@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1016649089682",
+    "project_id": "my-chatty-flutter",
+    "storage_bucket": "my-chatty-flutter.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016649089682:android:45d272834c608388fedc4b",
+        "android_client_info": {
+          "package_name": "com.example.chatty"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1016649089682-49sicofrcprd4dk07881db6jh6rqghug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJf9PcY-jATVIE3u-qxcYsN2Qd1llVeAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1016649089682-49sicofrcprd4dk07881db6jh6rqghug.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
