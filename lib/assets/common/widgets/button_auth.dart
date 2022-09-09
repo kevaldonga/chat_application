@@ -20,22 +20,20 @@ class _ButtonAuthState extends State<ButtonAuth> {
     return GestureDetector(
       onTap: widget.onclick,
       child: Container(
+        height: 45,
+        width: MediaQuery.of(context).size.width * 0.3,
         decoration: BoxDecoration(
           gradient: MyGradients.primaryGradient,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(25),
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            splashColor: const Color.fromARGB(255, 202, 197, 251),
-            highlightColor: const Color.fromRGBO(159, 207, 255, 1),
-            borderRadius: BorderRadius.circular(15),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Center(child: Text(widget.text)),
-            ),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Text(
+            widget.text,
+            style: const TextStyle(color: Colors.white, fontSize: 17),
           ),
         ),
       ),

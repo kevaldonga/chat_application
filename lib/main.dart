@@ -1,3 +1,5 @@
+import 'package:chatty/auth/screens/RegisterView.dart';
+import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/firebase/generated/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,10 +21,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'chatty',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(),
+      routes: {
+        Routes.loginview : (context) => const LoginView(),
+        Routes.registerview : (context) => const RegisterView(),
+        Routes.userview : (context) => const UserView(),
+      },
     );
   }
 }
