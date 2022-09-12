@@ -1,7 +1,10 @@
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/assets/common/widgets/alertdialog.dart';
 import 'package:chatty/assets/common/widgets/button_auth.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/validate.dart';
+import 'package:chatty/firebase/auth/firebase_auth.dart';
+import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 
 import '../../assets/common/widgets/textfield_auth.dart';
@@ -84,12 +87,34 @@ class _LoginViewState extends State<LoginView> {
                   const SizedBox(height: 20),
                   ButtonAuth(
                       text: "Login",
-                      onclick: () {
+                      onclick: () async {
                         setState(() {
                           erroremail = validate(Validate.email, email.text);
                           errorpassword =
                               validate(Validate.password, password.text);
                         });
+                        if (erroremail!.isEmpty && errorpassword!.isEmpty) {
+                          var e = await AuthFirebase.signin(
+                              email.text, password.text);
+                          if (e == null) {
+                            if (!mounted) return;
+                            await showbasicdialog(context, "Signed in",
+                                "you have signed in successfully!!");
+                            if (!mounted) return;
+                            Navigator.pushNamedAndRemoveUntil(
+                                context, Routes.userview, (_) => false);
+                          } else {
+                            if (e[0].isNotEmpty) {
+                              var a = ExceptionAuth.handleExceptions(e[0]);
+                              if (!mounted) return;
+                              showbasicdialog(context, a[0], a[1]);
+                            } else {
+                              if (!mounted) return;
+                              showbasicdialog(context, "fatal error",
+                                  "unexpected error occured please try again later.");
+                            }
+                          }
+                        }
                       }),
                   const SizedBox(height: 20),
                   GestureDetector(

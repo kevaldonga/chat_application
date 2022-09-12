@@ -37,5 +37,12 @@ class MyGradients {
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
-
+  static const LinearGradient maingradientvertical = LinearGradient(
+    colors: [
+      Color.fromRGBO(8, 100, 223, 1),
+      Color.fromRGBO(174, 3, 226, 1),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 }

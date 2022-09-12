@@ -7,6 +7,7 @@ import 'package:gradient_borders/box_borders/gradient_box_border.dart';
 class TextfieldAuth extends StatefulWidget {
   final TextEditingController controller;
   final String? autofill;
+  final bool? autofocus;
   final TextInputType? keyboardtype;
   final String? hintText;
   final String errorText;
@@ -14,6 +15,7 @@ class TextfieldAuth extends StatefulWidget {
   final int? maxlength;
   const TextfieldAuth(
       {super.key,
+      this.autofocus,
       required this.controller,
       required this.bordergradient,
       this.maxlength,
@@ -41,7 +43,7 @@ class _TextfieldAuthState extends State<TextfieldAuth> {
           textAlign: TextAlign.start,
           textAlignVertical: TextAlignVertical.center,
           controller: widget.controller,
-          autofocus: true,
+          autofocus: widget.autofocus ?? false,
           autocorrect: false,
           maxLength: widget.maxlength,
           autofillHints: widget.autofill == null ? [] : [widget.autofill!],
@@ -120,6 +122,11 @@ String validate(Validate v, String text) {
     case Validate.phone:
       if (text.length < 10) {
         return "too short";
+      }
+      break;
+    case Validate.name:
+      if(text.isEmpty){
+        return "empty field";
       }
       break;
   }
