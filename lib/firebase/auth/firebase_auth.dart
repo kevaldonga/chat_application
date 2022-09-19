@@ -1,6 +1,8 @@
+import 'package:chatty/firebase/database/my_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../assets/logic/profile.dart';
 
 class AuthFirebase {
   static FirebaseAuth? _auth;
@@ -20,12 +22,12 @@ class AuthFirebase {
     return null;
   }
 
-  static Future<List<String>?> signup(String email, String password,String phone,String name) async {
+  static Future<List<String>?> signup(Profile profile,password) async {
     EasyLoading.show(status: "signing up");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.createUserWithEmailAndPassword(
-          email: email, password: password);
+          email: profile.getEmail, password: password);
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
       return [e.code,""];
@@ -33,11 +35,7 @@ class AuthFirebase {
       EasyLoading.dismiss();
       return [e.toString(),""];
     }
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    sp.setStringList(email, [
-      email,
-      phone,
-    ]);
+    Database.writepersonalinfo(profile);
     EasyLoading.dismiss();
     return null;
   }

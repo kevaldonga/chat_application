@@ -1,13 +1,14 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/common/widgets/chatbubble.dart';
-import 'package:chatty/assets/logic/chat.dart';
-import 'package:chatty/constants/chatbubble_position.dart';
-import 'package:chatty/firebase/auth/firebase_auth.dart';
+import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
+import 'package:chatty/assets/common/widgets/chatroomitem.dart';
+import 'package:chatty/assets/common/widgets/textfield_main.dart';
+import 'package:chatty/assets/logic/firebaseuser.dart';
+import 'package:chatty/assets/logic/profile.dart';
+import 'package:chatty/userside/chatroom_activity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import '../assets/common/functions/getprofileimage.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class UserView extends StatefulWidget {
   const UserView({super.key});
@@ -17,10 +18,10 @@ class UserView extends StatefulWidget {
 }
 
 class _UserViewState extends State<UserView> {
+  TextEditingController searchcontroller = TextEditingController();
   late FirebaseAuth auth;
-  List<Chat> chats = [];
-  TextEditingController controller = TextEditingController();
-
+  late Profile profile;
+  late FirebaseUser user;
   @override
   void initState() {
     auth = FirebaseAuth.instance;
@@ -29,76 +30,87 @@ class _UserViewState extends State<UserView> {
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData md = MediaQuery.of(context);
-    return Scaffold(
-      backgroundColor: MyColors.scaffoldbackground,
-      floatingActionButton: FloatingActionButton(onPressed: () async {
-        await AuthFirebase.signout();
-        if (!mounted) return;
-        Navigator.pop(context);
-      }),
-      body: ListView.builder(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-          itemBuilder: (context, index) {
-            return Align(
-              alignment: Alignment.centerRight,
-              child: ChatBubble(
-                  key: ValueKey(chats[index].toString()),
-                  position: ChatBubblePosition.top,
-                  issentfromme:
-                      chats[index].sentFrom == auth.currentUser?.phoneNumber,
-                  text: chats[index].text),
-            );
-          },
-          itemCount: chats.length),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        width: md.size.width,
-        decoration: const BoxDecoration(
-            color: MyColors.scaffoldbackground,
-            borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(15), topRight: Radius.circular(15))),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(child: getuserprofile()),
-            SizedBox(
-              width: 283,
-              child: TextField(
-                autocorrect: true,
-                autofillHints: null,
-                autofocus: false,
-                expands: true,
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: "type something...",
-                  helperStyle: TextStyle(fontSize: 0),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: getpersonalinfo(auth.currentUser!.uid),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          profile = Profile.fromMap(data: snapshot.data!);
+          MediaQueryData md = MediaQuery.of(context);
+          EasyLoading.dismiss();
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.light,
+              statusBarIconBrightness: Brightness.dark,
+              statusBarColor: Colors.transparent,
+            ),
+            child: Scaffold(
+              backgroundColor: MyColors.scaffoldbackground,
+              body: SizedBox(
+                width: md.size.width,
+                height: md.size.height,
+                child: CustomScrollView(
+                  shrinkWrap: true,
+                  slivers: [
+                    SliverToBoxAdapter(child: SizedBox(height: md.padding.top)),
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      centerTitle: true,
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      automaticallyImplyLeading: false,
+                      title: SizedBox(
+                        height: 55,
+                        child: TextFieldmain(
+                            leading: const Icon(
+                              Icons.search_rounded,
+                              color: MyColors.textsecondary,
+                            ),
+                            ending: IconButton(
+                                onPressed: () {},
+                                icon: const Icon(
+                                  Icons.more_vert_rounded,
+                                  color: MyColors.textsecondary,
+                                )),
+                            hintText: "search...",
+                            contentPadding:
+                                const EdgeInsets.only(bottom: 15, top: 15),
+                            controller: searchcontroller),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverList(delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return ChatRoomItem(
+                          top: index == 0 ? true : null,
+                          ontap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) {
+                              return ChatRoomActivity(profiles: [profile]);
+                            }));
+                          },
+                          date: DateTime.now(),
+                          title: "hello",
+                          description: "hii",
+                          notificationcount: index != 0 ? 1 : null,
+                          read: index == 0 ? true : null,
+                        );
+                      },
+                      childCount: 10,
+                    )),
+                  ],
                 ),
               ),
+              extendBody: true,
             ),
-            IconButton(
-              onPressed: () {
-                sendmessage();
-              },
-              icon: const Icon(Icons.send),
-              color: MyColors.primarySwatch,
-            )
-          ],
-        ),
-      ),
+          );
+        } else {
+          EasyLoading.show();
+          return Container();
+        }
+      },
     );
-  }
-
-  void sendmessage() {
-    setState(() {
-      chats.add(Chat(
-          id: "randomly generated id",
-          time: DateTime.now(),
-          text: controller,
-          sentFrom: auth.currentUser?.phoneNumber));
-      controller.clear();
-      SystemChannels.textInput.invokeMethod("TextInput.hide");
-    });
   }
 }

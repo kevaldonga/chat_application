@@ -6,8 +6,10 @@ import 'package:chatty/constants/validate.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../assets/common/widgets/textfield_auth.dart';
+import '../../assets/logic/profile.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -22,6 +24,7 @@ class _RegisterViewState extends State<RegisterView> {
   final TextEditingController name = TextEditingController();
   final TextEditingController phone = TextEditingController();
   String? erroremail, errorpassword, errorphone, errorname;
+  Profile? profile;
 
   @override
   void dispose() {
@@ -36,7 +39,15 @@ class _RegisterViewState extends State<RegisterView> {
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarIconBrightness: Brightness.light,
+        ),
+      ),
       body: Container(
         width: md.size.width,
         height: md.size.height,
@@ -121,8 +132,7 @@ class _RegisterViewState extends State<RegisterView> {
                         if (erroremail!.isEmpty &&
                             errorpassword!.isEmpty &&
                             errorphone!.isEmpty) {
-                          var e = await AuthFirebase.signup(
-                              email.text, password.text,phone.text,name.text);
+                          var e = await AuthFirebase.signup(Profile(email: email.text, name: name.text, phoneNumber: phone.text,photourl: ""),password.text);
                           if (e == null) {
                             if (!mounted) return;
                             await showbasicdialog(context, "Signed up",

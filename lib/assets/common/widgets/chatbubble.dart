@@ -3,11 +3,13 @@ import 'package:chatty/constants/chatbubble_position.dart';
 import 'package:flutter/material.dart';
 
 class ChatBubble extends StatefulWidget {
-  ChatBubblePosition position;
+  final EdgeInsetsGeometry margin;
+  final ChatBubblePosition position;
   final bool issentfromme;
   final String text;
-  ChatBubble(
+  const ChatBubble(
       {super.key,
+      required this.margin,
       required this.position,
       required this.issentfromme,
       required this.text});
@@ -23,22 +25,9 @@ class _ChatBubbleState extends State<ChatBubble> {
       constraints: BoxConstraints.loose(
           Size.fromWidth(MediaQuery.of(context).size.width * 0.6)),
       padding: const EdgeInsets.only(left: 22, right: 22, top: 8, bottom: 12),
+      margin: widget.margin,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(
-              widget.position == ChatBubblePosition.top ? 20 : 0),
-          topRight: Radius.circular(!widget.issentfromme ? 20 : 0),
-          bottomLeft: Radius.circular(
-              widget.position != ChatBubblePosition.middle ||
-                      widget.issentfromme
-                  ? 20
-                  : 0),
-          bottomRight: Radius.circular(
-              widget.position != ChatBubblePosition.middle ||
-                      !widget.issentfromme
-                  ? 20
-                  : 0),
-        ),
+        borderRadius: _getraduisbyposition(),
         gradient: widget.issentfromme ? MyGradients.maingradientvertical : null,
         color: !widget.issentfromme ? Colors.white : null,
       ),
@@ -46,9 +35,56 @@ class _ChatBubbleState extends State<ChatBubble> {
         widget.text,
         style: TextStyle(
           color: widget.issentfromme ? Colors.white : MyColors.textprimary,
-          fontSize: 26,
+          fontSize: 20,
         ),
       ),
     );
+  }
+
+  BorderRadius _getraduisbyposition() {
+    switch (widget.position) {
+      case ChatBubblePosition.top:
+        if (widget.issentfromme) {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(0));
+        } else {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(0),
+              bottomRight: Radius.circular(20));
+        }
+      case ChatBubblePosition.middle:
+        if (widget.issentfromme) {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(0),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(0));
+        } else {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(0),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(0),
+              bottomRight: Radius.circular(20));
+        }
+      case ChatBubblePosition.bottom:
+        if (widget.issentfromme) {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(0),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20));
+        } else {
+          return const BorderRadius.only(
+              topLeft: Radius.circular(0),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20));
+        }
+    }
   }
 }
