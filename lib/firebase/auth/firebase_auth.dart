@@ -36,6 +36,7 @@ class AuthFirebase {
       return [e.toString(),""];
     }
     Database.writepersonalinfo(profile);
+    Database.setuid(profile.getPhoneNumber, FirebaseAuth.instance.currentUser!.uid);
     EasyLoading.dismiss();
     return null;
   }
@@ -101,9 +102,11 @@ class AuthFirebase {
   }
 
   static Future<List<Object?>?> refresh() async {
+    EasyLoading.show(status: "refreshing");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.currentUser?.reload();
+      EasyLoading.dismiss();
     } on FirebaseAuthException catch (e) {
       return [e.code,""];
     } on Exception catch (e) {

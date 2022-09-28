@@ -33,7 +33,40 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        // ignore: deprecated_member_use
         accentColor: MyColors.scaffoldbackground,
+        brightness: Brightness.light,
+        hintColor: MyColors.textsecondary,
+        dialogBackgroundColor: Colors.white,
+        platform: TargetPlatform.android,
+        primaryColor: MyColors.seconadaryswatch,
+        scaffoldBackgroundColor: MyColors.scaffoldbackground,
+        appBarTheme: const AppBarTheme(
+          color: MyColors.primarySwatch,
+          iconTheme: IconThemeData(
+            color: Colors.white,
+          ),
+          shadowColor: Colors.black12,
+        ),
+        dialogTheme: DialogTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          iconColor: MyColors.primarySwatch,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+            shape: MaterialStatePropertyAll<RoundedRectangleBorder>(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
       ),
       home: const MyHomePage(),
       builder: EasyLoading.init(),

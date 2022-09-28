@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -10,9 +11,17 @@ import '../../assets/logic/profile.dart';
 class Database {
   static FirebaseFirestore? _db;
 
-  static Future<void> writechat(Chat chat) async {
+  static Future<void> writechat(
+      {required Chat chat, required String chatroomid}) async {
     _db ??= FirebaseFirestore.instance;
+    // write it globally
     await _db?.collection("chats").doc(chat.id).set(chat.toMap());
+
+    // put id of chat in respected chatroom
+    // using array union of field value you can update individual elements in array
+    await _db?.collection("chatrooms").doc(chatroomid).update({
+      "chatids": FieldValue.arrayUnion([chat.id])
+    });
   }
 
   static Future<Chat?> readchat(String id) async {
@@ -29,20 +38,26 @@ class Database {
 
   static Future<void> writechatroom(ChatRoom chatroom) async {
     _db ??= FirebaseFirestore.instance;
-    List<String> chatids = [];
-    for (int i = 0; i < chatroom.chats.length; i++) {
-      chatids.add(chatroom.chats[i].id);
+    // write it globally
+    List<String> uids = [];
+    // get uids by phone no given in profiles
+    for (int i = 0; i < chatroom.connectedPersons.length; i++) {
+      String? uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
+      if (uid == null) continue;
+      uids.add(uid);
     }
-    // adding chats ids
     await _db
         ?.collection("chatrooms")
         .doc(chatroom.id)
-        .set({"chatids": chatids});
-    // adding connected persons
-    await _db
-        ?.collection("chatrooms")
-        .doc("connectedpersons")
-        .set(chatroom.connectedPersons);
+        .set({"chatids": chatroom.chats, "connectedpersons": uids});
+
+    // write chatroom id to everyconnected parties' account in connectedchatrooms
+    // using fieldvalue you can update values inside of an array of documents
+    for (int i = 0; i < uids.length; i++) {
+      await _db?.collection("connectedchatrooms").doc(uids[i]).update({
+        "chatroomids": FieldValue.arrayUnion([chatroom.id]),
+      });
+    }
   }
 
   static Future<ChatRoom> readchatroom(String id) async {
@@ -52,35 +67,63 @@ class Database {
     await _db?.collection("chatrooms").doc(id).get().then((value) {
       data = value.data();
     });
-    List<dynamic> chatids = data?["chatids"] as List<dynamic>;
-    // retrive chats by ids in list of chat
+    List<String> chatids = data?["chatids"] as List<String>;
     List<Chat> chats = [];
+
+    // get chats by its ids
     for (int i = 0; i < chatids.length; i++) {
-      Chat? chat = await readchat(chatids[i].toString());
-      if (chat == null) {
-        log("chat id of ${chatids[i]} was found null");
-      } else {
-        chats.add(chat);
-      }
+      Chat? chat = await Database.readchat(chatids[i]);
+      if (chat == null) continue;
+      chats.add(chat);
     }
-    // get connected persons
-    await _db
-        ?.collection("chatsrooms")
-        .doc("connectedpersons")
-        .get()
-        .then((value) {
-      data = value.data();
-    });
-    Map<String, Profile> connectedpersons = {};
-    data?.forEach((key, val) {
-      connectedpersons[key] = Profile.fromMap(data: val);
-    });
-    return ChatRoom(connectedPersons: connectedpersons, chats: chats, id: id);
+
+    // get personal info by getting uids of both parties
+    List<String> uids = data?["connectedpersons"] as List<String>;
+    List<Profile> profiles = [];
+    for (int i = 0; i < uids.length; i++) {
+      profiles.add(Profile.fromMap(data: await getpersonalinfo(uids[i])));
+    }
+    return ChatRoom(id: id, connectedPersons: profiles, chats: chats);
   }
 
   static void writepersonalinfo(Profile profile) async {
     _db ??= FirebaseFirestore.instance;
-    _db?.collection("users").doc(FirebaseAuth.instance.currentUser?.uid).set(profile.toMap());
+    await _db
+        ?.collection("users")
+        .doc(FirebaseAuth.instance.currentUser?.uid)
+        .set(profile.toMap());
     log("inserted value of ${profile.toString()}");
+  }
+
+  static Future<String?> getuid(String phoneno) async {
+    _db = FirebaseFirestore.instance;
+    DocumentSnapshot<Map<String, dynamic>>? data;
+    try {
+      data = await _db?.collection("userquickinfo").doc(phoneno).get();
+    } catch (e) {
+      return null;
+    }
+    return data!.data()?["uid"];
+  }
+
+  static Future<void> setuid(String phoneno, String uid) async {
+    _db = FirebaseFirestore.instance;
+    await _db?.collection("userquickinfo").doc(phoneno).set({"uid": uid});
+  }
+
+  static Future<List<ChatRoom>?> retrivechatrooms(String uid) async {
+    _db ??= FirebaseFirestore.instance;
+    // retrive all ids of connectedchatrooms
+    List<String>? chatroomsids = [];
+    await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
+      chatroomsids = value.data()?["chatroomsids"] as List<String>?;
+    });
+    if(chatroomsids == null) return null;
+    // retrive all chatrooms by its ids
+    List<ChatRoom> chatrooms = [];
+    for (int i = 0; i < chatroomsids!.length; i++) {
+      chatrooms.add(await Database.readchatroom(chatroomsids![i]));
+    }
+    return chatrooms;
   }
 }

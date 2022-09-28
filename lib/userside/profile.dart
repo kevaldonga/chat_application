@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/assets/common/functions/compressimage.dart';
 import 'package:chatty/assets/common/functions/setprofileimage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -29,9 +30,10 @@ class _MyProfileState extends State<MyProfile> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
     return Scaffold(
-      backgroundColor: MyColors.scaffoldbackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
         leading: BackButton(
@@ -42,10 +44,10 @@ class _MyProfileState extends State<MyProfile> {
               if (url == null && file == null){
                 Navigator.of(context).pop(widget.profile);
               }
-              if (file == null) {
-                widget.profile.setPhotourl = url;
+              if(file != null){
+                url = await setuserprofile(file!);
               }
-              if (url == null && file != null) widget.profile.setPhotourl = await setuserprofile(file!);
+              widget.profile.setPhotourl = url;
               if(!mounted) return;
               EasyLoading.dismiss();
               Navigator.of(context).pop(widget.profile);
@@ -102,7 +104,7 @@ class _MyProfileState extends State<MyProfile> {
                     picker = await FilePicker.platform
                         .pickFiles(allowMultiple: false, type: FileType.image);
                     if (picker == null) return;
-                    file = File(picker.files.single.path!);
+                    file = await compressimage(File(picker.files.single.path!),80);
                     setState(() {});
                   },
                   child: const Icon(Icons.edit, size: 20, color: Colors.white)),

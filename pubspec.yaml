@@ -44,6 +44,9 @@ dependencies:
   cloud_firestore: ^3.4.7
   firebase_storage: ^10.3.8
   file_picker: ^5.1.0
+  flutter_native_image: ^0.0.6+1
+  app_popup_menu: ^1.0.0
+  substring_highlight: ^1.0.33
 
 dev_dependencies:
   flutter_test:

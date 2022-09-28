@@ -31,6 +31,7 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -38,7 +39,7 @@ class _LoginViewState extends State<LoginView> {
         statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: MyColors.scaffoldbackground,
+        backgroundColor: theme.scaffoldBackgroundColor,
         resizeToAvoidBottomInset: false,
         body: Container(
           width: md.size.width,

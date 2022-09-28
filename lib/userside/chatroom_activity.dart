@@ -10,7 +10,6 @@ import 'package:chatty/userside/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../assets/colors/colors.dart';
 import '../assets/common/widgets/chatbubble.dart';
@@ -42,12 +41,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
     if (md.viewInsets.bottom > 0) {
       scrolltobottom();
     }
     return Container(
-      color: MyColors.scaffoldbackground,
+      color: theme.scaffoldBackgroundColor,
       child: Column(
         mainAxisSize: MainAxisSize.max,
         children: [
@@ -118,6 +118,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                 Flexible(
                   flex: 17,
                   child: TextFieldmain(
+                    onchanged: null,
                     contentPadding: const EdgeInsets.only(
                         top: 10, bottom: 15, left: 5, right: 10),
                     controller: controller,

@@ -1,16 +1,19 @@
+
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:flutter/material.dart';
 
-class TextFieldmain extends StatefulWidget implements PreferredSizeWidget{
+class TextFieldmain extends StatefulWidget implements PreferredSizeWidget {
   final TextEditingController controller;
+  final VoidCallback? onchanged;
   final String? hintText;
-  final Widget? leading,ending;
+  final Widget? leading, ending;
 
   final EdgeInsetsGeometry contentPadding;
   const TextFieldmain({
     this.leading,
     this.ending,
     super.key,
+    required this.onchanged,
     required this.contentPadding,
     required this.controller,
     this.hintText,
@@ -18,12 +21,28 @@ class TextFieldmain extends StatefulWidget implements PreferredSizeWidget{
 
   @override
   State<TextFieldmain> createState() => _TextFieldmainState();
-  
+
   @override
   Size get preferredSize => const Size.fromHeight(30);
 }
 
 class _TextFieldmainState extends State<TextFieldmain> {
+  @override
+  void initState() {
+    if (widget.onchanged != null) {
+      widget.controller.addListener(widget.onchanged!);
+    }
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    if (widget.onchanged != null) {
+      widget.controller.removeListener(widget.onchanged!);
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,8 +62,8 @@ class _TextFieldmainState extends State<TextFieldmain> {
           color: Colors.black,
         ),
         decoration: InputDecoration(
-          prefixIconConstraints: BoxConstraints.tight(const Size(40,20)),
-          suffixIconConstraints: BoxConstraints.tight(const Size(60,35)),
+          prefixIconConstraints: BoxConstraints.tight(const Size(40, 20)),
+          suffixIconConstraints: BoxConstraints.tight(const Size(60, 35)),
           prefixIcon: widget.leading,
           suffixIcon: widget.ending,
           contentPadding: widget.contentPadding,
