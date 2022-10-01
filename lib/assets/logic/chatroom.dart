@@ -17,10 +17,11 @@ class ChatRoom {
     required this.chats,
   }) : id = id ?? generatedid(10);
 
-  void sortchats(){
+  List<Chat> sortchats() {
     chats.sort((a, b) {
       return a.time.compareTo(b.time);
     });
+    return chats;
   }
 
   Chat getlatestchat() {
@@ -28,13 +29,18 @@ class ChatRoom {
     return chats.last;
   }
 
-  int getnotificationcount(){
+  int getnotificationcount({required String myphoneno}) {
     int count = 0;
-    for(int i = 0; i < chats.length; i++){
-      if(!chats[i].read){
+    for (int i = 0; i < chats.length; i++) {
+      if (chats[i].sentFrom != myphoneno && chats[i].isread) {
         count++;
       }
     }
     return count;
+  }
+
+  @override
+  String toString() {
+    return "id = $id || list of profiles = $connectedPersons || list of chats = $chats";
   }
 }

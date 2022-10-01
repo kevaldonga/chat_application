@@ -13,6 +13,10 @@ class Chat {
   
   String get sentFrom => _sentFrom;
 
+  bool get isread => read;
+
+  set setread(bool read) => this.read = read;
+
   Chat({
     required String id,
     required DateTime time,

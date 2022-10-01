@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../assets/logic/profile.dart';
+import '../firebase/database/my_database.dart';
 
 class MyProfile extends StatefulWidget {
   Profile profile;
@@ -39,18 +40,19 @@ class _MyProfileState extends State<MyProfile> {
         leading: BackButton(
             color: MyColors.seconadaryswatch,
             onPressed: () async {
-              EasyLoading.show(
-                  status: "saving");
-              if (url == null && file == null){
+              EasyLoading.show(status: "saving");
+              if ((url == null || url == "null") && file == null) {
                 Navigator.of(context).pop(widget.profile);
               }
-              if(file != null){
+              if (file != null) {
                 url = await setuserprofile(file!);
               }
               widget.profile.setPhotourl = url;
-              if(!mounted) return;
-              EasyLoading.dismiss();
-              Navigator.of(context).pop(widget.profile);
+                EasyLoading.dismiss();
+                if(!mounted) return;
+                await Database.writepersonalinfo(widget.profile).whenComplete((){
+                  Navigator.of(context).pop(widget.profile);
+                });
             }),
         backgroundColor: Colors.transparent,
         systemOverlayStyle: const SystemUiOverlayStyle(
@@ -104,7 +106,8 @@ class _MyProfileState extends State<MyProfile> {
                     picker = await FilePicker.platform
                         .pickFiles(allowMultiple: false, type: FileType.image);
                     if (picker == null) return;
-                    file = await compressimage(File(picker.files.single.path!),80);
+                    file = await compressimage(
+                        File(picker.files.single.path!), 80);
                     setState(() {});
                   },
                   child: const Icon(Icons.edit, size: 20, color: Colors.white)),
@@ -122,7 +125,7 @@ class _MyProfileState extends State<MyProfile> {
         width: md.size.width / 3,
         height: md.size.width / 3,
         child: file == null
-            ? url == null
+            ? url == null || url == "null"
                 ? const Icon(Icons.person,
                     size: 70, color: MyColors.primarySwatch)
                 : Image.network(url!, fit: BoxFit.cover)

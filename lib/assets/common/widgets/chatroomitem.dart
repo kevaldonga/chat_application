@@ -1,5 +1,6 @@
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/common/functions/formatdate.dart';
+import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:flutter/material.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
@@ -64,11 +65,11 @@ class _ChatRoomItemState extends State<ChatRoomItem> {
         child: Row(
           mainAxisSize: MainAxisSize.max,
           children: [
-            widget.url == null
+            widget.url == null && widget.url == "null"
                 ? const CircleAvatar(
                     child: Icon(Icons.face, color: MyColors.primarySwatch),
                   )
-                : Image.network(widget.url!),
+                : profilewidget(widget.url!, md.size.width * 0.12),
             SizedBox(width: md.size.width * 0.08),
             Flexible(
               flex: 5,
@@ -113,7 +114,8 @@ class _ChatRoomItemState extends State<ChatRoomItem> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(formatdate(widget.date)),
-                  widget.notificationcount == null
+                  widget.notificationcount == null ||
+                          widget.notificationcount == 0
                       ? Icon(Icons.check,
                           color: widget.read!
                               ? MyColors.primarySwatch

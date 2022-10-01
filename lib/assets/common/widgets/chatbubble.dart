@@ -85,6 +85,12 @@ class _ChatBubbleState extends State<ChatBubble> {
               bottomLeft: Radius.circular(20),
               bottomRight: Radius.circular(20));
         }
+      case ChatBubblePosition.alone:
+        return const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20));
     }
   }
 }

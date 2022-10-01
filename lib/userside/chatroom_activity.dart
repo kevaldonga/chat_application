@@ -4,6 +4,7 @@ import 'package:chatty/assets/common/functions/generateid.dart';
 import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
 import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:chatty/assets/common/widgets/textfield_main.dart';
+import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/profile.dart';
@@ -17,8 +18,8 @@ import '../assets/logic/chat.dart';
 import '../constants/chatbubble_position.dart';
 
 class ChatRoomActivity extends StatefulWidget {
-  final List<Profile> profiles;
-  const ChatRoomActivity({super.key, required this.profiles});
+  ChatRoom chatroom;
+  ChatRoomActivity({super.key, required this.chatroom});
 
   @override
   State<ChatRoomActivity> createState() => _ChatRoomActivityState();
@@ -26,7 +27,6 @@ class ChatRoomActivity extends StatefulWidget {
 
 class _ChatRoomActivityState extends State<ChatRoomActivity> {
   late FirebaseAuth auth;
-  List<Chat> chats = [];
   late Profile myprofile;
   TextEditingController controller = TextEditingController();
 
@@ -88,7 +88,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             return MyProfile(profile: myprofile);
           }));
           setState(() {});
-          Database.writepersonalinfo(myprofile);
         },
         child: Container(
             height: md.size.height * 0.09,
@@ -108,11 +107,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                 const SizedBox(width: 5),
                 Flexible(
                   flex: 4,
-                  child: myprofile.getPhotourl == null ? 
-                  const CircleAvatar(
-                    child: Icon(Icons.person,color: MyColors.primarySwatch),
-                  )
-                  : profilewidget(myprofile.getPhotourl!,45),
+                  child: myprofile.getPhotourl == null &&
+                          myprofile.getPhotourl == "null"
+                      ? const CircleAvatar(
+                          child:
+                              Icon(Icons.person, color: MyColors.primarySwatch),
+                        )
+                      : profilewidget(myprofile.getPhotourl!, 45),
                 ),
                 const SizedBox(width: 15),
                 Flexible(
@@ -146,7 +147,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     return Container(
       width: md.size.width,
       height: md.size.height * 0.78 - md.viewInsets.bottom,
-      padding: const EdgeInsets.only(left: 16,right: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16),
       alignment: Alignment.bottomCenter,
       child: ListView.builder(
           controller: _scrollcontroller,
@@ -154,22 +155,25 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
           shrinkWrap: true,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
           itemBuilder: (context, index) {
-            bool issentfromme = chats[index].sentFrom == myprofile.getPhoneNumber;
+            Chat currentchat = widget.chatroom.chats[index];
+            bool issentfromme =
+                currentchat.sentFrom == myprofile.getPhoneNumber;
             return Align(
               alignment:
                   issentfromme ? Alignment.centerRight : Alignment.centerLeft,
               child: Padding(
-                padding: EdgeInsets.only(bottom: index == chats.length - 1 ? 10 : 0),
+                padding: EdgeInsets.only(
+                    bottom: index == widget.chatroom.chats.length - 1 ? 10 : 0),
                 child: ChatBubble(
-                    key: ValueKey(chats[index].toString()),
+                    key: ValueKey(currentchat.toString()),
                     position: getpositionofbubble(index),
                     margin: getmarginofbubble(index),
                     issentfromme: issentfromme,
-                    text: chats[index].text),
+                    text: widget.chatroom.chats[index].text),
               ),
             );
           },
-          itemCount: chats.length),
+          itemCount: widget.chatroom.chats.length),
     );
   }
 
@@ -178,15 +182,20 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       children: [
         IconButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.of(context).pop(widget.chatroom);
             },
             icon: const Icon(Icons.arrow_back_ios_rounded,
                 color: MyColors.primarySwatch)),
         const SizedBox(width: 20),
-        const CircleAvatar(child: Icon(Icons.face,color: MyColors.primarySwatch)),
+        getotherprofile().getPhotourl == null &&
+                getotherprofile().getPhotourl == "null"
+            ? const CircleAvatar(
+                child: Icon(Icons.person, color: MyColors.primarySwatch),
+              )
+            : profilewidget(getotherprofile().getPhotourl!, 45),
         const SizedBox(width: 20),
-        const Text("darshan",
-            style: TextStyle(
+        Text(getotherprofile().getName,
+            style: const TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.w400,
                 fontSize: 20)),
@@ -194,40 +203,81 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     );
   }
 
-  void sendmessage() {
-    if(controller.text.isEmpty){
+  Profile getotherprofile() {
+    String? myemail = auth.currentUser!.email;
+    for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
+      if (myemail != widget.chatroom.connectedPersons[i].getEmail) {
+        return widget.chatroom.connectedPersons[i];
+      }
+    }
+    throw Error();
+  }
+
+  Profile getmyprofile() {
+    String? myemail = auth.currentUser!.email;
+    for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
+      if (myemail == widget.chatroom.connectedPersons[i].getEmail) {
+        return widget.chatroom.connectedPersons[i];
+      }
+    }
+    throw Error();
+  }
+
+  void sendmessage() async {
+    if (controller.text.isEmpty) {
       return;
     }
+    late Chat newchat;
     setState(() {
-      chats.add(Chat(
+      newchat = Chat(
           read: true,
-          id: "randomly generated id",
+          id: generatedid(15),
           time: DateTime.now(),
           text: controller.text,
-          sentFrom: myprofile.getPhoneNumber));
+          sentFrom: myprofile.getPhoneNumber);
+
+      widget.chatroom.chats.add(newchat);
       log("chat - ${controller.text} has been send");
+
       scrolltobottom();
+
       controller.clear();
       SystemChannels.textInput.invokeMethod("TextInput.hide");
     });
+
+    await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
   }
 
   ChatBubblePosition getpositionofbubble(int index) {
     if (index == 0) {
+      if (widget.chatroom.chats.length == 1) return ChatBubblePosition.alone;
+      if (widget.chatroom.chats[index].sentFrom !=
+          widget.chatroom.chats[index + 1].sentFrom) {
+        return ChatBubblePosition.alone;
+      }
+      return ChatBubblePosition.top;
+    }
+    if (widget.chatroom.chats.length - 1 == index) {
+      if (widget.chatroom.chats[index].sentFrom !=
+          widget.chatroom.chats[index - 1].sentFrom) {
+        return ChatBubblePosition.alone;
+      }
       return ChatBubblePosition.bottom;
     }
-    if (index == chats.length - 1) {
+    if (widget.chatroom.chats[index].sentFrom !=
+            widget.chatroom.chats[index - 1].sentFrom &&
+        widget.chatroom.chats[index].sentFrom !=
+            widget.chatroom.chats[index + 1].sentFrom) {
+      return ChatBubblePosition.alone;
+    }
+    if (widget.chatroom.chats[index].sentFrom ==
+            widget.chatroom.chats[index - 1].sentFrom &&
+        widget.chatroom.chats[index].sentFrom !=
+            widget.chatroom.chats[index + 1].sentFrom) {
       return ChatBubblePosition.bottom;
     }
-    if (chats[index].sentFrom != chats[index - 1].sentFrom &&
-        chats[index].sentFrom != chats[index + 1].sentFrom) {
-      return ChatBubblePosition.bottom;
-    }
-    if (chats[index].sentFrom == chats[index - 1].sentFrom &&
-        chats[index].sentFrom != chats[index + 1].sentFrom) {
-      return ChatBubblePosition.bottom;
-    }
-    if (chats[index].sentFrom != chats[index - 1].sentFrom) {
+    if (widget.chatroom.chats[index].sentFrom !=
+        widget.chatroom.chats[index - 1].sentFrom) {
       return ChatBubblePosition.top;
     }
     return ChatBubblePosition.middle;
@@ -237,19 +287,23 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (index == 0) {
       return const EdgeInsets.only(top: 3);
     }
-    if (index == chats.length - 1) {
-      if (chats[index].sentFrom != chats[index - 1].sentFrom) {
+    if (index == widget.chatroom.chats.length - 1) {
+      if (widget.chatroom.chats[index].sentFrom !=
+          widget.chatroom.chats[index - 1].sentFrom) {
         return const EdgeInsets.only(top: 12);
       }
       return const EdgeInsets.symmetric(vertical: 3);
     }
     return EdgeInsets.only(
-        top: chats[index - 1].sentFrom == chats[index].sentFrom ? 3 : 12);
+        top: widget.chatroom.chats[index - 1].sentFrom ==
+                widget.chatroom.chats[index].sentFrom
+            ? 3
+            : 12);
   }
 
   void scrolltobottom() {
     _scrollcontroller.animateTo(_scrollcontroller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 1000), curve: Curves.easeInOut);
   }
 
   void setpersonalinfo() async {
@@ -258,62 +312,23 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     });
   }
 
-  void populatechats() {
-    chats = [
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "hello",
-          sentFrom: myprofile.getPhoneNumber),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "hii",
-          sentFrom: "321"),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text:
-              "hey there i wanna talk to you about really great re u interested?",
-          sentFrom: myprofile.getPhoneNumber),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "yeah lets do it",
-          sentFrom: "321"),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "so i need to come on a talkshow",
-          sentFrom: myprofile.getPhoneNumber),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "name is racism talks",
-          sentFrom: "123"),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "u interested?",
-          sentFrom: "123"),
-      Chat(
-          read: true,
-          id: generatedid(10),
-          time: DateTime.now(),
-          text: "sure i am !!",
-          sentFrom: myprofile.getPhoneNumber),
-    ];
+  void refreshchatroom() async {
+    String id = widget.chatroom.id;
+    await Database.readchatroom(id).then((val) {
+      widget.chatroom = val;
+    });
+    setState(() {});
   }
 
   void init() {
-    myprofile = widget.profiles.first;
-    populatechats();
+    myprofile = getmyprofile();
+    refreshchatroom();
+    makechatallread();
+  }
+
+  void makechatallread() {
+    for (int i = 0; i < widget.chatroom.chats.length; i++) {
+      widget.chatroom.chats[i].setread = true;
+    }
   }
 }

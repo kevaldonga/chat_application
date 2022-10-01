@@ -1,10 +1,9 @@
-import 'dart:developer';
-
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
 import 'package:chatty/assets/common/widgets/alertdialog.dart';
 import 'package:chatty/assets/common/widgets/alertdialog_action_button.dart';
 import 'package:chatty/assets/common/widgets/chatroomitem.dart';
+import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:chatty/assets/common/widgets/popupmenuitem.dart';
 import 'package:chatty/assets/common/widgets/textfield_main.dart';
 import 'package:chatty/assets/common/widgets/textfield_material.dart';
@@ -16,6 +15,7 @@ import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/userside/chatroom_activity.dart';
 import 'package:chatty/userside/profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,15 +33,17 @@ class UserView extends StatefulWidget {
 class _UserViewState extends State<UserView> {
   TextEditingController searchcontroller = TextEditingController();
   late FirebaseAuth auth;
+  late FirebaseFirestore _db;
   late Profile profile;
   late FirebaseUser user;
-  List<ChatRoom> items = [];
-  List<ChatRoom> searchitems = [];
+  List<ChatRoom> chatrooms = [];
+  List<ChatRoom> searchchatrooms = [];
   Map<String, dynamic>? snapshot;
 
   @override
   void initState() {
     auth = FirebaseAuth.instance;
+    _db = FirebaseFirestore.instance;
     init();
     super.initState();
   }
@@ -112,6 +114,10 @@ class _UserViewState extends State<UserView> {
                             color: MyColors.textsecondary,
                           ),
                           ending: PopupMenuButton(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            enabled: true,
                             itemBuilder: (context) {
                               return [
                                 popupMenuItem(
@@ -179,7 +185,7 @@ class _UserViewState extends State<UserView> {
                             onSelected: (value) async {
                               switch (value) {
                                 case Profileop.myprofile:
-                                  await Navigator.push(context,
+                                  profile = await Navigator.push(context,
                                       MaterialPageRoute(builder: (context) {
                                     return MyProfile(profile: profile);
                                   }));
@@ -220,14 +226,18 @@ class _UserViewState extends State<UserView> {
                                   }
                               }
                             },
-                            icon: const Icon(
-                              Icons.more_vert_rounded,
-                              color: MyColors.textsecondary,
+                            child: Center(
+                              child: profile.getPhotourl == null ||
+                                      profile.getPhotourl == "null"
+                                  ? const CircleAvatar(
+                                      backgroundColor:
+                                          Color.fromARGB(255, 176, 184, 250),
+                                      child: Icon(Icons.person,
+                                          color: MyColors.primarySwatch,
+                                          size: 30),
+                                    )
+                                  : profilewidget(profile.getPhotourl!, 35),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            enabled: true,
                           ),
                           hintText: "search...",
                           contentPadding:
@@ -247,47 +257,92 @@ class _UserViewState extends State<UserView> {
           );
   }
 
-  void populatechatrooms() async {
-    items = await Database.retrivechatrooms(auth.currentUser!.uid) ?? [];
-    if (items.isEmpty) {
-      log("no chatrooms found !!");
+  Widget buildlistview(BuildContext context) {
+    if (chatrooms.isEmpty) {
+      return buildblankview("you are not connected to any chatgroups");
     }
+    if (searchchatrooms.isEmpty && searchcontroller.text.isNotEmpty) {
+      return buildblankview("we could not find the specified");
+    }
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        ChatRoom currentchatroom = searchcontroller.text.isEmpty
+            ? chatrooms[index]
+            : searchchatrooms[index];
+        currentchatroom.sortchats();
+        return ChatRoomItem(
+          url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
+          top: index == 0 ? true : null,
+          notificationcount: currentchatroom.getnotificationcount(
+              myphoneno: profile.getPhoneNumber),
+          // to check if notification is 0 and last msg sent was not by me
+          // which will make both read and notification couter null
+          read: (currentchatroom.getnotificationcount(
+                          myphoneno: profile.getPhoneNumber) ==
+                      0 &&
+                  currentchatroom.chats.last.sentFrom != profile.getPhoneNumber)
+              ? null
+              : currentchatroom.chats.last.isread,
+          searchcontroller: searchcontroller,
+          ontap: () => ontap(index),
+          date: currentchatroom.sortchats().last.time,
+          title: getotherprofile(currentchatroom.connectedPersons).getName,
+          description: currentchatroom.chats.isNotEmpty
+              ? currentchatroom.getlatestchat().text
+              : "",
+        );
+      },
+          childCount: searchcontroller.text.isEmpty
+              ? chatrooms.length
+              : searchchatrooms.length),
+    );
   }
 
   void setsearcheditems() {
     setState(() {
-      searchitems = [];
+      searchchatrooms = [];
       if (searchcontroller.text.isEmpty) {
         return;
       }
       String title, description;
       String searchtext = searchcontroller.text.toLowerCase();
-      for (int i = 0; i < items.length; i++) {
-        title =
-            getotherprofile(items[i].connectedPersons).getName.toLowerCase();
-        description = items[i].getlatestchat().text;
+      for (int i = 0; i < chatrooms.length; i++) {
+        title = getotherprofile(chatrooms[i].connectedPersons)
+            .getName
+            .toLowerCase();
+        description = chatrooms[i].getlatestchat().text;
         if (title.contains(searchtext) || description.contains(searchtext)) {
-          searchitems.add(items[i]);
+          searchchatrooms.add(chatrooms[i]);
         }
       }
     });
   }
 
+  void retrivechatrooms() async {
+    chatrooms = await Database.retrivechatrooms(uid: auth.currentUser!.uid)
+            .whenComplete(() {
+          setState(() {});
+        }) ??
+        [];
+  }
+
   void init() async {
     await getpersonalinfo(auth.currentUser!.uid).then((value) {
       snapshot = value;
-      populatechatrooms();
       profile = Profile.fromMap(data: snapshot!);
+      retrivechatrooms();
       EasyLoading.dismiss();
       setState(() {});
     });
   }
 
-  void ontap() {
+  void ontap(int index) async {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return ChatRoomActivity(profiles: [profile]);
+    chatrooms[index] =
+        await Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return ChatRoomActivity(chatroom: chatrooms[index]);
     }));
+    setState(() {});
   }
 
   void floatingbuttonaction() async {
@@ -321,14 +376,25 @@ class _UserViewState extends State<UserView> {
     if (result != null) {
       if (phone == profile.getPhoneNumber) {
         showbasicdialog(
-            context, "forbidden", "you cannot add your own phone no");
+          context,
+          "forbidden",
+          "you cannot add your own phone no",
+        );
         return;
       }
-      showbasicdialog(
-          context, "added", "given phone number was added successfully !");
+      await showbasicdialog(
+        context,
+        "added",
+        "given phone number was added successfully !",
+      );
+      addchatroom(phone);
     } else {
       if (phone.length < 10) return;
-      showbasicdialog(context, "failed", "given number doesnt exist yet !!");
+      showbasicdialog(
+        context,
+        "failed",
+        "given number doesnt exist yet !!",
+      );
     }
   }
 
@@ -340,34 +406,6 @@ class _UserViewState extends State<UserView> {
       }
     }
     throw Error();
-  }
-
-  buildlistview(BuildContext context) {
-    if (items.isEmpty) {
-      return buildblankview("you are not connected to any Chatgroups");
-    }
-    if (searchitems.isEmpty && searchcontroller.text.isNotEmpty) {
-      return buildblankview("we couldn't find specified chatroom");
-    }
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        ChatRoom currentchatroom =
-            searchcontroller.text.isEmpty ? items[index] : searchitems[index];
-        return ChatRoomItem(
-          top: index == 0 ? true : null,
-          notificationcount: null,
-          read: true,
-          searchcontroller: searchcontroller,
-          ontap: ontap,
-          date: DateTime.now(),
-          title: getotherprofile(currentchatroom.connectedPersons).getName,
-          description: currentchatroom.getlatestchat().text,
-        );
-      },
-          childCount: searchcontroller.text.isEmpty
-              ? items.length
-              : searchitems.length),
-    );
   }
 
   Widget buildblankview(String title) {
@@ -388,5 +426,38 @@ class _UserViewState extends State<UserView> {
         ),
       ),
     );
+  }
+
+  void addchatroom(String phone) async {
+    // checks if the chatrrom exist already
+    for (int i = 0; i < chatrooms.length; i++) {
+      if (phone ==
+          getotherprofile(
+            chatrooms[i].connectedPersons,
+          ).getPhoneNumber) {
+        return;
+      }
+    }
+
+    // get personal info like email, name by uid
+    String uid = await Database.getuid(phone) ?? "";
+    late Profile otherprofile;
+    await getpersonalinfo(uid).then((value) {
+      otherprofile = Profile.fromMap(data: value);
+    });
+    ChatRoom chatRoom = ChatRoom(
+      connectedPersons: [otherprofile, profile],
+      chats: [],
+    );
+    setState(() => chatrooms.add(chatRoom));
+    await Database.writechatroom(chatRoom);
+  }
+
+  void intializechatrooms(Map<String, dynamic> snapshot) async {
+    chatrooms = await Database.retrivechatrooms(
+          uid: auth.currentUser!.uid,
+          snapshot: snapshot,
+        ) ??
+        [];
   }
 }
