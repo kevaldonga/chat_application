@@ -15,7 +15,6 @@ import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/userside/chatroom_activity.dart';
 import 'package:chatty/userside/profile.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +32,6 @@ class UserView extends StatefulWidget {
 class _UserViewState extends State<UserView> {
   TextEditingController searchcontroller = TextEditingController();
   late FirebaseAuth auth;
-  late FirebaseFirestore _db;
   late Profile profile;
   late FirebaseUser user;
   List<ChatRoom> chatrooms = [];
@@ -43,7 +41,6 @@ class _UserViewState extends State<UserView> {
   @override
   void initState() {
     auth = FirebaseAuth.instance;
-    _db = FirebaseFirestore.instance;
     init();
     super.initState();
   }
@@ -103,147 +100,7 @@ class _UserViewState extends State<UserView> {
                     backgroundColor: Colors.transparent,
                     elevation: 0,
                     automaticallyImplyLeading: false,
-                    title: SizedBox(
-                      height: 55,
-                      child: TextFieldmain(
-                          onchanged: () {
-                            setsearcheditems();
-                          },
-                          leading: const Icon(
-                            Icons.search_rounded,
-                            color: MyColors.textsecondary,
-                          ),
-                          ending: PopupMenuButton(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            enabled: true,
-                            itemBuilder: (context) {
-                              return [
-                                popupMenuItem(
-                                    value: Profileop.myprofile,
-                                    height: 20,
-                                    child: Row(
-                                      children: const [
-                                        Icon(Icons.person,
-                                            color: MyColors.seconadaryswatch),
-                                        SizedBox(width: 30),
-                                        Text("profile")
-                                      ],
-                                    )),
-                                popupMenuItem(
-                                    value: Profileop.refresh,
-                                    height: 20,
-                                    child: Row(
-                                      children: const [
-                                        Icon(Icons.refresh,
-                                            color: MyColors.seconadaryswatch),
-                                        SizedBox(width: 30),
-                                        Text("refresh")
-                                      ],
-                                    )),
-                                popupMenuItem(
-                                    value: Profileop.updatepassword,
-                                    height: 20,
-                                    child: Row(
-                                      children: const [
-                                        Icon(Icons.password_rounded,
-                                            color: MyColors.seconadaryswatch),
-                                        SizedBox(width: 30),
-                                        Text("update password")
-                                      ],
-                                    )),
-                                popupMenuItem(
-                                    value: Profileop.verify,
-                                    height: 20,
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.verified,
-                                            color:
-                                                auth.currentUser!.emailVerified
-                                                    ? Colors.green
-                                                    : MyColors.textprimary),
-                                        const SizedBox(width: 30),
-                                        Text(auth.currentUser!.emailVerified
-                                            ? "verified"
-                                            : "verify yourself"),
-                                      ],
-                                    )),
-                                popupMenuItem(
-                                    value: Profileop.signout,
-                                    height: 20,
-                                    child: Row(
-                                      children: const [
-                                        Icon(Icons.logout,
-                                            color: MyColors.seconadaryswatch),
-                                        SizedBox(width: 30),
-                                        Text("sign out"),
-                                      ],
-                                    )),
-                              ];
-                            },
-                            onSelected: (value) async {
-                              switch (value) {
-                                case Profileop.myprofile:
-                                  profile = await Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) {
-                                    return MyProfile(profile: profile);
-                                  }));
-                                  setState(() {});
-                                  break;
-
-                                case Profileop.refresh:
-                                  await AuthFirebase.refresh();
-                                  break;
-                                case Profileop.verify:
-                                  await showbasicdialog(
-                                      context,
-                                      "are you sure ?",
-                                      "you will sent link to verify your email");
-                                  await AuthFirebase.verify();
-                                  break;
-                                case Profileop.updatepassword:
-                                  break;
-                                case Profileop.signout:
-                                  bool yousure = await showdialog(
-                                      context,
-                                      const Text("Are you sure ?"),
-                                      const Text(
-                                          "Are you sure you want to sign out ? "),
-                                      [
-                                        alertdialogactionbutton("go back", () {
-                                          Navigator.of(context).pop(false);
-                                        }),
-                                        alertdialogactionbutton("yes", () {
-                                          Navigator.of(context).pop(true);
-                                        }),
-                                      ]);
-                                  if (yousure) {
-                                    await AuthFirebase.signout();
-                                    if (!mounted) return;
-                                    Navigator.pushNamedAndRemoveUntil(context,
-                                        Routes.loginview, (_) => false);
-                                  }
-                              }
-                            },
-                            child: Center(
-                              child: profile.getPhotourl == null ||
-                                      profile.getPhotourl == "null"
-                                  ? const CircleAvatar(
-                                      backgroundColor:
-                                          Color.fromARGB(255, 176, 184, 250),
-                                      child: Icon(Icons.person,
-                                          color: MyColors.primarySwatch,
-                                          size: 30),
-                                    )
-                                  : profilewidget(profile.getPhotourl!, 35),
-                            ),
-                          ),
-                          hintText: "search...",
-                          contentPadding:
-                              const EdgeInsets.only(bottom: 15, top: 15),
-                          controller: searchcontroller),
-                    ),
+                    title: topsearchbar(context),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -255,6 +112,141 @@ class _UserViewState extends State<UserView> {
             ),
             extendBody: true,
           );
+  }
+
+  SizedBox topsearchbar(BuildContext context) {
+    return SizedBox(
+      height: 55,
+      child: TextFieldmain(
+          onchanged: () {
+            setsearcheditems();
+          },
+          leading: const Icon(
+            Icons.search_rounded,
+            color: MyColors.textsecondary,
+          ),
+          ending: PopupMenuButton(
+            clipBehavior: Clip.antiAlias,
+            splashRadius: 20,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            enabled: true,
+            itemBuilder: (context) {
+              return [
+                popupMenuItem(
+                    value: Profileop.myprofile,
+                    height: 20,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.person, color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("profile")
+                      ],
+                    )),
+                popupMenuItem(
+                    value: Profileop.refresh,
+                    height: 20,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.refresh, color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("refresh")
+                      ],
+                    )),
+                popupMenuItem(
+                    value: Profileop.updatepassword,
+                    height: 20,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.password_rounded,
+                            color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("update password")
+                      ],
+                    )),
+                popupMenuItem(
+                    value: Profileop.verify,
+                    height: 20,
+                    child: Row(
+                      children: [
+                        Icon(Icons.verified,
+                            color: auth.currentUser!.emailVerified
+                                ? Colors.green
+                                : MyColors.textprimary),
+                        const SizedBox(width: 30),
+                        Text(auth.currentUser!.emailVerified
+                            ? "verified"
+                            : "verify yourself"),
+                      ],
+                    )),
+                popupMenuItem(
+                    value: Profileop.signout,
+                    height: 20,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.logout, color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("sign out"),
+                      ],
+                    )),
+              ];
+            },
+            onSelected: (value) async {
+              switch (value) {
+                case Profileop.myprofile:
+                  profile = await Navigator.push(context,
+                      MaterialPageRoute(builder: (context) {
+                    return MyProfile(profile: profile);
+                  }));
+                  setState(() {});
+                  break;
+
+                case Profileop.refresh:
+                  await AuthFirebase.refresh();
+                  break;
+                case Profileop.verify:
+                  await showbasicdialog(context, "are you sure ?",
+                      "you will sent link to verify your email");
+                  await AuthFirebase.verify();
+                  break;
+                case Profileop.updatepassword:
+                  break;
+                case Profileop.signout:
+                  bool yousure = await showdialog(
+                      context,
+                      const Text("Are you sure ?"),
+                      const Text("Are you sure you want to sign out ? "), [
+                    alertdialogactionbutton("go back", () {
+                      Navigator.of(context).pop(false);
+                    }),
+                    alertdialogactionbutton("yes", () {
+                      Navigator.of(context).pop(true);
+                    }),
+                  ]);
+                  if (yousure) {
+                    await AuthFirebase.signout();
+                    if (!mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, Routes.loginview, (_) => false);
+                  }
+              }
+            },
+            child: Center(
+              child:
+                  profile.getPhotourl == null || profile.getPhotourl == "null"
+                      ? const CircleAvatar(
+                          backgroundColor: Color.fromARGB(255, 176, 184, 250),
+                          child: Icon(Icons.person,
+                              color: MyColors.primarySwatch, size: 30),
+                        )
+                      : profilewidget(profile.getPhotourl!, 35),
+            ),
+          ),
+          hintText: "search...",
+          contentPadding: const EdgeInsets.only(bottom: 15, top: 15),
+          controller: searchcontroller),
+    );
   }
 
   Widget buildlistview(BuildContext context) {
@@ -274,18 +266,19 @@ class _UserViewState extends State<UserView> {
           url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
           top: index == 0 ? true : null,
           notificationcount: currentchatroom.getnotificationcount(
-              myphoneno: profile.getPhoneNumber),
+            myphoneno: profile.getPhoneNumber,
+          ),
           // to check if notification is 0 and last msg sent was not by me
           // which will make both read and notification couter null
-          read: (currentchatroom.getnotificationcount(
+          read: currentchatroom.chats.isNotEmpty ? (currentchatroom.getnotificationcount(
                           myphoneno: profile.getPhoneNumber) ==
                       0 &&
                   currentchatroom.chats.last.sentFrom != profile.getPhoneNumber)
               ? null
-              : currentchatroom.chats.last.isread,
+              : currentchatroom.chats.last.isread : null,
           searchcontroller: searchcontroller,
           ontap: () => ontap(index),
-          date: currentchatroom.sortchats().last.time,
+          date: currentchatroom.chats.isNotEmpty ? currentchatroom.sortchats().last.time : null,
           title: getotherprofile(currentchatroom.connectedPersons).getName,
           description: currentchatroom.chats.isNotEmpty
               ? currentchatroom.getlatestchat().text

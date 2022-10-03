@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 class MyColors {
   static const Color scaffoldbackground = Color.fromARGB(255, 242, 237, 254);
   static const Color primarySwatch = Color.fromRGBO(76, 74, 206, 1);
-  static const Color seconadaryswatch = Color.fromRGBO(124, 38, 216,1);
+  static const Color seconadaryswatch = Color.fromRGBO(124, 38, 216, 1);
   static const Color textprimary = Color.fromRGBO(80, 80, 80, 1);
   static const Color textsecondary = Color.fromRGBO(89, 89, 89, 1);
   static const Color textFieldbackground = Color.fromARGB(255, 220, 223, 248);
-  static const Color textfieldborder2 = Color.fromRGBO(69, 80, 206,1);
+  static const Color textfieldborder2 = Color.fromRGBO(69, 80, 206, 1);
+  static const Color highlightColor = Color.fromARGB(255, 221, 219, 255);
+  static const Color focusColor = Color.fromARGB(255, 217, 201, 255);
+  static const Color splashColor = Color.fromARGB(255, 211, 215, 247);
 }
 
 class MyGradients {

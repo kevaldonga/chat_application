@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 
 
-Widget profilewidget(String url,double size){
+Widget profilewidget(String url,final double size){
   return ClipOval(
+    clipBehavior: Clip.antiAlias,
       child: Container(
         color: Colors.white,
         width: size,

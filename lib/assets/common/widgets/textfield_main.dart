@@ -46,35 +46,50 @@ class _TextFieldmainState extends State<TextFieldmain> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 20),
       decoration: BoxDecoration(
         color: MyColors.textFieldbackground,
         borderRadius: BorderRadius.circular(50),
       ),
-      child: TextField(
-        textAlign: TextAlign.start,
-        textAlignVertical: TextAlignVertical.center,
-        controller: widget.controller,
-        autocorrect: false,
-        cursorHeight: 24,
-        style: const TextStyle(
-          fontSize: 19,
-          color: Colors.black,
-        ),
-        decoration: InputDecoration(
-          prefixIconConstraints: BoxConstraints.tight(const Size(40, 20)),
-          suffixIconConstraints: BoxConstraints.tight(const Size(60, 35)),
-          prefixIcon: widget.leading,
-          suffixIcon: widget.ending,
-          contentPadding: widget.contentPadding,
-          border: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          focusedErrorBorder: InputBorder.none,
-          hintStyle: const TextStyle(color: MyColors.textsecondary),
-          hintText: widget.hintText,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(50),
+          onTap: (){},
+          highlightColor: Colors.transparent,
+          focusColor: const Color.fromARGB(255, 209, 189, 254),
+          splashColor: const Color.fromARGB(255, 193, 199, 247),
+          child: Container(
+            padding: const EdgeInsets.only(left: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: TextField(
+              textAlign: TextAlign.start,
+              textAlignVertical: TextAlignVertical.center,
+              controller: widget.controller,
+              autocorrect: false,
+              cursorHeight: 24,
+              style: const TextStyle(
+                fontSize: 19,
+                color: Colors.black,
+              ),
+              decoration: InputDecoration(
+                prefixIconConstraints: BoxConstraints.tight(const Size(40, 20)),
+                suffixIconConstraints: BoxConstraints.tight(const Size(60, 35)),
+                prefixIcon: widget.leading,
+                suffixIcon: widget.ending,
+                contentPadding: widget.contentPadding,
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                hintStyle: const TextStyle(color: MyColors.textsecondary),
+                hintText: widget.hintText,
+              ),
+            ),
+          ),
         ),
       ),
     );

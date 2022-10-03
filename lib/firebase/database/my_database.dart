@@ -65,7 +65,7 @@ class Database {
     }
   }
 
-  static Future<ChatRoom> readchatroom(String id) async {
+  static Future<ChatRoom> readchatroom({required String id}) async {
     _db ??= FirebaseFirestore.instance;
     // gets all chats ids
     Map<String, dynamic>? data = {};
@@ -135,8 +135,17 @@ class Database {
     // retrive all chatrooms by its ids
     List<ChatRoom> chatrooms = [];
     for (int i = 0; i < chatroomids!.length; i++) {
-      chatrooms.add(await Database.readchatroom(chatroomids![i]));
+      chatrooms.add(await Database.readchatroom(id: chatroomids![i]));
     }
     return chatrooms;
+  }
+
+  static void markchatsread(List<Chat> chats) async{
+    _db = FirebaseFirestore.instance;
+
+    // update all chats individualy by its ids 
+    for(int i = 0; i < chats.length; i++){
+      await _db?.collection("chats").doc(chats[i].id).update({"read": true});
+    }
   }
 }

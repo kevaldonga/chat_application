@@ -8,6 +8,7 @@ import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,8 +19,8 @@ import '../assets/logic/chat.dart';
 import '../constants/chatbubble_position.dart';
 
 class ChatRoomActivity extends StatefulWidget {
-  ChatRoom chatroom;
-  ChatRoomActivity({super.key, required this.chatroom});
+  final ChatRoom chatroom;
+  const ChatRoomActivity({super.key, required this.chatroom});
 
   @override
   State<ChatRoomActivity> createState() => _ChatRoomActivityState();
@@ -27,7 +28,10 @@ class ChatRoomActivity extends StatefulWidget {
 
 class _ChatRoomActivityState extends State<ChatRoomActivity> {
   late FirebaseAuth auth;
+  late FirebaseFirestore db;
   late Profile myprofile;
+  late bool canishowfab;
+  late VoidCallback scrollcontrollerlistener;
   TextEditingController controller = TextEditingController();
 
   final ScrollController _scrollcontroller = ScrollController();
@@ -36,7 +40,28 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   void initState() {
     super.initState();
     auth = FirebaseAuth.instance;
+    db = FirebaseFirestore.instance;
+    canishowfab = false;
+    scrollcontrollerlistener = () {
+      if (_scrollcontroller.position.atEdge) {
+        if (_scrollcontroller.position.pixels != 0) {
+          canishowfab = false;
+        }
+      } else {
+        canishowfab = true;
+      }
+      setState(() {});
+    };
+    _scrollcontroller.addListener(scrollcontrollerlistener);
     init();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _scrollcontroller.removeListener(scrollcontrollerlistener);
+    _scrollcontroller.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,9 +71,31 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (md.viewInsets.bottom > 0) {
       scrolltobottom();
     }
-    return Container(
-      color: theme.scaffoldBackgroundColor,
-      child: Column(
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: canishowfab
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: FloatingActionButton(
+                highlightElevation: 0,
+                backgroundColor: Colors.white,
+                splashColor: MyColors.splashColor,
+                focusColor: MyColors.focusColor,
+                foregroundColor: MyColors.primarySwatch,
+                child: const Icon(Icons.arrow_downward_rounded),
+                onPressed: () {
+                  setState(() {
+                    canishowfab = false;
+                    scrolltobottom();
+                  });
+                },
+              ),
+            )
+          : null,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Column(
         mainAxisSize: MainAxisSize.max,
         children: [
           Container(
@@ -81,65 +128,63 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   Expanded bottomaction(MediaQueryData md) {
     return Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          myprofile = await Navigator.push(context,
-              MaterialPageRoute(builder: (context) {
-            return MyProfile(profile: myprofile);
-          }));
-          setState(() {});
-        },
-        child: Container(
-            height: md.size.height * 0.09,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            width: md.size.width,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.black12),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                )),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(width: 5),
-                Flexible(
-                  flex: 4,
-                  child: myprofile.getPhotourl == null &&
-                          myprofile.getPhotourl == "null"
-                      ? const CircleAvatar(
-                          child:
-                              Icon(Icons.person, color: MyColors.primarySwatch),
-                        )
-                      : profilewidget(myprofile.getPhotourl!, 45),
+      child: Container(
+          height: md.size.height * 0.09,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          width: md.size.width,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.black12),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(25),
+                topRight: Radius.circular(25),
+              )),
+          child: Flex(
+            direction: Axis.horizontal,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(width: 5),
+              GestureDetector(
+                onTap: () async {
+                  myprofile = await Navigator.push(context,
+                      MaterialPageRoute(builder: (context) {
+                    return MyProfile(profile: myprofile);
+                  }));
+                  setState(() {});
+                },
+                child: myprofile.getPhotourl == null &&
+                        myprofile.getPhotourl == "null"
+                    ? const CircleAvatar(
+                        child:
+                            Icon(Icons.person, color: MyColors.primarySwatch),
+                      )
+                    : profilewidget(myprofile.getPhotourl!, 45),
+              ),
+              const SizedBox(width: 15),
+              Flexible(
+                flex: 17,
+                child: TextFieldmain(
+                  onchanged: null,
+                  contentPadding: const EdgeInsets.only(
+                      top: 10, bottom: 15, left: 5, right: 10),
+                  controller: controller,
+                  hintText: "type something...",
                 ),
-                const SizedBox(width: 15),
-                Flexible(
-                  flex: 17,
-                  child: TextFieldmain(
-                    onchanged: null,
-                    contentPadding: const EdgeInsets.only(
-                        top: 10, bottom: 15, left: 5, right: 10),
-                    controller: controller,
-                    hintText: "type something...",
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                flex: 3,
+                child: IconButton(
+                  onPressed: () {
+                    sendmessage();
+                  },
+                  icon: const Icon(Icons.send,
+                      color: MyColors.primarySwatch, size: 30),
                 ),
-                const SizedBox(width: 10),
-                Flexible(
-                  flex: 3,
-                  child: IconButton(
-                    onPressed: () {
-                      sendmessage();
-                    },
-                    icon: const Icon(Icons.send,
-                        color: MyColors.primarySwatch, size: 30),
-                  ),
-                ),
-              ],
-            )),
-      ),
+              ),
+            ],
+          )),
     );
   }
 
@@ -165,7 +210,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                 padding: EdgeInsets.only(
                     bottom: index == widget.chatroom.chats.length - 1 ? 10 : 0),
                 child: ChatBubble(
-                    key: ValueKey(currentchat.toString()),
                     position: getpositionofbubble(index),
                     margin: getmarginofbubble(index),
                     issentfromme: issentfromme,
@@ -303,7 +347,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   void scrolltobottom() {
     _scrollcontroller.animateTo(_scrollcontroller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 1000), curve: Curves.easeInOut);
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   void setpersonalinfo() async {
@@ -312,23 +356,43 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     });
   }
 
-  void refreshchatroom() async {
-    String id = widget.chatroom.id;
-    await Database.readchatroom(id).then((val) {
-      widget.chatroom = val;
-    });
+  Future<void> refreshchatroom(Map<String, dynamic> snapshot) async {
+    List<dynamic> latestchatids = snapshot["chatids"];
+    // create array of chats ids
+    List<String> chatids = [];
+    for (int i = 0; i < widget.chatroom.chats.length; i++) {
+      chatids.add(widget.chatroom.chats[i].id);
+    }
+
+    // compare both array ids to find new ids
+    // and retrive chats from that ids
+    for (int i = 0; i < latestchatids.length; i++) {
+      if (!chatids.contains(latestchatids[i])) {
+        await Database.readchat(latestchatids[i]).then((value) {
+          widget.chatroom.chats.add(value!);
+        });
+      }
+    }
+    widget.chatroom.sortchats();
     setState(() {});
   }
 
   void init() {
     myprofile = getmyprofile();
-    refreshchatroom();
     makechatallread();
+    db
+        .collection("chatrooms")
+        .doc(widget.chatroom.id)
+        .snapshots()
+        .listen((event) {
+      refreshchatroom(event.data()!);
+    });
   }
 
-  void makechatallread() {
+  void makechatallread() async {
     for (int i = 0; i < widget.chatroom.chats.length; i++) {
       widget.chatroom.chats[i].setread = true;
     }
+    Database.markchatsread(widget.chatroom.chats);
   }
 }

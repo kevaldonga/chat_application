@@ -1,9 +1,7 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/auth/screens/register_view.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/firebase/generated/firebase_options.dart';
-import 'package:chatty/userside/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +33,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         // ignore: deprecated_member_use
         accentColor: MyColors.scaffoldbackground,
+        // inkwell ripple colors
+        splashColor: MyColors.splashColor,
+        highlightColor: MyColors.highlightColor,
+        focusColor: MyColors.focusColor,
+
         brightness: Brightness.light,
         hintColor: MyColors.textsecondary,
         dialogBackgroundColor: Colors.white,
