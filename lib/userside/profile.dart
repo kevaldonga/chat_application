@@ -42,17 +42,19 @@ class _MyProfileState extends State<MyProfile> {
             onPressed: () async {
               EasyLoading.show(status: "saving");
               if ((url == null || url == "null") && file == null) {
+                EasyLoading.dismiss();
                 Navigator.of(context).pop(widget.profile);
               }
               if (file != null) {
-                url = await setuserprofile(file!);
-              }
-              widget.profile.setPhotourl = url;
-                EasyLoading.dismiss();
-                if(!mounted) return;
-                await Database.writepersonalinfo(widget.profile).whenComplete((){
-                  Navigator.of(context).pop(widget.profile);
+                await setuserprofile(file!).then((value) {
+                  widget.profile.setPhotourl = value;
+                  EasyLoading.dismiss();
+                  if (!mounted) return;
+                  Database.writepersonalinfo(widget.profile).whenComplete(() {
+                    Navigator.of(context).pop(widget.profile);
+                  });
                 });
+              }
             }),
         backgroundColor: Colors.transparent,
         systemOverlayStyle: const SystemUiOverlayStyle(

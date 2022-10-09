@@ -25,7 +25,6 @@ class ChatRoom {
   }
 
   Chat getlatestchat() {
-    sortchats();
     return chats.last;
   }
 

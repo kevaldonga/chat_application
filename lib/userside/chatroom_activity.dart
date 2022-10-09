@@ -33,7 +33,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   late bool canishowfab;
   late VoidCallback scrollcontrollerlistener;
   TextEditingController controller = TextEditingController();
-
   final ScrollController _scrollcontroller = ScrollController();
 
   @override
@@ -44,10 +43,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     canishowfab = false;
     scrollcontrollerlistener = () {
       if (_scrollcontroller.position.atEdge) {
-        if (_scrollcontroller.position.pixels != 0) {
+        if (_scrollcontroller.position.pixels ==
+            _scrollcontroller.position.maxScrollExtent) {
           canishowfab = false;
         }
-      } else {
+      }
+      else{
         canishowfab = true;
       }
       setState(() {});
@@ -68,14 +69,19 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
+    if (_scrollcontroller.hasClients &&
+        !canishowfab &&
+        _scrollcontroller.position.pixels == 0) {
+      scrolltobottom(md);
+    }
     if (md.viewInsets.bottom > 0) {
-      scrolltobottom();
+      scrolltobottom(md);
     }
     return Scaffold(
       resizeToAvoidBottomInset: false,
       floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: canishowfab
+      floatingActionButton: canishowfab && md.viewInsets.bottom == 0
           ? Padding(
               padding: const EdgeInsets.only(bottom: 100),
               child: FloatingActionButton(
@@ -88,7 +94,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                 onPressed: () {
                   setState(() {
                     canishowfab = false;
-                    scrolltobottom();
+                    scrolltobottom(md);
                   });
                 },
               ),
@@ -98,25 +104,28 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       body: Column(
         mainAxisSize: MainAxisSize.max,
         children: [
-          Container(
-            height: md.size.height * 0.11,
-            width: md.size.width,
-            padding:
-                EdgeInsets.only(top: md.viewPadding.top, bottom: 12, left: 10),
-            decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    spreadRadius: 10,
-                    offset: Offset.fromDirection(12),
-                  )
-                ],
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20))),
-            child: topactions(context),
+          Hero(
+            tag: getotherprofile().getPhotourl.toString(),
+            child: Container(
+              height: md.size.height * 0.11,
+              width: md.size.width,
+              padding: EdgeInsets.only(
+                  top: md.viewPadding.top, bottom: 12, left: 10),
+              decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      spreadRadius: 10,
+                      offset: Offset.fromDirection(12),
+                    )
+                  ],
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20))),
+              child: topactions(context),
+            ),
           ),
           chatslistview(md),
           bottomaction(md),
@@ -165,6 +174,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
               Flexible(
                 flex: 17,
                 child: TextFieldmain(
+                  scrollble: true,
                   onchanged: null,
                   contentPadding: const EdgeInsets.only(
                       top: 10, bottom: 15, left: 5, right: 10),
@@ -274,7 +284,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     late Chat newchat;
     setState(() {
       newchat = Chat(
-          read: true,
           id: generatedid(15),
           time: DateTime.now(),
           text: controller.text,
@@ -283,7 +292,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       widget.chatroom.chats.add(newchat);
       log("chat - ${controller.text} has been send");
 
-      scrolltobottom();
+      scrolltobottom(MediaQuery.of(context));
 
       controller.clear();
       SystemChannels.textInput.invokeMethod("TextInput.hide");
@@ -345,9 +354,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             : 12);
   }
 
-  void scrolltobottom() {
-    _scrollcontroller.animateTo(_scrollcontroller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  void scrolltobottom(MediaQueryData md) async {
+    await _scrollcontroller.animateTo(
+      _scrollcontroller.position.maxScrollExtent + md.size.height * 0.2,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+    canishowfab = false;
   }
 
   void setpersonalinfo() async {
@@ -356,43 +369,35 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     });
   }
 
-  Future<void> refreshchatroom(Map<String, dynamic> snapshot) async {
-    List<dynamic> latestchatids = snapshot["chatids"];
-    // create array of chats ids
-    List<String> chatids = [];
-    for (int i = 0; i < widget.chatroom.chats.length; i++) {
-      chatids.add(widget.chatroom.chats[i].id);
-    }
-
-    // compare both array ids to find new ids
-    // and retrive chats from that ids
-    for (int i = 0; i < latestchatids.length; i++) {
-      if (!chatids.contains(latestchatids[i])) {
-        await Database.readchat(latestchatids[i]).then((value) {
-          widget.chatroom.chats.add(value!);
-        });
-      }
-    }
-    widget.chatroom.sortchats();
-    setState(() {});
-  }
-
   void init() {
     myprofile = getmyprofile();
-    makechatallread();
+    markasallread();
+    listentochatroomchanges();
+  }
+
+  void markasallread() {
+    for (int i = 0; i < widget.chatroom.chats.length; i++) {
+      if (widget.chatroom.chats[i].sentFrom != myprofile.getPhoneNumber) {
+        widget.chatroom.chats[i].setread = true;
+      }
+    }
+    Database.markchatsread(widget.chatroom.chats, myprofile.getPhoneNumber);
+  }
+
+  void listentochatroomchanges() {
     db
         .collection("chatrooms")
         .doc(widget.chatroom.id)
         .snapshots()
-        .listen((event) {
-      refreshchatroom(event.data()!);
+        .listen((event) async {
+      await Database.refreshchatroom(event.data()!, widget.chatroom.chats)
+          .then((value) {
+        scrolltobottom(MediaQuery.of(context));
+        setState(() {
+          widget.chatroom.chats = value;
+          widget.chatroom.sortchats();
+        });
+      });
     });
-  }
-
-  void makechatallread() async {
-    for (int i = 0; i < widget.chatroom.chats.length; i++) {
-      widget.chatroom.chats[i].setread = true;
-    }
-    Database.markchatsread(widget.chatroom.chats);
   }
 }

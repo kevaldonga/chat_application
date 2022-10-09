@@ -6,6 +6,7 @@ class TextFieldmain extends StatefulWidget implements PreferredSizeWidget {
   final TextEditingController controller;
   final VoidCallback? onchanged;
   final String? hintText;
+  final bool scrollble;
   final Widget? leading, ending;
 
   final EdgeInsetsGeometry contentPadding;
@@ -13,11 +14,12 @@ class TextFieldmain extends StatefulWidget implements PreferredSizeWidget {
     this.leading,
     this.ending,
     super.key,
+    bool? scrollble,
     required this.onchanged,
     required this.contentPadding,
     required this.controller,
     this.hintText,
-  });
+  }) : scrollble = scrollble ?? false;
 
   @override
   State<TextFieldmain> createState() => _TextFieldmainState();
@@ -48,20 +50,20 @@ class _TextFieldmainState extends State<TextFieldmain> {
     return Container(
       decoration: BoxDecoration(
         color: MyColors.textFieldbackground,
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(30),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(30),
           onTap: (){},
           highlightColor: Colors.transparent,
-          focusColor: const Color.fromARGB(255, 209, 189, 254),
+          focusColor: const Color.fromARGB(255, 205, 209, 248),
           splashColor: const Color.fromARGB(255, 193, 199, 247),
           child: Container(
             padding: const EdgeInsets.only(left: 20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: TextField(
               textAlign: TextAlign.start,
@@ -69,6 +71,7 @@ class _TextFieldmainState extends State<TextFieldmain> {
               controller: widget.controller,
               autocorrect: false,
               cursorHeight: 24,
+              maxLines: widget.scrollble ? null : 1,
               style: const TextStyle(
                 fontSize: 19,
                 color: Colors.black,

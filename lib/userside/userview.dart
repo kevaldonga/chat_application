@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
 import 'package:chatty/assets/common/widgets/alertdialog.dart';
@@ -15,6 +17,7 @@ import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/userside/chatroom_activity.dart';
 import 'package:chatty/userside/profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -262,23 +265,30 @@ class _UserViewState extends State<UserView> {
             ? chatrooms[index]
             : searchchatrooms[index];
         currentchatroom.sortchats();
+        String myphoneno = profile.getPhoneNumber;
+        bool? isread;
+        if (currentchatroom.chats.isNotEmpty) {
+          if (currentchatroom.getnotificationcount(myphoneno: myphoneno) == 0 &&
+              currentchatroom.chats.last.sentFrom == myphoneno) {
+            isread = currentchatroom.chats.last.isread;
+          }
+        }
         return ChatRoomItem(
           url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
           top: index == 0 ? true : null,
-          notificationcount: currentchatroom.getnotificationcount(
-            myphoneno: profile.getPhoneNumber,
-          ),
-          // to check if notification is 0 and last msg sent was not by me
-          // which will make both read and notification couter null
-          read: currentchatroom.chats.isNotEmpty ? (currentchatroom.getnotificationcount(
-                          myphoneno: profile.getPhoneNumber) ==
-                      0 &&
-                  currentchatroom.chats.last.sentFrom != profile.getPhoneNumber)
-              ? null
-              : currentchatroom.chats.last.isread : null,
+          notificationcount: currentchatroom.chats.isNotEmpty
+              ? currentchatroom.chats.last.sentFrom == myphoneno
+                  ? 0
+                  : currentchatroom.getnotificationcount(
+                      myphoneno: profile.getPhoneNumber,
+                    )
+              : 0,
+          read: isread,
           searchcontroller: searchcontroller,
           ontap: () => ontap(index),
-          date: currentchatroom.chats.isNotEmpty ? currentchatroom.sortchats().last.time : null,
+          date: currentchatroom.chats.isNotEmpty
+              ? currentchatroom.sortchats().last.time
+              : null,
           title: getotherprofile(currentchatroom.connectedPersons).getName,
           description: currentchatroom.chats.isNotEmpty
               ? currentchatroom.getlatestchat().text
@@ -327,6 +337,7 @@ class _UserViewState extends State<UserView> {
       EasyLoading.dismiss();
       setState(() {});
     });
+    // listentochatroomchanges();
   }
 
   void ontap(int index) async {
@@ -452,5 +463,19 @@ class _UserViewState extends State<UserView> {
           snapshot: snapshot,
         ) ??
         [];
+  }
+
+  void listentochatroomchanges() {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    for (int i = 0; i < chatrooms.length; i++) {
+      db.collection("chatrooms").doc("chatids").snapshots().listen((event) {
+        Database.refreshchatroom(event.data()!, chatrooms[i].chats)
+            .then((value) {
+          chatrooms[i].chats = value;
+          log("updated value at chatroom = ${chatrooms[i].id} is ${chatrooms[i].chats.last}");
+          setState(() {});
+        });
+      });
+    }
   }
 }
