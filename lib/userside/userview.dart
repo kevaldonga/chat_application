@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:chatty/assets/colors/colors.dart';
@@ -40,6 +41,7 @@ class _UserViewState extends State<UserView> {
   List<ChatRoom> chatrooms = [];
   List<ChatRoom> searchchatrooms = [];
   Map<String, dynamic>? snapshot;
+  late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> listener;
 
   @override
   void initState() {
@@ -266,22 +268,16 @@ class _UserViewState extends State<UserView> {
             : searchchatrooms[index];
         currentchatroom.sortchats();
         String myphoneno = profile.getPhoneNumber;
-        bool? isread;
-        if (currentchatroom.chats.isNotEmpty) {
-          if (currentchatroom.getnotificationcount(myphoneno: myphoneno) == 0 &&
-              currentchatroom.chats.last.sentFrom == myphoneno) {
-            isread = currentchatroom.chats.last.isread;
-          }
-        }
+        bool? isread = currentchatroom.chats.isNotEmpty
+            ? currentchatroom.chats.last.sentFrom == myphoneno
+                ? currentchatroom.chats.last.isread
+                : null
+            : null;
         return ChatRoomItem(
           url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
           top: index == 0 ? true : null,
-          notificationcount: currentchatroom.chats.isNotEmpty
-              ? currentchatroom.chats.last.sentFrom == myphoneno
-                  ? 0
-                  : currentchatroom.getnotificationcount(
-                      myphoneno: profile.getPhoneNumber,
-                    )
+          notificationcount: isread == null
+              ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
               : 0,
           read: isread,
           searchcontroller: searchcontroller,
@@ -321,31 +317,31 @@ class _UserViewState extends State<UserView> {
     });
   }
 
-  void retrivechatrooms() async {
-    chatrooms = await Database.retrivechatrooms(uid: auth.currentUser!.uid)
-            .whenComplete(() {
-          setState(() {});
-        }) ??
-        [];
+  void retrivechatrooms() {
+    Database.retrivechatrooms(uid: auth.currentUser!.uid).then((value) {
+      chatrooms = value ?? [];
+      setState(() {});
+      EasyLoading.dismiss();
+      listentochatroomchanges();
+    });
   }
 
-  void init() async {
-    await getpersonalinfo(auth.currentUser!.uid).then((value) {
+  void init() {
+    getpersonalinfo(auth.currentUser!.uid).then((value) {
       snapshot = value;
       profile = Profile.fromMap(data: snapshot!);
       retrivechatrooms();
-      EasyLoading.dismiss();
-      setState(() {});
     });
-    // listentochatroomchanges();
   }
 
   void ontap(int index) async {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
+    listener.pause();
     chatrooms[index] =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ChatRoomActivity(chatroom: chatrooms[index]);
     }));
+    listener.resume();
     setState(() {});
   }
 
@@ -468,12 +464,17 @@ class _UserViewState extends State<UserView> {
   void listentochatroomchanges() {
     FirebaseFirestore db = FirebaseFirestore.instance;
     for (int i = 0; i < chatrooms.length; i++) {
-      db.collection("chatrooms").doc("chatids").snapshots().listen((event) {
-        Database.refreshchatroom(event.data()!, chatrooms[i].chats)
+      listener = db
+          .collection("chatrooms")
+          .doc(chatrooms[i].id)
+          .snapshots()
+          .listen((event) {
+        Database.refreshchatroom(event.data()!, chatrooms.first.chats)
             .then((value) {
-          chatrooms[i].chats = value;
+          chatrooms.first.chats = value;
+          if (chatrooms.first.chats.isEmpty) return;
           log("updated value at chatroom = ${chatrooms[i].id} is ${chatrooms[i].chats.last}");
-          setState(() {});
+          if (mounted) setState(() {});
         });
       });
     }

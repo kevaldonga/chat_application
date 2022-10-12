@@ -2,7 +2,7 @@ import 'package:chatty/assets/logic/profile.dart';
 
 class FirebaseUser {
   final String _uid;
-  Profile _profile;
+  final Profile _profile;
 
   get id => _uid;
 

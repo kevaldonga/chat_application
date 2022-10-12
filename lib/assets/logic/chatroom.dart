@@ -6,16 +6,20 @@ import 'chat.dart';
 class ChatRoom {
   final String id;
   // it includes both name and phoneno of connected parties
-  List<Profile> connectedPersons = [];
+  final List<Profile> _connectedPersons;
   // {
   //   "kevaldonga38@gmail.com" : {"name" : "keval","phoneno" : "9484844946","photourl": "url"},
   // }
   List<Chat> chats;
+
+  get connectedPersons => _connectedPersons;
+  
   ChatRoom({
     id,
-    required this.connectedPersons,
+    required List<Profile> connectedPersons,
     required this.chats,
-  }) : id = id ?? generatedid(10);
+  })  : id = id ?? generatedid(10),
+        _connectedPersons = connectedPersons;
 
   List<Chat> sortchats() {
     chats.sort((a, b) {
@@ -28,6 +32,7 @@ class ChatRoom {
     return chats.last;
   }
 
+ 
   int getnotificationcount({required String myphoneno}) {
     int count = 0;
     for (int i = 0; i < chats.length; i++) {
@@ -40,6 +45,6 @@ class ChatRoom {
 
   @override
   String toString() {
-    return "id = $id || list of profiles = $connectedPersons || list of chats = $chats";
+    return "id = $id || list of profiles = $_connectedPersons || list of chats = $chats";
   }
 }

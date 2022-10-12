@@ -47,8 +47,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             _scrollcontroller.position.maxScrollExtent) {
           canishowfab = false;
         }
-      }
-      else{
+      } else {
         canishowfab = true;
       }
       setState(() {});
@@ -72,10 +71,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (_scrollcontroller.hasClients &&
         !canishowfab &&
         _scrollcontroller.position.pixels == 0) {
-      scrolltobottom(md);
+      scrolltobottom();
     }
     if (md.viewInsets.bottom > 0) {
-      scrolltobottom(md);
+      scrolltobottom();
     }
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -94,7 +93,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                 onPressed: () {
                   setState(() {
                     canishowfab = false;
-                    scrolltobottom(md);
+                    scrolltobottom();
                   });
                 },
               ),
@@ -292,7 +291,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       widget.chatroom.chats.add(newchat);
       log("chat - ${controller.text} has been send");
 
-      scrolltobottom(MediaQuery.of(context));
+      scrolltobottom();
 
       controller.clear();
       SystemChannels.textInput.invokeMethod("TextInput.hide");
@@ -354,9 +353,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             : 12);
   }
 
-  void scrolltobottom(MediaQueryData md) async {
+  void scrolltobottom() async {
     await _scrollcontroller.animateTo(
-      _scrollcontroller.position.maxScrollExtent + md.size.height * 0.2,
+      _scrollcontroller.position.maxScrollExtent + 50,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -376,12 +375,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   void markasallread() {
+    // only which are not sent by me
+    Database.markchatsread(widget.chatroom.chats, myprofile.getPhoneNumber);
     for (int i = 0; i < widget.chatroom.chats.length; i++) {
       if (widget.chatroom.chats[i].sentFrom != myprofile.getPhoneNumber) {
         widget.chatroom.chats[i].setread = true;
       }
     }
-    Database.markchatsread(widget.chatroom.chats, myprofile.getPhoneNumber);
   }
 
   void listentochatroomchanges() {
@@ -390,13 +390,14 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         .doc(widget.chatroom.id)
         .snapshots()
         .listen((event) async {
-      await Database.refreshchatroom(event.data()!, widget.chatroom.chats)
+      Database.refreshchatroom(event.data()!, widget.chatroom.chats)
           .then((value) {
-        scrolltobottom(MediaQuery.of(context));
-        setState(() {
-          widget.chatroom.chats = value;
-          widget.chatroom.sortchats();
-        });
+        bool dowehavenewvalue = widget.chatroom.chats.length < value.length;
+        widget.chatroom.chats = value;
+        markasallread();
+        widget.chatroom.sortchats();
+        if (dowehavenewvalue) scrolltobottom();
+        if (mounted) setState(() {});
       });
     });
   }
