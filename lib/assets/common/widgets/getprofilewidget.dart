@@ -1,4 +1,5 @@
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 
@@ -9,7 +10,7 @@ Widget profilewidget(String url,final double size){
         color: Colors.white,
         width: size,
         height: size,
-        child: Image.network(url, fit: BoxFit.cover)
+        child: CachedNetworkImage(imageUrl: url, fit: BoxFit.cover)
       ),
     );
 }

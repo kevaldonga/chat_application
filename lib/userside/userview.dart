@@ -64,7 +64,13 @@ class _UserViewState extends State<UserView> {
       EasyLoading.show();
     }
     return snapshot == null
-        ? Container()
+        ? AnnotatedRegion<SystemUiOverlayStyle>(
+            value: const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.light,
+              statusBarColor: Colors.white,
+              statusBarIconBrightness: Brightness.dark,
+            ),
+            child: Container())
         : Scaffold(
             extendBodyBehindAppBar: true,
             floatingActionButton: FloatingActionButton(
@@ -211,6 +217,11 @@ class _UserViewState extends State<UserView> {
                   await AuthFirebase.refresh();
                   break;
                 case Profileop.verify:
+                  if (auth.currentUser!.emailVerified) {
+                    showbasicdialog(
+                        context, "verified", "you are already verified !!");
+                    return;
+                  }
                   await showbasicdialog(context, "are you sure ?",
                       "you will sent link to verify your email");
                   await AuthFirebase.verify();

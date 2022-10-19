@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/common/functions/compressimage.dart';
 import 'package:chatty/assets/common/functions/setprofileimage.dart';
@@ -33,58 +34,47 @@ class _MyProfileState extends State<MyProfile> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        leading: BackButton(
-            color: MyColors.seconadaryswatch,
-            onPressed: () async {
-              EasyLoading.show(status: "saving");
-              if ((url == null || url == "null") && file == null) {
-                EasyLoading.dismiss();
-                Navigator.of(context).pop(widget.profile);
-              }
-              if (file != null) {
-                await setuserprofile(file!).then((value) {
-                  widget.profile.setPhotourl = value;
-                  EasyLoading.dismiss();
-                  if (!mounted) return;
-                  Database.writepersonalinfo(widget.profile).whenComplete(() {
-                    Navigator.of(context).pop(widget.profile);
-                  });
-                });
-              }
-            }),
-        backgroundColor: Colors.transparent,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarIconBrightness: Brightness.dark,
+    return WillPopScope(
+      onWillPop: () async{
+        onBackPressed();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          elevation: 0,
+          leading: BackButton(
+              color: MyColors.seconadaryswatch, onPressed: onBackPressed),
+          backgroundColor: Colors.transparent,
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarIconBrightness: Brightness.dark,
+          ),
         ),
-      ),
-      body: ListView(
-        children: [
-          Center(child: _profilewidget(md)),
-          const SizedBox(height: 20),
-          Center(
-              child: Text(widget.profile.getName,
-                  style: const TextStyle(
-                      fontSize: 27, fontWeight: FontWeight.w500),
-                  softWrap: true)),
-          const SizedBox(height: 20),
-          Center(
-              child: Text(widget.profile.getPhoneNumber,
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black45))),
-          const SizedBox(height: 20),
-          Center(
-              child: Text(widget.profile.getEmail,
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black45))),
-        ],
+        body: ListView(
+          children: [
+            Center(child: _profilewidget(md)),
+            const SizedBox(height: 20),
+            Center(
+                child: Text(widget.profile.getName,
+                    style: const TextStyle(
+                        fontSize: 27, fontWeight: FontWeight.w500),
+                    softWrap: true)),
+            const SizedBox(height: 20),
+            Center(
+                child: Text(widget.profile.getPhoneNumber,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.black45))),
+            const SizedBox(height: 20),
+            Center(
+                child: Text(widget.profile.getEmail,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.black45))),
+          ],
+        ),
       ),
     );
   }
@@ -130,7 +120,7 @@ class _MyProfileState extends State<MyProfile> {
             ? url == null || url == "null"
                 ? const Icon(Icons.person,
                     size: 70, color: MyColors.primarySwatch)
-                : Image.network(url!, fit: BoxFit.cover)
+                : CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover)
             : Image.file(file!, fit: BoxFit.cover),
       ),
     );
@@ -145,5 +135,22 @@ class _MyProfileState extends State<MyProfile> {
         child: child,
       ),
     );
+  }
+
+  void onBackPressed() async {
+    EasyLoading.show(status: "saving");
+    if (file == null) {
+      EasyLoading.dismiss();
+      Navigator.of(context).pop(widget.profile);
+    } else {
+      await setuserprofile(file!).then((value) {
+        widget.profile.setPhotourl = value;
+        EasyLoading.dismiss();
+        if (!mounted) return;
+        Database.writepersonalinfo(widget.profile).whenComplete(() {
+          Navigator.of(context).pop(widget.profile);
+        });
+      });
+    }
   }
 }

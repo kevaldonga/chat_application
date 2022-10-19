@@ -61,6 +61,7 @@ class _RegisterViewState extends State<RegisterView> {
         child: Column(
           mainAxisSize: MainAxisSize.max,
           children: [
+            const SizedBox(height: 20),
             Container(
               alignment: Alignment.topLeft,
               padding: const EdgeInsets.only(left: 35, top: 82),

@@ -76,60 +76,66 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (md.viewInsets.bottom > 0) {
       scrolltobottom();
     }
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: canishowfab && md.viewInsets.bottom == 0
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 100),
-              child: FloatingActionButton(
-                highlightElevation: 0,
-                backgroundColor: Colors.white,
-                splashColor: MyColors.splashColor,
-                focusColor: MyColors.focusColor,
-                foregroundColor: MyColors.primarySwatch,
-                child: const Icon(Icons.arrow_downward_rounded),
-                onPressed: () {
-                  setState(() {
-                    canishowfab = false;
-                    scrolltobottom();
-                  });
-                },
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(widget.chatroom);
+        return false;
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: canishowfab && md.viewInsets.bottom == 0
+            ? Padding(
+                padding: const EdgeInsets.only(bottom: 100),
+                child: FloatingActionButton(
+                  highlightElevation: 0,
+                  backgroundColor: Colors.white,
+                  splashColor: MyColors.splashColor,
+                  focusColor: MyColors.focusColor,
+                  foregroundColor: MyColors.primarySwatch,
+                  child: const Icon(Icons.arrow_downward_rounded),
+                  onPressed: () {
+                    setState(() {
+                      canishowfab = false;
+                      scrolltobottom();
+                    });
+                  },
+                ),
+              )
+            : null,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Hero(
+              tag: getotherprofile().getPhotourl.toString(),
+              child: Container(
+                height: md.size.height * 0.11,
+                width: md.size.width,
+                padding: EdgeInsets.only(
+                    top: md.viewPadding.top, bottom: 12, left: 10),
+                decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        spreadRadius: 10,
+                        offset: Offset.fromDirection(12),
+                      )
+                    ],
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20))),
+                child: topactions(context),
               ),
-            )
-          : null,
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Hero(
-            tag: getotherprofile().getPhotourl.toString(),
-            child: Container(
-              height: md.size.height * 0.11,
-              width: md.size.width,
-              padding: EdgeInsets.only(
-                  top: md.viewPadding.top, bottom: 12, left: 10),
-              decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      spreadRadius: 10,
-                      offset: Offset.fromDirection(12),
-                    )
-                  ],
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20))),
-              child: topactions(context),
             ),
-          ),
-          chatslistview(md),
-          bottomaction(md),
-          SizedBox(height: md.viewInsets.bottom),
-        ],
+            chatslistview(md),
+            bottomaction(md),
+            SizedBox(height: md.viewInsets.bottom),
+          ],
+        ),
       ),
     );
   }
@@ -389,14 +395,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         .collection("chatrooms")
         .doc(widget.chatroom.id)
         .snapshots()
-        .listen((event) async {
+        .listen((event) {
       Database.refreshchatroom(event.data()!, widget.chatroom.chats)
           .then((value) {
-        bool dowehavenewvalue = widget.chatroom.chats.length < value.length;
         widget.chatroom.chats = value;
         markasallread();
         widget.chatroom.sortchats();
-        if (dowehavenewvalue) scrolltobottom();
+        scrolltobottom();
         if (mounted) setState(() {});
       });
     });

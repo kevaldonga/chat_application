@@ -36,7 +36,7 @@ class _LoginViewState extends State<LoginView> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

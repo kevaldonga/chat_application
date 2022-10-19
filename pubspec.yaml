@@ -47,6 +47,7 @@ dependencies:
   flutter_native_image: ^0.0.6+1
   app_popup_menu: ^1.0.0
   substring_highlight: ^1.0.33
+  cached_network_image: ^3.2.1
 
 dev_dependencies:
   flutter_test:
