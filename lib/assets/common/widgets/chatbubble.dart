@@ -3,13 +3,13 @@ import 'package:chatty/constants/chatbubble_position.dart';
 import 'package:flutter/material.dart';
 
 class ChatBubble extends StatelessWidget {
-  final EdgeInsetsGeometry margin;
+  final EdgeInsetsGeometry? margin;
   final ChatBubblePosition position;
   final bool issentfromme;
   final String text;
   const ChatBubble(
       {super.key,
-      required this.margin,
+      this.margin,
       required this.position,
       required this.issentfromme,
       required this.text});

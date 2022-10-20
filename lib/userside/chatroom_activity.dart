@@ -1,7 +1,9 @@
 import 'dart:developer';
 
+import 'package:chatty/assets/common/functions/formatdate.dart';
 import 'package:chatty/assets/common/functions/generateid.dart';
 import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
+import 'package:chatty/assets/common/functions/sameday.dart';
 import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:chatty/assets/common/widgets/textfield_main.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
@@ -209,11 +211,47 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       height: md.size.height * 0.78 - md.viewInsets.bottom,
       padding: const EdgeInsets.only(left: 16, right: 16),
       alignment: Alignment.bottomCenter,
-      child: ListView.builder(
+      child: ListView.separated(
+          separatorBuilder: (context, index) {
+            return !atSameDay(widget.chatroom.chats[index].time,
+                    widget.chatroom.chats[index + 1].time)
+                ? Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 5,
+                            spreadRadius: 2,
+                            offset: Offset.fromDirection(12),
+                          )
+                        ],
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                          formatdatebyday(
+                              widget.chatroom.chats[index + 1].time),
+                          style: const TextStyle(fontSize: 13)),
+                    ),
+                  )
+                : Container(
+                    margin: index != 0 &&
+                            index != widget.chatroom.chats.length - 1 &&
+                            !atSameDay(widget.chatroom.chats[index - 1].time,
+                                widget.chatroom.chats[index].time) &&
+                            !atSameDay(widget.chatroom.chats[index + 1].time,
+                                widget.chatroom.chats[index].time)
+                        ? null
+                        : getmarginofbubble(index + 1),
+                  );
+          },
           controller: _scrollcontroller,
           scrollDirection: Axis.vertical,
           shrinkWrap: true,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           itemBuilder: (context, index) {
             Chat currentchat = widget.chatroom.chats[index];
             bool issentfromme =
@@ -226,7 +264,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                     bottom: index == widget.chatroom.chats.length - 1 ? 10 : 0),
                 child: ChatBubble(
                     position: getpositionofbubble(index),
-                    margin: getmarginofbubble(index),
                     issentfromme: issentfromme,
                     text: widget.chatroom.chats[index].text),
               ),
@@ -307,6 +344,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   ChatBubblePosition getpositionofbubble(int index) {
+    // to cover corner cases
+    // where item may be first or last
+    // first
     if (index == 0) {
       if (widget.chatroom.chats.length == 1) return ChatBubblePosition.alone;
       if (widget.chatroom.chats[index].sentFrom !=
@@ -315,6 +355,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       }
       return ChatBubblePosition.top;
     }
+    // last
     if (widget.chatroom.chats.length - 1 == index) {
       if (widget.chatroom.chats[index].sentFrom !=
           widget.chatroom.chats[index - 1].sentFrom) {
@@ -322,6 +363,15 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       }
       return ChatBubblePosition.bottom;
     }
+    // to check if it is surrounded by divider
+    bool topofdivider = !atSameDay(widget.chatroom.chats[index].time,
+        widget.chatroom.chats[index + 1].time);
+    bool bottomofdivider = !atSameDay(widget.chatroom.chats[index].time,
+        widget.chatroom.chats[index - 1].time);
+    bool surrounded = topofdivider && bottomofdivider;
+    if (surrounded) return ChatBubblePosition.alone;
+    if (topofdivider) return ChatBubblePosition.bottom;
+    if (bottomofdivider) return ChatBubblePosition.top;
     if (widget.chatroom.chats[index].sentFrom !=
             widget.chatroom.chats[index - 1].sentFrom &&
         widget.chatroom.chats[index].sentFrom !=
