@@ -13,16 +13,16 @@ class AuthFirebase {
       await _auth?.signInWithEmailAndPassword(email: email, password: password);
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
       EasyLoading.dismiss();
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     EasyLoading.dismiss();
     return null;
   }
 
-  static Future<List<String>?> signup(Profile profile,password) async {
+  static Future<List<String>?> signup(Profile profile, password) async {
     EasyLoading.show(status: "signing up");
     _auth ??= FirebaseAuth.instance;
     try {
@@ -30,13 +30,14 @@ class AuthFirebase {
           email: profile.getEmail, password: password);
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
       EasyLoading.dismiss();
-      return [e.toString(),""];
+      return [e.toString(), ""];
     }
     Database.writepersonalinfo(profile);
-    Database.setuid(profile.getPhoneNumber, FirebaseAuth.instance.currentUser!.uid);
+    Database.setuid(
+        profile.getPhoneNumber, FirebaseAuth.instance.currentUser!.uid);
     EasyLoading.dismiss();
     return null;
   }
@@ -48,10 +49,10 @@ class AuthFirebase {
       await _auth?.signOut();
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
       EasyLoading.dismiss();
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     EasyLoading.dismiss();
     return null;
@@ -64,10 +65,10 @@ class AuthFirebase {
       await _auth?.currentUser?.updateEmail(newEmail);
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
       EasyLoading.dismiss();
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     EasyLoading.dismiss();
     return null;
@@ -80,10 +81,10 @@ class AuthFirebase {
       await _auth?.currentUser?.updatePassword(newPassword);
     } on FirebaseAuthException catch (e) {
       EasyLoading.dismiss();
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
       EasyLoading.dismiss();
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     EasyLoading.dismiss();
     return null;
@@ -94,9 +95,9 @@ class AuthFirebase {
     try {
       await _auth?.currentUser?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     return null;
   }
@@ -108,9 +109,9 @@ class AuthFirebase {
       await _auth?.currentUser?.reload();
       EasyLoading.dismiss();
     } on FirebaseAuthException catch (e) {
-      return [e.code,""];
+      return [e.code, ""];
     } on Exception catch (e) {
-      return ["",e.toString()];
+      return ["", e.toString()];
     }
     return null;
   }

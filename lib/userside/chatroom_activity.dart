@@ -1,5 +1,7 @@
-import 'dart:developer';
+import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:chatty/assets/common/functions/compressimage.dart';
 import 'package:chatty/assets/common/functions/formatdate.dart';
 import 'package:chatty/assets/common/functions/generateid.dart';
 import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
@@ -9,14 +11,18 @@ import 'package:chatty/assets/common/widgets/textfield_main.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/imageview.dart';
 import 'package:chatty/userside/profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../assets/colors/colors.dart';
 import '../assets/common/widgets/chatbubble.dart';
+import '../assets/common/widgets/sharebottomsheet.dart';
 import '../assets/logic/chat.dart';
 import '../constants/chatbubble_position.dart';
 
@@ -34,8 +40,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   late Profile myprofile;
   late bool canishowfab;
   late VoidCallback scrollcontrollerlistener;
+  File? file;
   TextEditingController controller = TextEditingController();
   final ScrollController _scrollcontroller = ScrollController();
+  bool animationrunning = false;
 
   @override
   void initState() {
@@ -70,12 +78,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
+    bool iskeyboardvisible = md.viewInsets.bottom > 0;
     if (_scrollcontroller.hasClients &&
         !canishowfab &&
-        _scrollcontroller.position.pixels == 0) {
+        _scrollcontroller.position.pixels == 0 &&
+        !animationrunning) {
       scrolltobottom();
-    }
-    if (md.viewInsets.bottom > 0) {
+    } else if (iskeyboardvisible && !animationrunning) {
       scrolltobottom();
     }
     return WillPopScope(
@@ -83,66 +92,73 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         Navigator.of(context).pop(widget.chatroom);
         return false;
       },
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: canishowfab && md.viewInsets.bottom == 0
-            ? Padding(
-                padding: const EdgeInsets.only(bottom: 100),
-                child: FloatingActionButton(
-                  highlightElevation: 0,
-                  backgroundColor: Colors.white,
-                  splashColor: MyColors.splashColor,
-                  focusColor: MyColors.focusColor,
-                  foregroundColor: MyColors.primarySwatch,
-                  child: const Icon(Icons.arrow_downward_rounded),
-                  onPressed: () {
-                    setState(() {
-                      canishowfab = false;
-                      scrolltobottom();
-                    });
-                  },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light),
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: canishowfab && md.viewInsets.bottom == 0
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  child: FloatingActionButton(
+                    highlightElevation: 0,
+                    backgroundColor: Colors.white,
+                    splashColor: MyColors.splashColor,
+                    focusColor: MyColors.focusColor,
+                    foregroundColor: MyColors.primarySwatch,
+                    child: const Icon(Icons.arrow_downward_rounded),
+                    onPressed: () {
+                      setState(() {
+                        canishowfab = false;
+                        scrolltobottom();
+                      });
+                    },
+                  ),
+                )
+              : null,
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Hero(
+                tag: getotherprofile().getPhotourl.toString(),
+                child: Container(
+                  height: md.size.height * 0.11,
+                  width: md.size.width,
+                  padding: EdgeInsets.only(
+                      top: md.viewPadding.top, bottom: 12, left: 10),
+                  decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          spreadRadius: 10,
+                          offset: Offset.fromDirection(12),
+                        )
+                      ],
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20))),
+                  child: topactions(context),
                 ),
-              )
-            : null,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: Column(
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Hero(
-              tag: getotherprofile().getPhotourl.toString(),
-              child: Container(
-                height: md.size.height * 0.11,
-                width: md.size.width,
-                padding: EdgeInsets.only(
-                    top: md.viewPadding.top, bottom: 12, left: 10),
-                decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 10,
-                        spreadRadius: 10,
-                        offset: Offset.fromDirection(12),
-                      )
-                    ],
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20))),
-                child: topactions(context),
               ),
-            ),
-            chatslistview(md),
-            bottomaction(md),
-            SizedBox(height: md.viewInsets.bottom),
-          ],
+              chatslistview(md),
+              bottomaction(md, iskeyboardvisible),
+              SizedBox(height: md.viewInsets.bottom),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Expanded bottomaction(MediaQueryData md) {
+  Expanded bottomaction(MediaQueryData md, bool iskeyboardvisible) {
     return Expanded(
       child: Container(
           height: md.size.height * 0.09,
@@ -179,6 +195,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
               ),
               const SizedBox(width: 15),
               Flexible(
+                fit: FlexFit.tight,
                 flex: 17,
                 child: TextFieldmain(
                   scrollble: true,
@@ -189,7 +206,37 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                   hintText: "type something...",
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 5),
+              Transform.rotate(
+                angle: -math.pi / 4,
+                child: IconButton(
+                    onPressed: () {
+                      showbottomsheet(
+                        context: context,
+                        items: [
+                          // camera
+                          shareItem(
+                            context: context,
+                            backgroundcolor: Colors.red.shade500,
+                            icon: Icons.camera_alt_rounded,
+                            ontap: pickfromcamera,
+                          ),
+                          // gallery
+                          shareItem(
+                            context: context,
+                            backgroundcolor: Colors.green.shade500,
+                            icon: Icons.image,
+                            ontap: pickfromgallery,
+                          ),
+                        ],
+                      );
+                    },
+                    icon: const Icon(
+                      size: 27,
+                      Icons.attach_file,
+                      color: MyColors.textprimary,
+                    )),
+              ),
               Flexible(
                 flex: 3,
                 child: IconButton(
@@ -215,28 +262,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
           separatorBuilder: (context, index) {
             return !atSameDay(widget.chatroom.chats[index].time,
                     widget.chatroom.chats[index + 1].time)
-                ? Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 5,
-                            spreadRadius: 2,
-                            offset: Offset.fromDirection(12),
-                          )
-                        ],
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Text(
-                          formatdatebyday(
-                              widget.chatroom.chats[index + 1].time),
-                          style: const TextStyle(fontSize: 13)),
-                    ),
-                  )
+                ? dateseparator(index)
                 : Container(
                     margin: index != 0 &&
                             index != widget.chatroom.chats.length - 1 &&
@@ -256,20 +282,72 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             Chat currentchat = widget.chatroom.chats[index];
             bool issentfromme =
                 currentchat.sentFrom == myprofile.getPhoneNumber;
+            Alignment bubblealignment =
+                issentfromme ? Alignment.centerRight : Alignment.centerLeft;
             return Align(
-              alignment:
-                  issentfromme ? Alignment.centerRight : Alignment.centerLeft,
-              child: Padding(
-                padding: EdgeInsets.only(
-                    bottom: index == widget.chatroom.chats.length - 1 ? 10 : 0),
-                child: ChatBubble(
-                    position: getpositionofbubble(index),
-                    issentfromme: issentfromme,
-                    text: widget.chatroom.chats[index].text),
+              alignment: bubblealignment,
+              child: GestureDetector(
+                onTap: () {
+                  if (widget.chatroom.chats[index].url == null) {
+                    return;
+                  }
+                  openImage(widget.chatroom.chats[index]);
+                },
+                onDoubleTap: () async {
+                  setState(() {
+                    if (ChatBubble.expandedbubble == currentchat) {
+                      ChatBubble.expandedbubble = null;
+                      return;
+                    }
+                    ChatBubble.expandedbubble = currentchat;
+                  });
+                  if (index == widget.chatroom.chats.length - 1) {
+                    Future.delayed(const Duration(milliseconds: 200))
+                        .whenComplete(() {
+                      _scrollcontroller.animateTo(
+                          curve: Curves.bounceInOut,
+                          duration: const Duration(milliseconds: 200),
+                          _scrollcontroller.position.maxScrollExtent + 30);
+                    });
+                  }
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(
+                      bottom:
+                          index == widget.chatroom.chats.length - 1 ? 10 : 0),
+                  child: ChatBubble(
+                      position: getpositionofbubble(index),
+                      issentfromme: issentfromme,
+                      chat: currentchat),
+                ),
               ),
             );
           },
           itemCount: widget.chatroom.chats.length),
+    );
+  }
+
+  Center dateseparator(int index) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              blurStyle: BlurStyle.normal,
+              spreadRadius: 1,
+              offset: Offset(6, 3),
+            )
+          ],
+          borderRadius: BorderRadius.circular(40),
+        ),
+        child: Text(formatdatebyday(widget.chatroom.chats[index + 1].time),
+            style: const TextStyle(fontSize: 13)),
+      ),
     );
   }
 
@@ -319,27 +397,26 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     throw Error();
   }
 
-  void sendmessage() async {
-    if (controller.text.isEmpty) {
-      return;
-    }
+  void sendmessage({bool isitfile = false}) async {
+    if (controller.text.isEmpty && file == null) return;
     late Chat newchat;
+    String id = generatedid(15);
     setState(() {
       newchat = Chat(
-          id: generatedid(15),
+          file: file,
+          isiturl: isitfile,
+          id: id,
           time: DateTime.now(),
           text: controller.text,
           sentFrom: myprofile.getPhoneNumber);
 
       widget.chatroom.chats.add(newchat);
-      log("chat - ${controller.text} has been send");
 
       scrolltobottom();
 
       controller.clear();
       SystemChannels.textInput.invokeMethod("TextInput.hide");
     });
-
     await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
   }
 
@@ -370,8 +447,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         widget.chatroom.chats[index - 1].time);
     bool surrounded = topofdivider && bottomofdivider;
     if (surrounded) return ChatBubblePosition.alone;
-    if (topofdivider) return ChatBubblePosition.bottom;
-    if (bottomofdivider) return ChatBubblePosition.top;
     if (widget.chatroom.chats[index].sentFrom !=
             widget.chatroom.chats[index - 1].sentFrom &&
         widget.chatroom.chats[index].sentFrom !=
@@ -381,13 +456,17 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (widget.chatroom.chats[index].sentFrom ==
             widget.chatroom.chats[index - 1].sentFrom &&
         widget.chatroom.chats[index].sentFrom !=
-            widget.chatroom.chats[index + 1].sentFrom) {
+            widget.chatroom.chats[index + 1].sentFrom &&
+        !bottomofdivider) {
       return ChatBubblePosition.bottom;
     }
     if (widget.chatroom.chats[index].sentFrom !=
-        widget.chatroom.chats[index - 1].sentFrom) {
+            widget.chatroom.chats[index - 1].sentFrom &&
+        !topofdivider) {
       return ChatBubblePosition.top;
     }
+    if (bottomofdivider) return ChatBubblePosition.top;
+    if (topofdivider) return ChatBubblePosition.bottom;
     return ChatBubblePosition.middle;
   }
 
@@ -400,7 +479,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
           widget.chatroom.chats[index - 1].sentFrom) {
         return const EdgeInsets.only(top: 12);
       }
-      return const EdgeInsets.symmetric(vertical: 3);
+      return const EdgeInsets.only(bottom: 3);
     }
     return EdgeInsets.only(
         top: widget.chatroom.chats[index - 1].sentFrom ==
@@ -409,12 +488,17 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             : 12);
   }
 
-  void scrolltobottom() async {
-    await _scrollcontroller.animateTo(
-      _scrollcontroller.position.maxScrollExtent + 50,
+  void scrolltobottom() {
+    animationrunning = true;
+    _scrollcontroller
+        .animateTo(
+      _scrollcontroller.position.maxScrollExtent + 150,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-    );
+    )
+        .whenComplete(() {
+      animationrunning = false;
+    });
     canishowfab = false;
   }
 
@@ -455,5 +539,35 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         if (mounted) setState(() {});
       });
     });
+  }
+
+  void pickfromgallery() async {
+    Navigator.pop(context);
+    FilePickerResult? result;
+    result = await FilePicker.platform
+        .pickFiles(allowMultiple: false, type: FileType.image);
+    if (result == null) return;
+    file = await compressimage(File(result.files.first.path!), 80);
+    sendmessage(isitfile: true);
+  }
+
+  void pickfromcamera() async {
+    Navigator.pop(context);
+    final image =
+        // ignore: invalid_use_of_visible_for_testing_member
+        await ImagePicker.platform.pickImage(source: ImageSource.camera);
+    if (image == null) return;
+    file = await compressimage(File(image.path), 80);
+    sendmessage(isitfile: true);
+  }
+
+  void openImage(Chat chat) async {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return ImageView(
+          chat: chat,
+          sentFrom: chat.sentFrom == myprofile.getPhoneNumber
+              ? myprofile.getName
+              : getotherprofile().getName);
+    }));
   }
 }

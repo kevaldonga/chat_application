@@ -35,7 +35,7 @@ class _MyProfileState extends State<MyProfile> {
     ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
     return WillPopScope(
-      onWillPop: () async{
+      onWillPop: () async {
         onBackPressed();
         return false;
       },

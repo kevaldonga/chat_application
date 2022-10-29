@@ -133,13 +133,20 @@ class _RegisterViewState extends State<RegisterView> {
                         if (erroremail!.isEmpty &&
                             errorpassword!.isEmpty &&
                             errorphone!.isEmpty) {
-                          var e = await AuthFirebase.signup(Profile(email: email.text, name: name.text, phoneNumber: phone.text,photourl: ""),password.text);
+                          var e = await AuthFirebase.signup(
+                              Profile(
+                                  email: email.text,
+                                  name: name.text,
+                                  phoneNumber: phone.text,
+                                  photourl: ""),
+                              password.text);
                           if (e == null) {
                             if (!mounted) return;
                             await showbasicdialog(context, "Signed up",
                                 "you have signed up successfully!!");
                             if (!mounted) return;
-                            Navigator.pushNamedAndRemoveUntil(context, Routes.userview , (_)=>false);
+                            Navigator.pushNamedAndRemoveUntil(
+                                context, Routes.userview, (_) => false);
                           } else {
                             if (e[0].isNotEmpty) {
                               var a = ExceptionAuth.handleExceptions(e[0]);

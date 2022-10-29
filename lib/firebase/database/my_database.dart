@@ -22,6 +22,16 @@ class Database {
     await _db?.collection("chatrooms").doc(chatroomid).update({
       "chatids": FieldValue.arrayUnion([chat.id])
     });
+    log("written chat $chat");
+  }
+
+  static Future<void> updatechat(Chat chat) async {
+    _db ??= FirebaseFirestore.instance;
+
+    // update it only by its id
+    // dont need anything
+    await _db?.collection("chats").doc(chat.id).update(chat.toMap());
+    log("updated chat $chat");
   }
 
   static Future<Chat?> readchat(String id) async {
@@ -33,6 +43,7 @@ class Database {
     if (chat == null) {
       return null;
     }
+    log("retrived chat $chat");
     return Chat.fromMap(chat: chat!);
   }
 

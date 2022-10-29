@@ -12,8 +12,8 @@ class ChatRoom {
   // }
   List<Chat> chats;
 
-  get connectedPersons => _connectedPersons;
-  
+  List<Profile> get connectedPersons => _connectedPersons;
+
   ChatRoom({
     id,
     required List<Profile> connectedPersons,
@@ -32,7 +32,6 @@ class ChatRoom {
     return chats.last;
   }
 
- 
   int getnotificationcount({required String myphoneno}) {
     int count = 0;
     for (int i = 0; i < chats.length; i++) {

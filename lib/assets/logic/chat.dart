@@ -1,16 +1,21 @@
+import 'dart:io';
+
 class Chat {
   final String _id;
   final DateTime _time;
   final String _text;
   final String _sentFrom;
   bool _read = false;
+  bool? isiturl;
+  File? file;
+  String? url;
 
   String get id => _id;
 
   DateTime get time => _time;
 
   String get text => _text;
-  
+
   String get sentFrom => _sentFrom;
 
   bool get isread => _read;
@@ -18,6 +23,9 @@ class Chat {
   set setread(bool read) => _read = read;
 
   Chat({
+    this.file,
+    this.url,
+    this.isiturl,
     required String id,
     required DateTime time,
     required String text,
@@ -33,11 +41,13 @@ class Chat {
         _time = DateTime.parse(chat["time"]!),
         _text = chat["text"]!,
         _sentFrom = chat["sentfrom"]!,
-        _read = chat["read"]!;
+        _read = chat["read"]!,
+        url = chat["url"];
 
   Map<String, dynamic> toMap() {
     return {
       "id": _id,
+      if (url != null || url != "null") "url": url,
       "time": _time.toString(),
       "text": _text,
       "sentfrom": _sentFrom,
@@ -46,7 +56,7 @@ class Chat {
   }
 
   @override
-  String toString(){
-    return "id = $_id || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
+  String toString() {
+    return "id = $_id || url = $url || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
   }
 }

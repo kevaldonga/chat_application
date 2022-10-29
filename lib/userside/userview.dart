@@ -41,7 +41,7 @@ class _UserViewState extends State<UserView> {
   List<ChatRoom> chatrooms = [];
   List<ChatRoom> searchchatrooms = [];
   Map<String, dynamic>? snapshot;
-  late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> listener;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? listener;
 
   @override
   void initState() {
@@ -206,14 +206,24 @@ class _UserViewState extends State<UserView> {
             onSelected: (value) async {
               switch (value) {
                 case Profileop.myprofile:
+                  if (listener != null) listener!.pause();
                   profile = await Navigator.push(context,
                       MaterialPageRoute(builder: (context) {
                     return MyProfile(profile: profile);
                   }));
+                  if (listener != null) listener!.cancel();
                   setState(() {});
                   break;
 
                 case Profileop.refresh:
+                  EasyLoading.show(status: "refreshing");
+                  await Database.retrivechatrooms(uid: auth.currentUser!.uid)
+                      .then((value) {
+                    chatrooms = value ?? [];
+                    EasyLoading.dismiss();
+                    if (!mounted) return;
+                    setState(() {});
+                  });
                   await AuthFirebase.refresh();
                   break;
                 case Profileop.verify:
@@ -241,6 +251,7 @@ class _UserViewState extends State<UserView> {
                     }),
                   ]);
                   if (yousure) {
+                    if (listener != null) listener!.cancel();
                     await AuthFirebase.signout();
                     if (!mounted) return;
                     Navigator.pushNamedAndRemoveUntil(
@@ -347,12 +358,12 @@ class _UserViewState extends State<UserView> {
 
   void ontap(int index) async {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
-    listener.pause();
+    if (listener != null) listener!.pause();
     chatrooms[index] =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ChatRoomActivity(chatroom: chatrooms[index]);
     }));
-    listener.resume();
+    if (listener != null) listener!.resume();
     setState(() {});
   }
 
@@ -440,7 +451,7 @@ class _UserViewState extends State<UserView> {
   }
 
   void addchatroom(String phone) async {
-    // checks if the chatrrom exist already
+    // checks if the chatroom exist already
     for (int i = 0; i < chatrooms.length; i++) {
       if (phone ==
           getotherprofile(
@@ -462,6 +473,7 @@ class _UserViewState extends State<UserView> {
     );
     setState(() => chatrooms.add(chatRoom));
     await Database.writechatroom(chatRoom);
+    listentochatroomchanges();
   }
 
   void intializechatrooms(Map<String, dynamic> snapshot) async {

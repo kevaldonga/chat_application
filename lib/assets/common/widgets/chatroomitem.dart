@@ -83,7 +83,7 @@ class ChatRoomItem extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (date != null)
-            Center(widthFactor: 0, child: Text(formatdate(date!))),
+            Center(widthFactor: 0, child: Text(formatdate(date!, md))),
           notificationcount == 0 && read == null
               ? Container()
               : notificationcount == 0
