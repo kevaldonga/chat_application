@@ -19,6 +19,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../assets/colors/colors.dart';
 import '../assets/common/widgets/chatbubble.dart';
@@ -44,6 +45,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   TextEditingController controller = TextEditingController();
   final ScrollController _scrollcontroller = ScrollController();
   bool animationrunning = false;
+  bool firsttime = true;
 
   @override
   void initState() {
@@ -52,11 +54,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     db = FirebaseFirestore.instance;
     canishowfab = false;
     scrollcontrollerlistener = () {
-      if (_scrollcontroller.position.atEdge) {
-        if (_scrollcontroller.position.pixels ==
-            _scrollcontroller.position.maxScrollExtent) {
-          canishowfab = false;
-        }
+      if (_scrollcontroller.position.pixels + 200 >=
+          _scrollcontroller.position.maxScrollExtent) {
+        canishowfab = false;
       } else {
         canishowfab = true;
       }
@@ -82,8 +82,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     if (_scrollcontroller.hasClients &&
         !canishowfab &&
         _scrollcontroller.position.pixels == 0 &&
-        !animationrunning) {
+        !animationrunning &&
+        !firsttime) {
       scrolltobottom();
+      firsttime = false;
     } else if (iskeyboardvisible && !animationrunning) {
       scrolltobottom();
     }
@@ -228,6 +230,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                             icon: Icons.image,
                             ontap: pickfromgallery,
                           ),
+                          // files
+                          shareItem(
+                            context: context,
+                            backgroundcolor: Colors.blue.shade500,
+                            icon: Icons.description_outlined,
+                            ontap: pickfromfiles,
+                          ),
                         ],
                       );
                     },
@@ -288,28 +297,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
               alignment: bubblealignment,
               child: GestureDetector(
                 onTap: () {
-                  if (widget.chatroom.chats[index].url == null) {
-                    return;
-                  }
-                  openImage(widget.chatroom.chats[index]);
+                  onchatbubbletap(index);
                 },
-                onDoubleTap: () async {
-                  setState(() {
-                    if (ChatBubble.expandedbubble == currentchat) {
-                      ChatBubble.expandedbubble = null;
-                      return;
-                    }
-                    ChatBubble.expandedbubble = currentchat;
-                  });
-                  if (index == widget.chatroom.chats.length - 1) {
-                    Future.delayed(const Duration(milliseconds: 200))
-                        .whenComplete(() {
-                      _scrollcontroller.animateTo(
-                          curve: Curves.bounceInOut,
-                          duration: const Duration(milliseconds: 200),
-                          _scrollcontroller.position.maxScrollExtent + 30);
-                    });
-                  }
+                onDoubleTap: () {
+                  onchatbubbledoubletap(index, currentchat);
                 },
                 child: Padding(
                   padding: EdgeInsets.only(
@@ -397,17 +388,18 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     throw Error();
   }
 
-  void sendmessage({bool isitfile = false}) async {
+  void sendmessage({FileType? type, String? name}) async {
     if (controller.text.isEmpty && file == null) return;
     late Chat newchat;
     String id = generatedid(15);
     setState(() {
       newchat = Chat(
+          filename: name,
+          type: type,
           file: file,
-          isiturl: isitfile,
           id: id,
           time: DateTime.now(),
-          text: controller.text,
+          text: type != FileType.any ? controller.text : "",
           sentFrom: myprofile.getPhoneNumber);
 
       widget.chatroom.chats.add(newchat);
@@ -548,7 +540,18 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         .pickFiles(allowMultiple: false, type: FileType.image);
     if (result == null) return;
     file = await compressimage(File(result.files.first.path!), 80);
-    sendmessage(isitfile: true);
+    sendmessage(type: FileType.media);
+  }
+
+  void pickfromfiles() async {
+    Navigator.pop(context);
+    FilePickerResult? result = await FilePicker.platform
+        .pickFiles(allowMultiple: false, type: FileType.any);
+    if (result == null) return;
+    // files over the 20MB are not allowed for now
+    if (result.files.first.size > 20971520) return;
+    file = File(result.files.first.path!);
+    sendmessage(type: FileType.any, name: result.files.first.name);
   }
 
   void pickfromcamera() async {
@@ -558,7 +561,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         await ImagePicker.platform.pickImage(source: ImageSource.camera);
     if (image == null) return;
     file = await compressimage(File(image.path), 80);
-    sendmessage(isitfile: true);
+    sendmessage(type: FileType.media);
   }
 
   void openImage(Chat chat) async {
@@ -569,5 +572,47 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
               ? myprofile.getName
               : getotherprofile().getName);
     }));
+  }
+
+  void onchatbubbletap(int index) {
+    if (widget.chatroom.chats[index].filename != null ||
+        widget.chatroom.chats[index].url == null) {
+      expandbubble(index, widget.chatroom.chats[index]);
+    } else {
+      openImage(widget.chatroom.chats[index]);
+    }
+  }
+
+  void onchatbubbledoubletap(int index, Chat currentchat) {
+    if (currentchat.url == null) {
+      return;
+    }
+    if (currentchat.filename != null) {
+      openfile(currentchat);
+      return;
+    }
+    expandbubble(index, currentchat);
+  }
+
+  void expandbubble(int index, Chat currentchat) {
+    setState(() {
+      if (ChatBubble.expandedbubble == currentchat) {
+        ChatBubble.expandedbubble = null;
+        return;
+      }
+      ChatBubble.expandedbubble = currentchat;
+    });
+    if (index == widget.chatroom.chats.length - 1) {
+      Future.delayed(const Duration(milliseconds: 200)).whenComplete(() {
+        _scrollcontroller.animateTo(
+            curve: Curves.bounceInOut,
+            duration: const Duration(milliseconds: 200),
+            _scrollcontroller.position.maxScrollExtent + 30);
+      });
+    }
+  }
+
+  void openfile(Chat chat) async {
+    final dir = await getApplicationDocumentsDirectory();
   }
 }

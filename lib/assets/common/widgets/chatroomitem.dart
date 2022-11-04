@@ -91,7 +91,7 @@ class ChatRoomItem extends StatelessWidget {
                       color:
                           read! ? MyColors.primarySwatch : MyColors.textprimary)
                   : notificationbubble(notificationcount,
-                      Size(md.size.width * 0.08, md.size.width * 0.08)),
+                      Size(md.size.width * 0.07, md.size.width * 0.07)),
         ],
       ),
     );

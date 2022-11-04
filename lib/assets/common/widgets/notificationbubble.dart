@@ -1,7 +1,7 @@
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:flutter/material.dart';
 
-Widget notificationbubble(int count,Size size) {
+Widget notificationbubble(int count, Size size) {
   return Container(
     width: size.width,
     height: size.height,
@@ -16,7 +16,7 @@ Widget notificationbubble(int count,Size size) {
       softWrap: false,
       style: const TextStyle(
         color: Colors.white,
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: FontWeight.w400,
       ),
     )),

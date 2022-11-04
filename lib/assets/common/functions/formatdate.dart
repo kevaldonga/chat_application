@@ -8,5 +8,5 @@ String formatdate(DateTime dateTime, MediaQueryData md) {
 }
 
 String formatdatebyday(DateTime dateTime) {
-  return DateFormat("dd MMMM yyyy").format(dateTime);
+  return DateFormat("d MMMM yyyy").format(dateTime);
 }

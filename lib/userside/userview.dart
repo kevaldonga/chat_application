@@ -24,6 +24,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
+import '../assets/common/widgets/chatroomitem_shimmer.dart';
 import '../firebase/database/my_database.dart';
 
 class UserView extends StatefulWidget {
@@ -38,6 +39,7 @@ class _UserViewState extends State<UserView> {
   late FirebaseAuth auth;
   late Profile profile;
   late FirebaseUser user;
+  bool initialized = false;
   List<ChatRoom> chatrooms = [];
   List<ChatRoom> searchchatrooms = [];
   Map<String, dynamic>? snapshot;
@@ -101,6 +103,8 @@ class _UserViewState extends State<UserView> {
               width: md.size.width,
               height: md.size.height,
               child: CustomScrollView(
+                physics:
+                    !initialized ? const NeverScrollableScrollPhysics() : null,
                 shrinkWrap: true,
                 slivers: [
                   SliverToBoxAdapter(child: SizedBox(height: md.padding.top)),
@@ -216,11 +220,11 @@ class _UserViewState extends State<UserView> {
                   break;
 
                 case Profileop.refresh:
-                  EasyLoading.show(status: "refreshing");
+                  initialized = false;
                   await Database.retrivechatrooms(uid: auth.currentUser!.uid)
                       .then((value) {
                     chatrooms = value ?? [];
-                    EasyLoading.dismiss();
+                    initialized = true;
                     if (!mounted) return;
                     setState(() {});
                   });
@@ -277,45 +281,54 @@ class _UserViewState extends State<UserView> {
   }
 
   Widget buildlistview(BuildContext context) {
-    if (chatrooms.isEmpty) {
+    if (chatrooms.isEmpty && initialized) {
       return buildblankview("you are not connected to any chatgroups");
     }
     if (searchchatrooms.isEmpty && searchcontroller.text.isNotEmpty) {
       return buildblankview("we could not find the specified");
     }
     return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        ChatRoom currentchatroom = searchcontroller.text.isEmpty
-            ? chatrooms[index]
-            : searchchatrooms[index];
-        currentchatroom.sortchats();
-        String myphoneno = profile.getPhoneNumber;
-        bool? isread = currentchatroom.chats.isNotEmpty
-            ? currentchatroom.chats.last.sentFrom == myphoneno
-                ? currentchatroom.chats.last.isread
-                : null
-            : null;
-        return ChatRoomItem(
-          url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
-          top: index == 0 ? true : null,
-          notificationcount: isread == null
-              ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
-              : 0,
-          read: isread,
-          searchcontroller: searchcontroller,
-          ontap: () => ontap(index),
-          date: currentchatroom.chats.isNotEmpty
-              ? currentchatroom.sortchats().last.time
-              : null,
-          title: getotherprofile(currentchatroom.connectedPersons).getName,
-          description: currentchatroom.chats.isNotEmpty
-              ? currentchatroom.getlatestchat().text
-              : "",
-        );
-      },
-          childCount: searchcontroller.text.isEmpty
-              ? chatrooms.length
-              : searchchatrooms.length),
+      delegate: SliverChildBuilderDelegate(
+        childCount: initialized
+            ? searchcontroller.text.isEmpty
+                ? chatrooms.length
+                : searchchatrooms.length
+            : 10,
+        (context, index) {
+          if (!initialized) {
+            return const ShimmerChatRoomItem();
+          }
+          ChatRoom currentchatroom = searchcontroller.text.isEmpty
+              ? chatrooms[index]
+              : searchchatrooms[index];
+          currentchatroom.sortchats();
+          String myphoneno = profile.getPhoneNumber;
+          bool? isread = currentchatroom.chats.isNotEmpty
+              ? currentchatroom.chats.last.sentFrom == myphoneno
+                  ? currentchatroom.chats.last.isread
+                  : null
+              : null;
+          return ChatRoomItem(
+            url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
+            top: index == 0 ? true : null,
+            notificationcount: isread == null
+                ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
+                : 0,
+            read: isread,
+            searchcontroller: searchcontroller,
+            ontap: () => ontap(index),
+            date: currentchatroom.chats.isNotEmpty
+                ? currentchatroom.sortchats().last.time
+                : null,
+            title: getotherprofile(currentchatroom.connectedPersons).getName,
+            description: currentchatroom.chats.isNotEmpty
+                ? currentchatroom.getlatestchat().text ??
+                    currentchatroom.getlatestchat().filename ??
+                    "image"
+                : "",
+          );
+        },
+      ),
     );
   }
 
@@ -331,7 +344,7 @@ class _UserViewState extends State<UserView> {
         title = getotherprofile(chatrooms[i].connectedPersons)
             .getName
             .toLowerCase();
-        description = chatrooms[i].getlatestchat().text;
+        description = chatrooms[i].getlatestchat().text ?? "";
         if (title.contains(searchtext) || description.contains(searchtext)) {
           searchchatrooms.add(chatrooms[i]);
         }
@@ -342,16 +355,18 @@ class _UserViewState extends State<UserView> {
   void retrivechatrooms() {
     Database.retrivechatrooms(uid: auth.currentUser!.uid).then((value) {
       chatrooms = value ?? [];
+      initialized = true;
       setState(() {});
-      EasyLoading.dismiss();
       listentochatroomchanges();
     });
   }
 
   void init() {
     getpersonalinfo(auth.currentUser!.uid).then((value) {
+      EasyLoading.dismiss();
       snapshot = value;
       profile = Profile.fromMap(data: snapshot!);
+      setState(() {});
       retrivechatrooms();
     });
   }

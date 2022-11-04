@@ -1,12 +1,15 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
+
 class Chat {
   final String _id;
   final DateTime _time;
-  final String _text;
+  final String? _text;
   final String _sentFrom;
+  String? filename;
+  FileType? type;
   bool _read = false;
-  bool? isiturl;
   File? file;
   String? url;
 
@@ -14,7 +17,7 @@ class Chat {
 
   DateTime get time => _time;
 
-  String get text => _text;
+  String? get text => _text;
 
   String get sentFrom => _sentFrom;
 
@@ -25,7 +28,8 @@ class Chat {
   Chat({
     this.file,
     this.url,
-    this.isiturl,
+    this.filename,
+    this.type,
     required String id,
     required DateTime time,
     required String text,
@@ -39,17 +43,19 @@ class Chat {
   Chat.fromMap({required Map<String, dynamic> chat})
       : _id = chat["id"]!,
         _time = DateTime.parse(chat["time"]!),
-        _text = chat["text"]!,
+        _text = chat["text"],
         _sentFrom = chat["sentfrom"]!,
         _read = chat["read"]!,
-        url = chat["url"];
+        filename = chat["filename"],
+        url = chat["url"] == "null" ? null : chat["url"];
 
   Map<String, dynamic> toMap() {
     return {
       "id": _id,
+      if (filename != null || filename != "null") "filename": filename,
       if (url != null || url != "null") "url": url,
       "time": _time.toString(),
-      "text": _text,
+      if (text != "") "text": _text,
       "sentfrom": _sentFrom,
       "read": _read,
     };
@@ -57,6 +63,6 @@ class Chat {
 
   @override
   String toString() {
-    return "id = $_id || url = $url || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
+    return "id = $_id || filename = $filename || url = $url || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
   }
 }
