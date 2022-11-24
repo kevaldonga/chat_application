@@ -48,6 +48,7 @@ class _MyProfileState extends State<MyProfile> {
           backgroundColor: Colors.transparent,
           systemOverlayStyle: const SystemUiOverlayStyle(
             statusBarIconBrightness: Brightness.dark,
+            systemNavigationBarIconBrightness: Brightness.dark,
           ),
         ),
         body: ListView(

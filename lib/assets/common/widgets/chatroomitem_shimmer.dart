@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-class ShimmerChatRoomItem extends StatefulWidget {
-  const ShimmerChatRoomItem({super.key});
-
-  @override
-  State<ShimmerChatRoomItem> createState() => ShimmerChatRoomItemState();
-}
-
-class ShimmerChatRoomItemState extends State<ShimmerChatRoomItem> {
+class ShimmerChatRoomItem extends StatelessWidget {
   final highlightColor = Colors.grey.shade300;
   final baseColor = Colors.grey.shade50;
+
+  ShimmerChatRoomItem({super.key});
   @override
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);

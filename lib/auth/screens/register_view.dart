@@ -46,6 +46,7 @@ class _RegisterViewState extends State<RegisterView> {
         elevation: 0,
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarIconBrightness: Brightness.light,
+          systemNavigationBarIconBrightness: Brightness.light,
         ),
       ),
       body: Container(

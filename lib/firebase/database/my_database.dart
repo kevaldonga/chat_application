@@ -83,7 +83,7 @@ class Database {
     await _db?.collection("chatrooms").doc(id).get().then((value) {
       data = value.data();
     });
-    List<dynamic> chatids = data?["chatids"];
+    List<dynamic> chatids = data?["chatids"] ?? [];
     List<Chat> chats = [];
 
     // get chats by its ids
@@ -151,7 +151,7 @@ class Database {
     return chatrooms;
   }
 
-  static void markchatsread(List<Chat> chats, String phoneno) async {
+  static Future<void> markchatsread(List<Chat> chats, String phoneno) async {
     _db = FirebaseFirestore.instance;
 
     // update all chats individualy by its ids
@@ -164,7 +164,7 @@ class Database {
 
   static Future<List<Chat>> refreshchatroom(
       Map<String, dynamic> snapshot, List<Chat> chats) async {
-    List<dynamic> latestchatids = snapshot["chatids"];
+    List<dynamic> latestchatids = snapshot["chatids"] ?? [];
     // create array of chats ids
     List<String> chatids = [];
     for (int i = 0; i < chats.length; i++) {

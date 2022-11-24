@@ -7,6 +7,7 @@ import 'package:substring_highlight/substring_highlight.dart';
 import 'notificationbubble.dart';
 
 class ChatRoomItem extends StatelessWidget {
+  final String id;
   final String title, description;
   final DateTime? date;
   final bool? read;
@@ -16,8 +17,9 @@ class ChatRoomItem extends StatelessWidget {
   final TextEditingController searchcontroller;
   final VoidCallback ontap;
   const ChatRoomItem({
-    required this.url,
     super.key,
+    required this.id,
+    required this.url,
     required this.read,
     required this.top,
     required this.notificationcount,
@@ -32,7 +34,7 @@ class ChatRoomItem extends StatelessWidget {
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
     return Hero(
-      tag: url.toString(),
+      tag: id,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

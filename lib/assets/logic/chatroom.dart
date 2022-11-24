@@ -2,24 +2,25 @@ import 'package:chatty/assets/logic/profile.dart';
 
 import '../common/functions/generateid.dart';
 import 'chat.dart';
+import 'groupInfo.dart';
 
 class ChatRoom {
   final String id;
-  // it includes both name and phoneno of connected parties
   final List<Profile> _connectedPersons;
-  // {
-  //   "kevaldonga38@gmail.com" : {"name" : "keval","phoneno" : "9484844946","photourl": "url"},
-  // }
   List<Chat> chats;
+  GroupInfo? groupinfo;
+  bool isitgroup = false;
 
   List<Profile> get connectedPersons => _connectedPersons;
 
   ChatRoom({
     id,
+    this.groupinfo,
     required List<Profile> connectedPersons,
     required this.chats,
   })  : id = id ?? generatedid(10),
-        _connectedPersons = connectedPersons;
+        _connectedPersons = connectedPersons,
+        isitgroup = connectedPersons.length > 2 && groupinfo != null;
 
   List<Chat> sortchats() {
     chats.sort((a, b) {

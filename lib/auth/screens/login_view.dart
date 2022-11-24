@@ -35,6 +35,8 @@ class _LoginViewState extends State<LoginView> {
     MediaQueryData md = MediaQuery.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
       ),
