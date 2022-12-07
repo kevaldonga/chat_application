@@ -12,16 +12,15 @@ class FirebaseUser {
 
   get phone => _profile.getPhoneNumber;
 
-  String? get url => _profile.getPhotourl;
+  String? get url => _profile.photourl;
 
-  set seturl(String url) => _profile.setPhotourl = url;
+  set seturl(String url) => _profile.photourl = url;
 
   FirebaseUser({
     required String uid,
     required Profile profile,
     required this.connectedchatrooms,
-  })  : 
-        _uid = uid,
+  })  : _uid = uid,
         _profile = profile;
   List<String> connectedchatrooms = [];
 }

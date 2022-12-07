@@ -2,30 +2,30 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
-import 'package:chatty/assets/common/widgets/alertdialog.dart';
-import 'package:chatty/assets/common/widgets/alertdialog_action_button.dart';
-import 'package:chatty/assets/common/widgets/chatroomitem.dart';
-import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
-import 'package:chatty/assets/common/widgets/popupmenuitem.dart';
-import 'package:chatty/assets/common/widgets/textfield_main.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/firebaseuser.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
-import 'package:chatty/userside/chatroom_activity.dart';
-import 'package:chatty/userside/fabactions.dart';
-import 'package:chatty/userside/profile.dart';
+import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import '../assets/common/widgets/chatroomitem_shimmer.dart';
-import '../firebase/database/my_database.dart';
+import '../../../assets/alertdialog/alertdialog.dart';
+import '../../../assets/alertdialog/alertdialog_action_button.dart';
+import '../../../firebase/database/my_database.dart';
+import '../../chatroom/screens/chatroom_activity.dart';
+import '../../profiles/common/functions/getpersonalinfo.dart';
+import '../../profiles/common/widgets/getprofilewidget.dart';
+import '../common/widgets/chatroomitem.dart';
+import '../common/widgets/chatroomitem_shimmer.dart';
+import '../common/widgets/popupmenuitem.dart';
+import '../common/widgets/textfield_main.dart';
+import 'fabactions.dart';
 
 class UserView extends StatefulWidget {
   const UserView({super.key});
@@ -276,13 +276,13 @@ class _UserViewState extends State<UserView> {
         }
       },
       child: Center(
-        child: profile.getPhotourl == null || profile.getPhotourl == "null"
+        child: profile.photourl == null || profile.photourl == "null"
             ? const CircleAvatar(
                 backgroundColor: Color.fromARGB(255, 176, 184, 250),
                 child:
                     Icon(Icons.person, color: MyColors.primarySwatch, size: 30),
               )
-            : profilewidget(profile.getPhotourl!, 35),
+            : profilewidget(profile.photourl!, 35),
       ),
     );
   }
@@ -317,7 +317,7 @@ class _UserViewState extends State<UserView> {
               : null;
           return ChatRoomItem(
             id: chatrooms[index].id,
-            url: getotherprofile(currentchatroom.connectedPersons).getPhotourl,
+            url: getotherprofile(currentchatroom.connectedPersons).photourl,
             top: index == 0 ? true : null,
             notificationcount: isread == null
                 ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
@@ -462,9 +462,13 @@ class _UserViewState extends State<UserView> {
     }
     if (currentchatroom.getlatestchat().text == null ||
         currentchatroom.getlatestchat().text == "") {
-      return currentchatroom.getlatestchat().filename == null ? "🖼️" : "📄";
+      return currentchatroom.getlatestchat().fileinfo?.filename == null
+          ? "🖼️"
+          : "📄";
     } else {
-      return (currentchatroom.getlatestchat().url != null ? "🖼️  " : "") +
+      return (currentchatroom.getlatestchat().fileinfo?.url != null
+              ? "🖼️  "
+              : "") +
           currentchatroom.getlatestchat().text!;
     }
   }

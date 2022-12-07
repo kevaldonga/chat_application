@@ -3,16 +3,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class Chat {
+  FileInfo? fileinfo;
   final String _id;
   final DateTime _time;
   final String? _text;
   final String _sentFrom;
-  String? filename;
-  FileType? type;
   bool _read = false;
-  bool fileexist = false;
-  File? file;
-  String? url;
 
   String get id => _id;
 
@@ -27,10 +23,7 @@ class Chat {
   set setread(bool read) => _read = read;
 
   Chat({
-    this.file,
-    this.url,
-    this.filename,
-    this.type,
+    this.fileinfo,
     required String id,
     required DateTime time,
     required String text,
@@ -47,9 +40,11 @@ class Chat {
         _text = chat["text"],
         _sentFrom = chat["sentfrom"]!,
         _read = chat["read"]!,
-        fileexist = chat["fileexist"] ?? false,
-        filename = chat["filename"] == "null" ? null : chat["filename"],
-        url = chat["url"];
+        fileinfo = FileInfo(
+          fileexist: chat["fileexist"] ?? false,
+          filename: chat["filename"] == "null" ? null : chat["filename"],
+          url: chat["url"],
+        );
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> data = {
@@ -58,15 +53,36 @@ class Chat {
       "sentfrom": _sentFrom,
       "read": _read,
     };
-    if (fileexist) data["fileexist"] = fileexist;
+    if (fileinfo == null) return data;
+    if (fileinfo!.fileexist) data["fileexist"] = fileinfo!.fileexist;
     if (text != "") data["text"] = _text;
-    if (filename != null || filename != "null") data["filename"] = filename;
-    if (url != null || url != "null") data["url"] = url;
+    if (fileinfo?.filename != null && fileinfo?.filename != "null") {
+      data["filename"] = fileinfo?.filename;
+    }
+    if (fileinfo?.url != null && fileinfo?.url != "null") {
+      data["url"] = fileinfo?.url;
+    }
     return data;
   }
 
   @override
   String toString() {
-    return "id = $_id || filename = $filename || fileexist = $fileexist || url = $url || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
+    return "id = $_id || filename = ${fileinfo?.filename} || fileexist = ${fileinfo?.fileexist} || url = ${fileinfo?.url} || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
   }
+}
+
+class FileInfo {
+  bool fileexist;
+  File? file;
+  String? filename;
+  String? url;
+  FileType? type;
+
+  FileInfo({
+    this.file,
+    this.filename,
+    this.type,
+    this.url,
+    this.fileexist = false,
+  });
 }

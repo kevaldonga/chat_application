@@ -1,17 +1,18 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/userside/chatroom_activity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import '../assets/common/functions/getpersonalinfo.dart';
-import '../assets/common/widgets/alertdialog.dart';
-import '../assets/common/widgets/alertdialog_action_button.dart';
-import '../assets/common/widgets/textfield_material.dart';
-import '../assets/logic/profile.dart';
-import '../firebase/database/my_database.dart';
+import '../../../assets/alertdialog/alertdialog.dart';
+import '../../../assets/alertdialog/alertdialog_action_button.dart';
+import '../../../assets/alertdialog/textfield_material.dart';
+import '../../../assets/logic/profile.dart';
+import '../../../firebase/database/my_database.dart';
+import '../../chatroom/screens/chatroom_activity.dart';
+import '../../profiles/common/functions/getpersonalinfo.dart';
+import '../../profiles/common/widgets/getprofilewidget.dart';
+import 'creategroupActivity.dart';
 
 class FabActions extends StatefulWidget {
   List<ChatRoom> chatrooms;
@@ -85,7 +86,7 @@ class _FabActionsState extends State<FabActions> {
           extraTopItems(
             icon: Icons.group_add_rounded,
             text: "New group",
-            ontap: () {},
+            ontap: createGroup,
           ),
           // add chatroom
           extraTopItems(
@@ -150,11 +151,11 @@ class _FabActionsState extends State<FabActions> {
             Stack(
               alignment: AlignmentDirectional.bottomEnd,
               children: [
-                profile.getPhotourl == "null" || profile.getPhotourl == null
+                profile.photourl == "null" || profile.photourl == null
                     ? const CircleAvatar(
                         child: Icon(Icons.face, color: MyColors.primarySwatch),
                       )
-                    : profilewidget(profile.getPhotourl!, md.size.width * 0.1),
+                    : profilewidget(profile.photourl!, md.size.width * 0.1),
                 AnimatedOpacity(
                   opacity: selectedprofiles.contains(profile) ? 1 : 0,
                   duration: const Duration(milliseconds: 300),
@@ -184,6 +185,22 @@ class _FabActionsState extends State<FabActions> {
         ),
       ),
     );
+  }
+
+  void createGroup() async {
+    if (selectedprofiles.length <= 1) {
+      showbasicdialog(context, "Select more than 1 people",
+          "You have to select more than 1 people to create a group");
+      return;
+    }
+    ChatRoom? chatroom = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateGroup(
+            users: selectedprofiles,
+            admins: [widget.profile],
+          ),
+        ));
   }
 
   void createChatRoom() async {

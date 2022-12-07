@@ -1,6 +1,4 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/common/widgets/alertdialog.dart';
-import 'package:chatty/assets/common/widgets/button_auth.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/validate.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
@@ -8,7 +6,9 @@ import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../assets/common/widgets/textfield_auth.dart';
+import '../../assets/alertdialog/alertdialog.dart';
+import '../widgets/button_auth.dart';
+import '../widgets/textfield_auth.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});

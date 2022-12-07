@@ -1,5 +1,6 @@
-import 'package:chatty/assets/common/widgets/alertdialog_action_button.dart';
 import 'package:flutter/material.dart';
+
+import 'alertdialog_action_button.dart';
 
 Future<bool> showdialog(BuildContext context, Widget title, Widget contents,
     List<Widget> actions) async {

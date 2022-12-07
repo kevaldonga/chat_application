@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -9,8 +10,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
-import '../../logic/chat.dart';
-import '../../logic/profile.dart';
+import '../../../../assets/logic/chat.dart';
+import '../../../../assets/logic/profile.dart';
 import '../functions/formatdate.dart';
 
 class ChatBubble extends StatefulWidget {
@@ -59,7 +60,8 @@ class _ChatBubbleState extends State<ChatBubble> {
         Container(
           constraints:
               BoxConstraints.loose(Size.fromWidth(md.size.width * 0.75)),
-          padding: widget.chat.file != null || widget.chat.url != null
+          padding: widget.chat.fileinfo?.file != null ||
+                  widget.chat.fileinfo?.url != null
               ? const EdgeInsets.all(7)
               : const EdgeInsets.only(left: 22, right: 22, top: 8, bottom: 12),
           margin: widget.margin,
@@ -75,11 +77,15 @@ class _ChatBubbleState extends State<ChatBubble> {
             children: [
               if (widget.profile != null && !widget.issentfromme)
                 Padding(
-                  padding: widget.chat.type != null
+                  padding: widget.chat.fileinfo?.type != null
                       ? EdgeInsets.symmetric(
                           horizontal:
-                              widget.chat.type == FileType.media ? 10 : 0,
-                          vertical: widget.chat.type == FileType.media ? 5 : 0,
+                              widget.chat.fileinfo?.type == FileType.media
+                                  ? 10
+                                  : 0,
+                          vertical: widget.chat.fileinfo?.type == FileType.media
+                              ? 5
+                              : 0,
                         )
                       : EdgeInsets.zero,
                   child: Text(
@@ -94,10 +100,10 @@ class _ChatBubbleState extends State<ChatBubble> {
               getcorrespondingbubble(),
               if (widget.chat.text != null && widget.chat.text != "")
                 Padding(
-                  padding:
-                      (!(widget.chat.file == null && widget.chat.url == null))
-                          ? const EdgeInsets.only(left: 7, top: 5, bottom: 5)
-                          : EdgeInsets.zero,
+                  padding: widget.chat.fileinfo?.file != null ||
+                          widget.chat.fileinfo?.url != null
+                      ? const EdgeInsets.only(left: 7, top: 5, bottom: 5)
+                      : EdgeInsets.zero,
                   child: Text(
                     widget.chat.text!,
                     style: TextStyle(
@@ -137,13 +143,13 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   Widget imageBubble() {
     initimageexist();
-    if (widget.chat.file?.lengthSync() == 0) return cachedimage();
-    return widget.chat.file != null ? fileimage() : cachedimage();
+    if (widget.chat.fileinfo!.file?.lengthSync() == 0) return cachedimage();
+    return widget.chat.fileinfo!.file != null ? fileimage() : cachedimage();
   }
 
-  Image fileimage() {
+  Widget fileimage() {
     return Image.file(
-      widget.chat.file!,
+      widget.chat.fileinfo!.file!,
       fit: BoxFit.fitWidth,
       gaplessPlayback: true,
     );
@@ -151,8 +157,8 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   CachedNetworkImage cachedimage() {
     return CachedNetworkImage(
-      cacheKey: widget.chat.url!,
-      imageUrl: widget.chat.url!,
+      cacheKey: widget.chat.fileinfo!.url!,
+      imageUrl: widget.chat.fileinfo!.url!,
       fit: BoxFit.fitWidth,
     );
   }
@@ -183,8 +189,8 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
   Widget fileBubble() {
-    String path = "${widget.dir.path}/files/${widget.chat.filename}";
-    widget.chat.fileexist = File(path).existsSync();
+    String path = "${widget.dir.path}/files/${widget.chat.fileinfo!.filename}";
+    widget.chat.fileinfo!.fileexist = File(path).existsSync();
     final contentcolor =
         widget.issentfromme ? Colors.white : MyColors.primarySwatch;
     return Padding(
@@ -197,7 +203,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             flex: 3,
             // icon
             child: GestureDetector(
-              onTap: !widget.chat.fileexist && !widget.issentfromme
+              onTap: !widget.chat.fileinfo!.fileexist && !widget.issentfromme
                   ? download == null
                       ? filedownloadtostorage
                       : null
@@ -216,7 +222,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                     ),
                   ),
                   Icon(
-                    widget.issentfromme || widget.chat.fileexist
+                    widget.issentfromme || widget.chat.fileinfo!.fileexist
                         ? Icons.description
                         : Icons.download,
                     color: contentcolor,
@@ -233,7 +239,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             child: Text(
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              widget.chat.filename ?? "unknown file",
+              widget.chat.fileinfo!.filename ?? "unknown file",
               style: TextStyle(color: contentcolor, fontSize: 19),
             ),
           ),
@@ -304,13 +310,13 @@ class _ChatBubbleState extends State<ChatBubble> {
       setState(() {});
     });
     final snapshot = await upload?.whenComplete(() {});
-    widget.chat.url = await snapshot?.ref.getDownloadURL();
+    widget.chat.fileinfo!.url = await snapshot?.ref.getDownloadURL();
     setState(() {});
     await Database.updatechat(widget.chat);
   }
 
   Widget getcorrespondingbubble() {
-    switch (widget.chat.type) {
+    switch (widget.chat.fileinfo?.type) {
       case null:
         return const SizedBox();
       case FileType.any:
@@ -324,7 +330,7 @@ class _ChatBubbleState extends State<ChatBubble> {
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Hero(
-                tag: widget.chat.url.toString(),
+                tag: widget.chat.fileinfo!.url.toString(),
                 child: imageBubble(),
               ),
             ),
@@ -346,7 +352,7 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   void filedownloadtostorage() async {
     FirebaseStorage storage = FirebaseStorage.instance;
-    final mydir = "${widget.dir.path}/files/${widget.chat.filename}";
+    final mydir = "${widget.dir.path}/files/${widget.chat.fileinfo!.filename}";
     File file = File(mydir);
     // creates the file first before writing anything
     file = await file.create(recursive: true);
@@ -360,7 +366,7 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   Future<void> imagedownloadtostorage() async {
     initimageexist();
-    if (widget.chat.fileexist) return;
+    if (widget.chat.fileinfo!.fileexist) return;
     FirebaseStorage storage = FirebaseStorage.instance;
     File file = File("${widget.dir.path}/images/IMG${widget.chat.id}.jpg");
     file = await file.create(recursive: true);
@@ -374,33 +380,34 @@ class _ChatBubbleState extends State<ChatBubble> {
       setState(() {});
     }).onDone(() {
       log("file has been stored");
-      widget.chat.fileexist = true;
+      widget.chat.fileinfo!.fileexist = true;
       Database.updatechat(widget.chat);
-      widget.chat.file = file;
+      widget.chat.fileinfo!.file = file;
       if (!mounted) return;
       setState(() {});
     });
   }
 
   void init() async {
-    if (widget.chat.file != null &&
-        (widget.chat.url == null || widget.chat.url == "null")) {
-      writefiletocloud(widget.chat.file!, widget.chat.id);
+    if (widget.chat.fileinfo?.file != null &&
+        (widget.chat.fileinfo?.url == null ||
+            widget.chat.fileinfo?.url == "null")) {
+      writefiletocloud(widget.chat.fileinfo!.file!, widget.chat.id);
     }
-    if (widget.chat.filename != null) {
-      widget.chat.type = FileType.any;
-    } else if (widget.chat.url != null) {
+    if (widget.chat.fileinfo?.filename != null) {
+      widget.chat.fileinfo?.type = FileType.any;
+    } else if (widget.chat.fileinfo?.url != null) {
       imagedownloadtostorage();
-      widget.chat.type = FileType.media;
+      widget.chat.fileinfo?.type = FileType.media;
     }
   }
 
   void initimageexist() {
     String path = "${widget.dir.path}/images/IMG${widget.chat.id}.jpg";
     final File file = File(path);
-    widget.chat.fileexist = file.existsSync();
-    if (widget.chat.fileexist) {
-      widget.chat.file = file;
+    widget.chat.fileinfo!.fileexist = file.existsSync();
+    if (widget.chat.fileinfo!.fileexist) {
+      widget.chat.fileinfo!.file = file;
     }
   }
 }

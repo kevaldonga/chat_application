@@ -2,7 +2,8 @@ class Profile {
   String _email;
   String _name;
   String _phoneNumber;
-  String? _photourl;
+  String? photourl;
+  String? bio;
 
   String get getEmail => _email;
 
@@ -16,39 +17,37 @@ class Profile {
 
   set setPhoneNumber(phoneNumber) => _phoneNumber = phoneNumber;
 
-  String? get getPhotourl => _photourl;
-
-  set setPhotourl(photourl) => _photourl = photourl;
-
-  Profile({
-    required String email,
-    required String name,
-    required String phoneNumber,
-    String? photourl,
-  })  : _email = email,
+  Profile(
+      {required String email,
+      required String name,
+      required String phoneNumber,
+      this.photourl,
+      this.bio})
+      : _email = email,
         _name = name,
-        _phoneNumber = phoneNumber,
-        _photourl = photourl;
+        _phoneNumber = phoneNumber;
 
   Profile.fromMap({
     required Map<String, dynamic> data,
   })  : _name = data["name"].toString(),
         _email = data["email"].toString(),
         _phoneNumber = data["phoneno"].toString(),
-        _photourl = data["photourl"].toString().isEmpty
+        photourl = data["photourl"].toString().isEmpty
             ? null
-            : data["photourl"].toString();
+            : data["photourl"].toString(),
+        bio = data["bio"].toString().isEmpty ? null : data["bio"].toString();
 
   Map<String, String?> toMap() {
     return {
       "email": _email,
       "name": _name,
       "phoneno": _phoneNumber,
-      "photourl": _photourl,
+      if (photourl != null && photourl != "null") "photourl": photourl,
+      if (photourl != null && photourl != "null") "bio": bio,
     };
   }
 
   @override
   String toString() =>
-      "email = $_email || name = $_name || phoneno = $_phoneNumber || photourl = $_photourl";
+      "email = $_email || name = $_name || phoneno = $_phoneNumber || photourl = $photourl";
 }

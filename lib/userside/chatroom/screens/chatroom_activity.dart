@@ -1,19 +1,10 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:chatty/assets/common/functions/compressimage.dart';
-import 'package:chatty/assets/common/functions/formatdate.dart';
-import 'package:chatty/assets/common/functions/generateid.dart';
-import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
-import 'package:chatty/assets/common/functions/sameday.dart';
-import 'package:chatty/assets/common/widgets/chatroomactivity_shimmer.dart';
-import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
-import 'package:chatty/assets/common/widgets/textfield_main.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/userside/imageview.dart';
-import 'package:chatty/userside/profile.dart';
+import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,11 +13,20 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../assets/colors/colors.dart';
-import '../assets/common/widgets/chatbubble.dart';
-import '../assets/common/widgets/sharebottomsheet.dart';
-import '../assets/logic/chat.dart';
-import '../constants/chatbubble_position.dart';
+import '../../../assets/colors/colors.dart';
+import '../../../assets/logic/chat.dart';
+import '../../../constants/chatbubble_position.dart';
+import '../../dashview/common/widgets/imageview.dart';
+import '../../dashview/common/widgets/textfield_main.dart';
+import '../../profiles/common/functions/compressimage.dart';
+import '../../profiles/common/functions/getpersonalinfo.dart';
+import '../../profiles/common/widgets/getprofilewidget.dart';
+import '../common/functions/formatdate.dart';
+import '../common/functions/generateid.dart';
+import '../common/functions/sameday.dart';
+import '../common/widgets/chatbubble.dart';
+import '../common/widgets/chatroomactivity_shimmer.dart';
+import '../common/widgets/sharebottomsheet.dart';
 
 class ChatRoomActivity extends StatefulWidget {
   final ChatRoom chatroom;
@@ -194,13 +194,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                   }));
                   setState(() {});
                 },
-                child: myprofile.getPhotourl == null &&
-                        myprofile.getPhotourl == "null"
+                child: myprofile.photourl == null &&
+                        myprofile.photourl == "null"
                     ? const CircleAvatar(
                         child:
                             Icon(Icons.person, color: MyColors.primarySwatch),
                       )
-                    : profilewidget(myprofile.getPhotourl!, 45),
+                    : profilewidget(myprofile.photourl!, 45),
               ),
               const SizedBox(width: 15),
               Flexible(
@@ -362,7 +362,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   Row topactions(BuildContext context) {
     String? photourl = !widget.chatroom.isitgroup
-        ? getotherprofile().getPhotourl
+        ? getotherprofile().photourl
         : widget.chatroom.groupinfo!.photourl;
     String? title = !widget.chatroom.isitgroup
         ? getotherprofile().getName
@@ -425,9 +425,11 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     String id = generatedid(15);
     setState(() {
       newchat = Chat(
-          filename: name,
-          type: type,
-          file: type != null ? file : null,
+          fileinfo: FileInfo(
+            filename: name,
+            type: type,
+            file: type != null ? file : null,
+          ),
           id: id,
           time: DateTime.now(),
           text: type != FileType.any ? controller.text : "",
@@ -617,9 +619,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   void onchatbubbletap(int index) {
-    if (widget.chatroom.chats[index].url == null) {
+    if (widget.chatroom.chats[index].fileinfo?.url == null) {
       expandbubble(index, widget.chatroom.chats[index]);
-    } else if (widget.chatroom.chats[index].filename == null) {
+    } else if (widget.chatroom.chats[index].fileinfo?.filename == null) {
       openImage(widget.chatroom.chats[index]);
     } else {
       openfile(widget.chatroom.chats[index]);
@@ -627,7 +629,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   void onchatbubbledoubletap(int index, Chat currentchat) {
-    if (currentchat.url == null) {
+    if (currentchat.fileinfo?.url == null) {
       return;
     }
     expandbubble(index, currentchat);

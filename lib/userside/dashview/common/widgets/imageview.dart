@@ -2,15 +2,15 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/assets/common/functions/formatdate.dart';
-import 'package:chatty/assets/common/widgets/popupmenuitem.dart';
+import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../assets/colors/colors.dart';
-import '../assets/logic/chat.dart';
+import '../../../../assets/colors/colors.dart';
+import '../../../../assets/logic/chat.dart';
+import '../../../chatroom/common/functions/formatdate.dart';
 
 class ImageView extends StatefulWidget {
   final Chat chat;
@@ -66,10 +66,12 @@ class _ImageViewState extends State<ImageView> {
                     File file = File(path);
                     file = await file.create(recursive: true);
                     if (file.existsSync()) return;
-                    if (widget.chat.file == null) {
+                    if (widget.chat.fileinfo!.file == null) {
                       urltostorage(file);
                     } else {
-                      await widget.chat.file!.copy(path).then((value) {
+                      await widget.chat.fileinfo!.file!
+                          .copy(path)
+                          .then((value) {
                         log("${value.path} has been saved to storage");
                       });
                     }
@@ -107,14 +109,14 @@ class _ImageViewState extends State<ImageView> {
           constrained: true,
           clipBehavior: Clip.none,
           child: Hero(
-            tag: widget.chat.url.toString(),
-            child: widget.chat.file == null
+            tag: widget.chat.fileinfo!.url.toString(),
+            child: widget.chat.fileinfo!.file == null
                 ? CachedNetworkImage(
-                    imageUrl: widget.chat.url!,
+                    imageUrl: widget.chat.fileinfo!.url!,
                     fit: BoxFit.fitWidth,
                   )
                 : Image.file(
-                    widget.chat.file!,
+                    widget.chat.fileinfo!.file!,
                     fit: BoxFit.fitWidth,
                   ),
           ),

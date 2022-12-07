@@ -3,10 +3,10 @@ import 'package:chatty/assets/logic/profile.dart';
 class GroupInfo {
   String name;
   String photourl;
-  Profile admin;
+  List<Profile> admins;
   GroupInfo({
     required this.name,
     required this.photourl,
-    required this.admin,
+    required this.admins,
   });
 }

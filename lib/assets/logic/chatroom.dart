@@ -1,6 +1,6 @@
 import 'package:chatty/assets/logic/profile.dart';
 
-import '../common/functions/generateid.dart';
+import '../../userside/chatroom/common/functions/generateid.dart';
 import 'chat.dart';
 import 'groupInfo.dart';
 
@@ -20,7 +20,7 @@ class ChatRoom {
     required this.chats,
   })  : id = id ?? generatedid(10),
         _connectedPersons = connectedPersons,
-        isitgroup = connectedPersons.length > 2 && groupinfo != null;
+        isitgroup = groupinfo != null;
 
   List<Chat> sortchats() {
     chats.sort((a, b) {

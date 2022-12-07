@@ -1,12 +1,12 @@
 import 'dart:developer';
 
-import 'package:chatty/assets/common/functions/getpersonalinfo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:chatty/assets/logic/chatroom.dart';
 import '../../assets/logic/chat.dart';
 import '../../assets/logic/profile.dart';
+import '../../userside/profiles/common/functions/getpersonalinfo.dart';
 
 class Database {
   static FirebaseFirestore? _db;

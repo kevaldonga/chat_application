@@ -1,9 +1,9 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/common/functions/formatdate.dart';
-import 'package:chatty/assets/common/widgets/getprofilewidget.dart';
 import 'package:flutter/material.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
+import '../../../chatroom/common/functions/formatdate.dart';
+import '../../../profiles/common/widgets/getprofilewidget.dart';
 import 'notificationbubble.dart';
 
 class ChatRoomItem extends StatelessWidget {
