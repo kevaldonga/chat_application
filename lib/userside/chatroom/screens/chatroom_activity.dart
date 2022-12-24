@@ -1,10 +1,13 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/profiles/screens/groupprofile.dart';
 import 'package:chatty/userside/profiles/screens/myprofile.dart';
+import 'package:chatty/userside/profiles/screens/userprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,15 +15,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../assets/colors/colors.dart';
+import '../../../assets/logic/FirebaseUser.dart';
 import '../../../assets/logic/chat.dart';
 import '../../../constants/chatbubble_position.dart';
 import '../../dashview/common/widgets/imageview.dart';
 import '../../dashview/common/widgets/textfield_main.dart';
 import '../../profiles/common/functions/compressimage.dart';
 import '../../profiles/common/functions/getpersonalinfo.dart';
-import '../../profiles/common/widgets/getprofilewidget.dart';
+import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/functions/formatdate.dart';
 import '../common/functions/generateid.dart';
 import '../common/functions/sameday.dart';
@@ -30,7 +35,12 @@ import '../common/widgets/sharebottomsheet.dart';
 
 class ChatRoomActivity extends StatefulWidget {
   final ChatRoom chatroom;
-  const ChatRoomActivity({super.key, required this.chatroom});
+  FirebaseUser user;
+  ChatRoomActivity({
+    super.key,
+    required this.user,
+    required this.chatroom,
+  });
 
   @override
   State<ChatRoomActivity> createState() => _ChatRoomActivityState();
@@ -137,24 +147,60 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
               Hero(
                 tag: widget.chatroom.id,
                 child: Container(
-                  height: md.size.height * 0.11,
-                  width: md.size.width,
-                  padding: EdgeInsets.only(
-                      top: md.viewPadding.top, bottom: 12, left: 10),
                   decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          spreadRadius: 10,
-                          offset: Offset.fromDirection(12),
-                        )
-                      ],
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20))),
-                  child: topactions(context),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        spreadRadius: 10,
+                        offset: Offset.fromDirection(12),
+                      )
+                    ],
+                    borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20)),
+                    color: Colors.white,
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        unfocus();
+                        Profile otherprofile = getotherprofile();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return widget.chatroom.isitgroup
+                                ? const GroupProfile()
+                                : UserProfile(
+                                    myphoneno: myprofile.getPhoneNumber,
+                                    user: widget.user,
+                                    chats: getchatroomfiles(),
+                                    herotag: widget.chatroom.id,
+                                    profile: otherprofile,
+                                    sentData: getsentfromdata(),
+                                  );
+                          },
+                        )).then((value) {
+                          if (value == null) return;
+                          widget.user = value;
+                        });
+                      },
+                      focusColor: MyColors.focusColor,
+                      highlightColor: Colors.transparent,
+                      splashColor: MyColors.splashColor,
+                      child: Container(
+                        height: md.size.height * 0.11,
+                        width: md.size.width,
+                        padding: EdgeInsets.only(
+                            top: md.viewPadding.top, bottom: 12, left: 10),
+                        decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20))),
+                        child: topactions(context),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               chatslistview(md),
@@ -187,21 +233,19 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
             children: [
               const SizedBox(width: 5),
               GestureDetector(
-                onTap: () async {
-                  myprofile = await Navigator.push(context,
-                      MaterialPageRoute(builder: (context) {
-                    return MyProfile(profile: myprofile);
-                  }));
-                  setState(() {});
-                },
-                child: myprofile.photourl == null &&
-                        myprofile.photourl == "null"
-                    ? const CircleAvatar(
-                        child:
-                            Icon(Icons.person, color: MyColors.primarySwatch),
-                      )
-                    : profilewidget(myprofile.photourl!, 45),
-              ),
+                  onTap: () async {
+                    unfocus();
+                    myprofile = await Navigator.push(context,
+                        MaterialPageRoute(builder: (context) {
+                      return MyProfile(profile: myprofile);
+                    }));
+                    setState(() {});
+                  },
+                  child: Hero(
+                    transitionOnUserGestures: true,
+                    tag: myprofile.photourl.toString(),
+                    child: profilewidget(myprofile.photourl, 45),
+                  )),
               const SizedBox(width: 15),
               Flexible(
                 fit: FlexFit.tight,
@@ -321,6 +365,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                               ? 10
                               : 0),
                       child: ChatBubble(
+                          mediavisibility: widget.user.mediavisibility[
+                                  getotherprofile().getEmail] ??
+                              true,
                           dir: dir!,
                           profile: widget.chatroom.isitgroup
                               ? getotherprofile(currentchat.sentFrom)
@@ -360,35 +407,37 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     );
   }
 
-  Row topactions(BuildContext context) {
+  Widget topactions(BuildContext context) {
     String? photourl = !widget.chatroom.isitgroup
         ? getotherprofile().photourl
         : widget.chatroom.groupinfo!.photourl;
     String? title = !widget.chatroom.isitgroup
         ? getotherprofile().getName
         : widget.chatroom.groupinfo!.name;
-    bool isprofilenull = photourl == null && photourl == "null";
-    return Row(
-      children: [
-        IconButton(
-            onPressed: () {
-              Navigator.of(context).pop(widget.chatroom);
-            },
-            icon: const Icon(Icons.arrow_back_ios_rounded,
-                color: MyColors.primarySwatch)),
-        const SizedBox(width: 20),
-        isprofilenull
-            ? const CircleAvatar(
-                child: Icon(Icons.person, color: MyColors.primarySwatch),
-              )
-            : profilewidget(photourl!, 45),
-        const SizedBox(width: 20),
-        Text(title,
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          IconButton(
+              onPressed: () {
+                Navigator.of(context).pop(widget.chatroom);
+              },
+              icon: const Icon(Icons.arrow_back_ios_rounded,
+                  color: MyColors.primarySwatch)),
+          const SizedBox(width: 20),
+          profilewidget(photourl, 45),
+          const SizedBox(width: 20),
+          Text(
+            title,
             style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w400,
-                fontSize: 20)),
-      ],
+              color: Colors.black,
+              fontWeight: FontWeight.w400,
+              fontSize: 20,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -425,11 +474,14 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     String id = generatedid(15);
     setState(() {
       newchat = Chat(
-          fileinfo: FileInfo(
-            filename: name,
-            type: type,
-            file: type != null ? file : null,
-          ),
+          fileinfo: type != null
+              ? FileInfo(
+                  filename: name,
+                  type: type,
+                  file: file,
+                  path: file!.path,
+                )
+              : null,
           id: id,
           time: DateTime.now(),
           text: type != FileType.any ? controller.text : "",
@@ -582,7 +634,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         .pickFiles(allowMultiple: false, type: FileType.image);
     if (result == null) return;
     file = await compressimage(File(result.files.first.path!), 80);
-    sendmessage(type: FileType.media);
+    sendmessage(type: FileType.image);
   }
 
   void pickfromfiles() async {
@@ -593,7 +645,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     // files over the 20MB are not allowed for now
     if (result.files.first.size > 20971520) return;
     file = File(result.files.first.path!);
-    sendmessage(type: FileType.any, name: result.files.first.name);
+    sendmessage(type: FileType.media, name: result.files.first.name);
   }
 
   void pickfromcamera() {
@@ -604,11 +656,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
         .then((image) async {
       if (image == null) return;
       file = await compressimage(File(image.path), 80);
-      sendmessage(type: FileType.media);
+      sendmessage(type: FileType.image);
     });
   }
 
   void openImage(Chat chat) async {
+    unfocus();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView(
           chat: chat,
@@ -621,7 +674,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   void onchatbubbletap(int index) {
     if (widget.chatroom.chats[index].fileinfo?.url == null) {
       expandbubble(index, widget.chatroom.chats[index]);
-    } else if (widget.chatroom.chats[index].fileinfo?.filename == null) {
+    } else if (widget.chatroom.chats[index].fileinfo?.type == FileType.image) {
       openImage(widget.chatroom.chats[index]);
     } else {
       openfile(widget.chatroom.chats[index]);
@@ -653,5 +706,41 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     }
   }
 
-  void openfile(Chat chat) {}
+  void openfile(Chat chat) {
+    File file = File("storage/emulated/0/Download/${chat.fileinfo!.filename}");
+    if (chat.fileinfo!.fileexist) {
+      if (chat.fileinfo!.file != null) {
+        log("file:${chat.fileinfo!.file!.path}");
+        // ignore: deprecated_member_use
+        launch("file:${chat.fileinfo!.file!.path}");
+      } else if (file.existsSync() && file.lengthSync() != 0) {
+        // ignore: deprecated_member_use
+        launch("file:${file.path}");
+      }
+    }
+  }
+
+  List<Chat> getchatroomfiles() {
+    List<Chat> chats = [];
+    for (int i = 0; i < widget.chatroom.chats.length; i++) {
+      if (widget.chatroom.chats[i].fileinfo != null &&
+          widget.chatroom.chats[i].fileinfo?.type == FileType.image) {
+        chats.add(widget.chatroom.chats[i]);
+      }
+    }
+    return chats;
+  }
+
+  Map<String, String> getsentfromdata() {
+    Map<String, String> sentdata = {};
+    for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
+      sentdata[widget.chatroom.connectedPersons[i].getPhoneNumber] =
+          widget.chatroom.connectedPersons[i].getName;
+    }
+    return sentdata;
+  }
+
+  void unfocus() {
+    SystemChannels.textInput.invokeMethod("TextInput.hide");
+  }
 }

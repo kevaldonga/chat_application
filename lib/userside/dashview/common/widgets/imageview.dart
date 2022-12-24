@@ -1,11 +1,12 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatty/assets/logic/Toast.dart';
 import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../assets/colors/colors.dart';
@@ -60,22 +61,26 @@ class _ImageViewState extends State<ImageView> {
               onSelected: (value) async {
                 switch (value) {
                   case popupmenu.save:
-                    final dir = await getDownloadsDirectory();
-                    String path =
-                        "${dir!.path}/chatty/images/IMG${widget.chat.id}.jpg";
-                    File file = File(path);
-                    file = await file.create(recursive: true);
-                    if (file.existsSync()) return;
-                    if (widget.chat.fileinfo!.file == null) {
-                      urltostorage(file);
+                    if (widget.chat.fileinfo!.file != null) {
+                      // save image to gallery
+                      saveimage(widget.chat.fileinfo!.file!.path);
                     } else {
-                      await widget.chat.fileinfo!.file!
-                          .copy(path)
-                          .then((value) {
-                        log("${value.path} has been saved to storage");
+                      // save image first to temp directory from cloud
+                      final dir = await getTemporaryDirectory();
+                      String path =
+                          "${dir.path}/chatty/images/IMG${widget.chat.id}.jpg";
+                      File file = File(path);
+                      file = await file.create(recursive: true).then((value) {
+                        file = value;
+                        FirebaseStorage.instance
+                            .ref("chats/${widget.chat.id}")
+                            .writeToFile(value)
+                            .whenComplete(() {
+                          saveimage(value.path);
+                        });
+                        return value;
                       });
                     }
-                    break;
                 }
               },
               child: const Icon(Icons.more_vert_rounded, color: Colors.white),
@@ -98,6 +103,7 @@ class _ImageViewState extends State<ImageView> {
         ),
         backgroundColor: Colors.black26,
         systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.black,
           systemNavigationBarColor: Colors.black,
           systemNavigationBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
@@ -125,7 +131,11 @@ class _ImageViewState extends State<ImageView> {
     );
   }
 
-  void urltostorage(File file) async {
-    FirebaseStorage.instance.ref("chats/${widget.chat.id}").writeToFile(file);
+  void saveimage(String path) {
+    GallerySaver.saveImage(path).then((value) {
+      Toast("image saved successfully!");
+    }).onError((error, stackTrace) {
+      Toast("These was error occured - $error");
+    });
   }
 }

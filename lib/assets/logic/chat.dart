@@ -40,11 +40,14 @@ class Chat {
         _text = chat["text"],
         _sentFrom = chat["sentfrom"]!,
         _read = chat["read"]!,
-        fileinfo = FileInfo(
-          fileexist: chat["fileexist"] ?? false,
-          filename: chat["filename"] == "null" ? null : chat["filename"],
-          url: chat["url"],
-        );
+        fileinfo = chat["url"] != "null" && chat["url"] != null
+            ? FileInfo(
+                fileexist: chat["fileexist"] ?? false,
+                filename: chat["filename"] == "null" ? null : chat["filename"],
+                url: chat["url"],
+                path: chat["path"],
+              )
+            : null;
 
   Map<String, dynamic> toMap() {
     Map<String, dynamic> data = {
@@ -52,10 +55,13 @@ class Chat {
       "time": _time.toString(),
       "sentfrom": _sentFrom,
       "read": _read,
+      if (text != "") "text": _text,
     };
     if (fileinfo == null) return data;
+    if (fileinfo!.path != null && fileinfo!.path != "null") {
+      data["path"] = fileinfo!.path;
+    }
     if (fileinfo!.fileexist) data["fileexist"] = fileinfo!.fileexist;
-    if (text != "") data["text"] = _text;
     if (fileinfo?.filename != null && fileinfo?.filename != "null") {
       data["filename"] = fileinfo?.filename;
     }
@@ -77,6 +83,7 @@ class FileInfo {
   String? filename;
   String? url;
   FileType? type;
+  String? path;
 
   FileInfo({
     this.file,
@@ -84,5 +91,11 @@ class FileInfo {
     this.type,
     this.url,
     this.fileexist = false,
+    this.path,
   });
+
+  @override
+  String toString() {
+    return "filexist = $fileexist || file = $file || filename = $filename || url = $url || type = $type || path = $path";
+  }
 }

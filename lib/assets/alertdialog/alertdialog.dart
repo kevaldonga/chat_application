@@ -35,7 +35,7 @@ Future<void> showbasicdialog(
             borderRadius: BorderRadius.circular(20),
           ),
           actions: [
-            alertdialogactionbutton("ok", () {
+            alertdialogactionbutton("OK", () {
               Navigator.of(context).pop(true);
             }),
           ],

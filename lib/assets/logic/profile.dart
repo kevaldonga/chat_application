@@ -42,8 +42,9 @@ class Profile {
       "email": _email,
       "name": _name,
       "phoneno": _phoneNumber,
-      if (photourl != null && photourl != "null") "photourl": photourl,
-      if (photourl != null && photourl != "null") "bio": bio,
+      if (photourl != null && photourl != "null" && photourl != "")
+        "photourl": photourl,
+      if (bio != null && bio != "null" && bio != "") "bio": bio,
     };
   }
 

@@ -1,11 +1,9 @@
+import 'package:chatty/assets/colors/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ShimmerChatRoomItem extends StatelessWidget {
-  final highlightColor = Colors.grey.shade300;
-  final baseColor = Colors.grey.shade50;
-
-  ShimmerChatRoomItem({super.key});
+  const ShimmerChatRoomItem({super.key});
   @override
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
@@ -40,8 +38,8 @@ class ShimmerChatRoomItem extends StatelessWidget {
   Shimmer profile(MediaQueryData md) {
     return Shimmer.fromColors(
       enabled: true,
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+      baseColor: MyColors.shimmerbasecolor,
+      highlightColor: MyColors.shimmerhighlightcolor,
       direction: ShimmerDirection.ltr,
       child: ClipOval(
           child: Container(
@@ -58,8 +56,8 @@ class ShimmerChatRoomItem extends StatelessWidget {
   Shimmer content(MediaQueryData md) {
     return Shimmer.fromColors(
       enabled: true,
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+      baseColor: MyColors.shimmerbasecolor,
+      highlightColor: MyColors.shimmerhighlightcolor,
       direction: ShimmerDirection.ltr,
       child: Container(
           decoration: BoxDecoration(
@@ -74,8 +72,8 @@ class ShimmerChatRoomItem extends StatelessWidget {
   Shimmer title(MediaQueryData md) {
     return Shimmer.fromColors(
       enabled: true,
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+      baseColor: MyColors.shimmerbasecolor,
+      highlightColor: MyColors.shimmerhighlightcolor,
       direction: ShimmerDirection.ltr,
       child: Container(
           decoration: BoxDecoration(

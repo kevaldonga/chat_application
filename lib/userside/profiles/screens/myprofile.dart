@@ -13,6 +13,7 @@ import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
 import '../common/functions/compressimage.dart';
 import '../common/functions/setprofileimage.dart';
+import '../common/widgets/buildcircle.dart';
 
 enum TextFieldType {
   name,
@@ -34,16 +35,23 @@ class _MyProfileState extends State<MyProfile> {
   late TextEditingController name;
   late TextEditingController bio;
   late MediaQueryData md;
+  late FocusNode namefocusnode, biofocusnode;
+  int focusedindex = 0;
 
   @override
   void initState() {
-    name = TextEditingController(text: widget.profile.getName);
-    bio = TextEditingController(
-        text: widget.profile.bio == null || widget.profile.bio == "null"
-            ? ""
-            : widget.profile.bio);
-    url = widget.profile.photourl;
+    setupfocuslisteners();
+    initcontrollers();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    biofocusnode.dispose();
+    namefocusnode.dispose();
+    bio.dispose();
+    name.dispose();
+    super.dispose();
   }
 
   @override
@@ -52,15 +60,16 @@ class _MyProfileState extends State<MyProfile> {
     md = MediaQuery.of(context);
     return WillPopScope(
       onWillPop: () async {
+        isdatachanged();
         bool a = await showdialog(
           context,
           const Text("Are you sure ?"),
           const Text("are you sure you want to update your profile ?"),
           [
             alertdialogactionbutton(
-                "yes", () => Navigator.of(context).pop(true)),
+                "YES", () => Navigator.of(context).pop(true)),
             alertdialogactionbutton(
-                "no", () => Navigator.of(context).pop(false)),
+                "NO", () => Navigator.of(context).pop(false)),
           ],
         );
         if (a) {
@@ -69,6 +78,7 @@ class _MyProfileState extends State<MyProfile> {
         return !a;
       },
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
@@ -80,93 +90,73 @@ class _MyProfileState extends State<MyProfile> {
             systemNavigationBarIconBrightness: Brightness.dark,
           ),
         ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Center(child: _profilewidget(md)),
-            SizedBox(height: md.size.height * 0.07),
-            Container(
-              margin: const EdgeInsets.all(15),
-              padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 10,
-                bottom: 25,
+        body: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: md.viewPadding.top + 60),
+                child: Center(child: _profilewidget(md)),
               ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  listItem(TextFieldType.name),
-                  listItem(TextFieldType.bio),
-                  listItem(TextFieldType.phone),
-                ],
-              ),
-            ),
-          ],
+              SizedBox(height: md.size.height * 0.07),
+              listItem(TextFieldType.name, 1),
+              listItem(TextFieldType.bio, 2),
+              listItem(TextFieldType.phone, 0),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _profilewidget(MediaQueryData md) {
-    return Stack(
-      children: [
-        _buildimage(md),
-        Positioned(
-          bottom: 0,
-          right: 4,
-          child: _buildcircle(
-            color: Colors.white,
-            padding: 4,
-            child: _buildcircle(
-              color: MyColors.primarySwatch,
-              padding: 10,
-              child: GestureDetector(
-                  onTap: () async {
-                    FilePickerResult? picker;
-                    picker = await FilePicker.platform
-                        .pickFiles(allowMultiple: false, type: FileType.image);
-                    if (picker == null) return;
-                    file = await compressimage(
-                        File(picker.files.single.path!), 80);
-                    setState(() {});
-                  },
-                  child: const Icon(Icons.edit, size: 20, color: Colors.white)),
+    return GestureDetector(
+      onTap: () async {
+        FilePickerResult? picker;
+        picker = await FilePicker.platform
+            .pickFiles(allowMultiple: false, type: FileType.image);
+        if (picker == null) return;
+        file = await compressimage(File(picker.files.single.path!), 80);
+        setState(() {});
+      },
+      child: Stack(
+        children: [
+          _buildimage(md),
+          Positioned(
+            bottom: 0,
+            right: 4,
+            child: buildcircle(
+              color: Colors.white,
+              padding: 4,
+              child: buildcircle(
+                color: MyColors.primarySwatch,
+                padding: 10,
+                child: const Icon(Icons.edit, size: 20, color: Colors.white),
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildimage(MediaQueryData md) {
-    return ClipOval(
-      child: Container(
-        color: Colors.white,
-        width: md.size.width / 3,
-        height: md.size.width / 3,
-        child: file == null
-            ? url == null || url == "null"
-                ? const Icon(Icons.person,
-                    size: 70, color: MyColors.primarySwatch)
-                : CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover)
-            : Image.file(file!, fit: BoxFit.cover),
+        ],
       ),
     );
   }
 
-  Widget _buildcircle(
-      {required color, required double padding, Widget? child}) {
-    return ClipOval(
-      child: Container(
-        color: color,
-        padding: EdgeInsets.all(padding),
-        child: child,
+  Widget _buildimage(MediaQueryData md) {
+    return Hero(
+      tag: url.toString(),
+      transitionOnUserGestures: true,
+      child: ClipOval(
+        child: Container(
+          color: MyColors.profilebackground,
+          width: md.size.width / 3,
+          height: md.size.width / 3,
+          child: file == null
+              ? url == null || url == "null"
+                  ? const Icon(Icons.person_rounded,
+                      size: 70, color: MyColors.profileforeground)
+                  : CachedNetworkImage(imageUrl: url!, fit: BoxFit.cover)
+              : Image.file(file!, fit: BoxFit.cover),
+        ),
       ),
     );
   }
@@ -197,81 +187,117 @@ class _MyProfileState extends State<MyProfile> {
     }
   }
 
-  Widget listItem(TextFieldType type) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
+  Widget listItem(TextFieldType type, int index) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: md.size.width,
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+      decoration: BoxDecoration(
+        border: Border.all(
+            width: 2,
+            color: focusedindex == index
+                ? MyColors.primarySwatch
+                : Colors.black38),
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+      ),
+      child: Flex(
+        direction: Axis.horizontal,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
-            flex: 2,
+            flex: 3,
             fit: FlexFit.tight,
             child: Icon(
               type == TextFieldType.name
                   ? Icons.person_rounded
                   : type == TextFieldType.phone
-                      ? Icons.phone_rounded
+                      ? Icons.call_rounded
                       : Icons.info_outline_rounded,
-              color: MyColors.textsecondary,
+              color: focusedindex == index
+                  ? MyColors.primarySwatch
+                  : Colors.black38,
             ),
           ),
-          Flexible(
-            flex: 9,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  type == TextFieldType.name
-                      ? "Name"
-                      : type == TextFieldType.bio
-                          ? "About"
-                          : "Phone",
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                    color: MyColors.textsecondary,
+          Expanded(
+            flex: 20,
+            child: type != TextFieldType.phone
+                ? TextField(
+                    maxLength: type == TextFieldType.name ? 10 : 50,
+                    maxLines: type == TextFieldType.bio ? 4 : 1,
+                    focusNode: type == TextFieldType.name
+                        ? namefocusnode
+                        : biofocusnode,
+                    controller: type == TextFieldType.name ? name : bio,
+                    keyboardType: TextInputType.multiline,
+                    decoration: const InputDecoration(
+                      helperStyle: TextStyle(
+                        fontSize: 0,
+                      ),
+                      counterStyle: TextStyle(
+                        fontSize: 0,
+                      ),
+                      isCollapsed: true,
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                    ),
+                  )
+                : Text(
+                    widget.profile.getPhoneNumber,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                type != TextFieldType.phone
-                    ? SizedBox(
-                        width: md.size.width * 0.6,
-                        child: TextField(
-                          controller: type == TextFieldType.name ? name : bio,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                            isCollapsed: true,
-                            border: InputBorder.none,
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: MyColors.focusColor,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: InputBorder.none,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            color: Colors.black,
-                          ),
-                        ),
-                      )
-                    : Flexible(
-                        flex: 8,
-                        child: Text(
-                          widget.profile.getPhoneNumber,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            color: Colors.black,
-                          ),
-                        ),
-                      )
-              ],
-            ),
-          )
+          ),
         ],
       ),
     );
+  }
+
+  void initcontrollers() {
+    name = TextEditingController(text: widget.profile.getName);
+    bio = TextEditingController(
+        text: widget.profile.bio == null || widget.profile.bio == "null"
+            ? ""
+            : widget.profile.bio);
+    url = widget.profile.photourl;
+  }
+
+  void setupfocuslisteners() {
+    namefocusnode = FocusNode();
+    biofocusnode = FocusNode();
+    namefocusnode.addListener(() {
+      if (namefocusnode.hasFocus) {
+        focusedindex = 1;
+      } else {
+        focusedindex = 0;
+      }
+      setState(() {});
+    });
+    biofocusnode.addListener(() {
+      if (biofocusnode.hasFocus) {
+        focusedindex = 2;
+      } else {
+        focusedindex = 0;
+      }
+      setState(() {});
+    });
+  }
+
+  void isdatachanged() {
+    if (widget.profile.getName != name.text &&
+        widget.profile.bio != bio.text &&
+        file == null) {
+      Navigator.of(context).pop(widget.profile);
+    }
   }
 }

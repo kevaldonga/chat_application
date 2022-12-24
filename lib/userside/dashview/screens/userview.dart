@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/firebaseuser.dart';
 import 'package:chatty/assets/logic/profile.dart';
+import 'package:chatty/assets/logic/toast.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
@@ -20,7 +21,7 @@ import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../firebase/database/my_database.dart';
 import '../../chatroom/screens/chatroom_activity.dart';
 import '../../profiles/common/functions/getpersonalinfo.dart';
-import '../../profiles/common/widgets/getprofilewidget.dart';
+import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/widgets/chatroomitem.dart';
 import '../common/widgets/chatroomitem_shimmer.dart';
 import '../common/widgets/popupmenuitem.dart';
@@ -38,12 +39,14 @@ class _UserViewState extends State<UserView> {
   TextEditingController searchcontroller = TextEditingController();
   late FirebaseAuth auth;
   late Profile profile;
-  late FirebaseUser user;
   bool initialized = false;
+  late FirebaseUser user;
   List<ChatRoom> chatrooms = [];
   List<ChatRoom> searchchatrooms = [];
   Map<String, dynamic>? snapshot;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? listener;
+  late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>
+      addedtochatroom;
 
   @override
   void initState() {
@@ -77,18 +80,23 @@ class _UserViewState extends State<UserView> {
             child: Container())
         : Scaffold(
             extendBodyBehindAppBar: true,
-            floatingActionButton: FloatingActionButton(
-              backgroundColor: MyColors.textfieldborder2,
-              foregroundColor: Colors.white,
-              focusColor: const Color.fromARGB(255, 111, 119, 207),
-              splashColor: const Color.fromARGB(255, 83, 93, 208),
-              onPressed: () {
-                floatingbuttonaction();
-              },
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+            floatingActionButton: Theme(
+              data: ThemeData(
+                  colorScheme: ColorScheme.fromSwatch()
+                      .copyWith(secondary: Colors.transparent)),
+              child: FloatingActionButton(
+                backgroundColor: MyColors.textfieldborder2,
+                foregroundColor: Colors.white,
+                focusColor: const Color.fromARGB(255, 111, 119, 207),
+                splashColor: const Color.fromARGB(255, 83, 93, 208),
+                onPressed: () {
+                  floatingbuttonaction();
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.message_rounded),
               ),
-              child: const Icon(Icons.message_rounded),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             appBar: AppBar(
@@ -222,12 +230,12 @@ class _UserViewState extends State<UserView> {
       onSelected: (value) async {
         switch (value) {
           case Profileop.myprofile:
-            if (listener != null) listener!.pause();
+            pauselisteners();
             profile = await Navigator.push(context,
                 MaterialPageRoute(builder: (context) {
               return MyProfile(profile: profile);
             }));
-            if (listener != null) listener!.cancel();
+            resumelisteners();
             setState(() {});
             break;
 
@@ -244,12 +252,10 @@ class _UserViewState extends State<UserView> {
             break;
           case Profileop.verify:
             if (auth.currentUser!.emailVerified) {
-              showbasicdialog(
-                  context, "verified", "you are already verified !!");
+              Toast("you are already verifed!");
               return;
             }
-            await showbasicdialog(context, "are you sure ?",
-                "you will sent link to verify your email");
+            Toast("sending link to verify!");
             await AuthFirebase.verify();
             break;
           case Profileop.updatepassword:
@@ -259,15 +265,15 @@ class _UserViewState extends State<UserView> {
                 context,
                 const Text("Are you sure ?"),
                 const Text("Are you sure you want to sign out ? "), [
-              alertdialogactionbutton("go back", () {
+              alertdialogactionbutton("BACK", () {
                 Navigator.of(context).pop(false);
               }),
-              alertdialogactionbutton("yes", () {
+              alertdialogactionbutton("YES", () {
                 Navigator.of(context).pop(true);
               }),
             ]);
             if (yousure) {
-              if (listener != null) listener!.cancel();
+              cancellisteners();
               await AuthFirebase.signout();
               if (!mounted) return;
               Navigator.pushNamedAndRemoveUntil(
@@ -275,15 +281,7 @@ class _UserViewState extends State<UserView> {
             }
         }
       },
-      child: Center(
-        child: profile.photourl == null || profile.photourl == "null"
-            ? const CircleAvatar(
-                backgroundColor: Color.fromARGB(255, 176, 184, 250),
-                child:
-                    Icon(Icons.person, color: MyColors.primarySwatch, size: 30),
-              )
-            : profilewidget(profile.photourl!, 35),
-      ),
+      child: Center(child: profilewidget(profile.photourl, 35)),
     );
   }
 
@@ -303,7 +301,7 @@ class _UserViewState extends State<UserView> {
             : 10,
         (context, index) {
           if (!initialized) {
-            return ShimmerChatRoomItem();
+            return const ShimmerChatRoomItem();
           }
           ChatRoom currentchatroom = searchcontroller.text.isEmpty
               ? chatrooms[index]
@@ -315,9 +313,15 @@ class _UserViewState extends State<UserView> {
                   ? currentchatroom.chats.last.isread
                   : null
               : null;
+          String? url = currentchatroom.isitgroup
+              ? currentchatroom.groupinfo!.photourl
+              : getotherprofile(currentchatroom.connectedPersons).photourl;
+          String title = currentchatroom.isitgroup
+              ? currentchatroom.groupinfo!.name
+              : getotherprofile(currentchatroom.connectedPersons).getName;
           return ChatRoomItem(
             id: chatrooms[index].id,
-            url: getotherprofile(currentchatroom.connectedPersons).photourl,
+            url: url,
             top: index == 0 ? true : null,
             notificationcount: isread == null
                 ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
@@ -328,7 +332,7 @@ class _UserViewState extends State<UserView> {
             date: currentchatroom.chats.isNotEmpty
                 ? currentchatroom.sortchats().last.time
                 : null,
-            title: getotherprofile(currentchatroom.connectedPersons).getName,
+            title: title,
             description: getcurrentchatroomdescription(currentchatroom),
           );
         },
@@ -361,10 +365,12 @@ class _UserViewState extends State<UserView> {
       initialized = true;
       setState(() {});
       listentochatroomchanges();
+      listentoaddedtonewchatroom();
     });
   }
 
   void init() {
+    initfirebaseuser();
     getpersonalinfo(auth.currentUser!.uid).then((value) {
       EasyLoading.dismiss();
       snapshot = value;
@@ -376,26 +382,31 @@ class _UserViewState extends State<UserView> {
 
   void ontap(int index) async {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
-    if (listener != null) listener!.pause();
+    pauselisteners();
     chatrooms[index] =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return ChatRoomActivity(chatroom: chatrooms[index]);
+      return ChatRoomActivity(
+        chatroom: chatrooms[index],
+        user: user,
+      );
     }));
-    if (listener != null) listener!.resume();
+    resumelisteners();
     setState(() {});
   }
 
   void floatingbuttonaction() async {
-    await Navigator.push(context, MaterialPageRoute(
+    pauselisteners();
+    await Navigator.push(context, MaterialPageRoute<ChatRoom?>(
       builder: (context) {
-        return FabActions(profile, chatrooms);
+        return FabActions(profile, chatrooms, user);
       },
     )).then((newchatroom) {
       if (newchatroom == null) {
         return;
       }
-      setState(() => chatrooms.add(newchatroom));
-      listentochatroomchanges();
+      chatrooms.add(newchatroom);
+      setState(() {});
+      resumelisteners();
     });
   }
 
@@ -471,5 +482,41 @@ class _UserViewState extends State<UserView> {
               : "") +
           currentchatroom.getlatestchat().text!;
     }
+  }
+
+  void initfirebaseuser() async {
+    user = await Database.readFirebaseUser(auth.currentUser!.uid);
+  }
+
+  void listentoaddedtonewchatroom() {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    addedtochatroom = db
+        .collection("connectedchatrooms")
+        .doc(auth.currentUser!.uid)
+        .snapshots()
+        .listen((event) {
+      Database.chatroomidsListener(event.data(), chatrooms).then((value) {
+        chatrooms = value;
+        setState(() {});
+      });
+    });
+  }
+
+  void resumelisteners() {
+    if (listener == null) {
+      listentochatroomchanges();
+    }
+    listener?.resume();
+    addedtochatroom.resume();
+  }
+
+  void pauselisteners() {
+    listener?.pause();
+    addedtochatroom.resume();
+  }
+
+  void cancellisteners() {
+    listener?.cancel();
+    addedtochatroom.cancel();
   }
 }

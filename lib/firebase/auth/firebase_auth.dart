@@ -1,92 +1,77 @@
+import 'package:chatty/assets/logic/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../../assets/logic/profile.dart';
 
 class AuthFirebase {
   static FirebaseAuth? _auth;
   static Future<List<String>?> signin(String email, String password) async {
-    EasyLoading.show(status: "signing");
+    Toast("signing in...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.signInWithEmailAndPassword(email: email, password: password);
     } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
       return [e.code, ""];
     } on Exception catch (e) {
-      EasyLoading.dismiss();
       return ["", e.toString()];
     }
-    EasyLoading.dismiss();
     return null;
   }
 
   static Future<List<String>?> signup(Profile profile, password) async {
-    EasyLoading.show(status: "signing up");
+    Toast("signing up...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.createUserWithEmailAndPassword(
           email: profile.getEmail, password: password);
     } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
       return [e.code, ""];
     } on Exception catch (e) {
-      EasyLoading.dismiss();
       return [e.toString(), ""];
     }
     Database.writepersonalinfo(profile);
     Database.setuid(
         profile.getPhoneNumber, FirebaseAuth.instance.currentUser!.uid);
-    EasyLoading.dismiss();
     return null;
   }
 
   static Future<List<String>?> signout() async {
-    EasyLoading.show(status: "signing out");
+    Toast("signing out...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.signOut();
     } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
       return [e.code, ""];
     } on Exception catch (e) {
-      EasyLoading.dismiss();
       return ["", e.toString()];
     }
-    EasyLoading.dismiss();
     return null;
   }
 
   static Future<List<String>?> changeemail(String newEmail) async {
-    EasyLoading.show(status: "changing");
+    Toast("changing email...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.currentUser?.updateEmail(newEmail);
     } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
       return [e.code, ""];
     } on Exception catch (e) {
-      EasyLoading.dismiss();
       return ["", e.toString()];
     }
-    EasyLoading.dismiss();
     return null;
   }
 
   static Future<List<String>?> changepassword(String newPassword) async {
-    EasyLoading.show(status: "updating");
+    Toast("updating...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.currentUser?.updatePassword(newPassword);
     } on FirebaseAuthException catch (e) {
-      EasyLoading.dismiss();
       return [e.code, ""];
     } on Exception catch (e) {
-      EasyLoading.dismiss();
       return ["", e.toString()];
     }
-    EasyLoading.dismiss();
     return null;
   }
 
@@ -103,11 +88,10 @@ class AuthFirebase {
   }
 
   static Future<List<Object?>?> refresh() async {
-    EasyLoading.show(status: "refreshing");
+    Toast("refrshing...");
     _auth ??= FirebaseAuth.instance;
     try {
       await _auth?.currentUser?.reload();
-      EasyLoading.dismiss();
     } on FirebaseAuthException catch (e) {
       return [e.code, ""];
     } on Exception catch (e) {

@@ -11,6 +11,10 @@ class MyColors {
   static const Color highlightColor = Color.fromARGB(255, 221, 219, 255);
   static const Color focusColor = Color.fromARGB(255, 217, 201, 255);
   static const Color splashColor = Color.fromARGB(255, 211, 215, 247);
+  static const Color profilebackground = Color.fromARGB(255, 176, 184, 250);
+  static const Color profileforeground = primarySwatch;
+  static Color shimmerhighlightcolor = Colors.grey.shade300;
+  static Color shimmerbasecolor = Colors.grey.shade50;
 }
 
 class MyGradients {

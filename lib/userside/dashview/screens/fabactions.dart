@@ -1,5 +1,7 @@
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:chatty/assets/logic/toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -11,13 +13,14 @@ import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
 import '../../chatroom/screens/chatroom_activity.dart';
 import '../../profiles/common/functions/getpersonalinfo.dart';
-import '../../profiles/common/widgets/getprofilewidget.dart';
+import '../../profiles/common/widgets/getprofilecircle.dart';
 import 'creategroupActivity.dart';
 
 class FabActions extends StatefulWidget {
   List<ChatRoom> chatrooms;
   Profile profile;
-  FabActions(this.profile, this.chatrooms, {super.key});
+  FirebaseUser user;
+  FabActions(this.profile, this.chatrooms, this.user, {super.key});
 
   @override
   State<FabActions> createState() => _FabActionsState();
@@ -28,6 +31,7 @@ class _FabActionsState extends State<FabActions> {
   late int chatroomlength = 0;
   List<Profile> profiles = [];
   List<Profile> selectedprofiles = [];
+  bool selection = false;
 
   @override
   void initState() {
@@ -45,14 +49,15 @@ class _FabActionsState extends State<FabActions> {
           highlightColor: Colors.transparent,
           splashColor: Colors.white38,
           splashRadius: 30,
-          icon: Icon(selectedprofiles.isEmpty
-              ? Icons.arrow_back_rounded
-              : Icons.close_rounded),
+          icon: Icon(
+            !selection ? Icons.arrow_back_rounded : Icons.close_rounded,
+          ),
           onPressed: () {
-            if (selectedprofiles.isEmpty) {
+            if (!selection) {
               Navigator.pop(context);
             } else {
               setState(() {
+                selection = false;
                 selectedprofiles = [];
               });
             }
@@ -62,7 +67,7 @@ class _FabActionsState extends State<FabActions> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              selectedprofiles.isEmpty
+              !selection
                   ? "Select contact"
                   : "${selectedprofiles.length} contacts selected",
               style: const TextStyle(
@@ -123,12 +128,22 @@ class _FabActionsState extends State<FabActions> {
         if (selectedprofiles.contains(profile)) {
           setState(() {
             selectedprofiles.remove(profile);
+            if (selectedprofiles.isEmpty) {
+              selection = false;
+            }
+          });
+          return;
+        } else if (selection) {
+          setState(() {
+            selection = true;
+            selectedprofiles.add(profile);
           });
           return;
         }
         Navigator.push(context, MaterialPageRoute(
           builder: (context) {
-            return ChatRoomActivity(chatroom: getchatroom(profile));
+            return ChatRoomActivity(
+                chatroom: getchatroom(profile), user: widget.user);
           },
         ));
       },
@@ -136,10 +151,14 @@ class _FabActionsState extends State<FabActions> {
         if (selectedprofiles.contains(profile)) {
           setState(() {
             selectedprofiles.remove(profile);
+            if (selectedprofiles.isEmpty) {
+              selection = false;
+            }
           });
           return;
         }
         setState(() {
+          selection = true;
           selectedprofiles.add(profile);
         });
       },
@@ -153,7 +172,9 @@ class _FabActionsState extends State<FabActions> {
               children: [
                 profile.photourl == "null" || profile.photourl == null
                     ? const CircleAvatar(
-                        child: Icon(Icons.face, color: MyColors.primarySwatch),
+                        backgroundColor: MyColors.profilebackground,
+                        child: Icon(Icons.person_rounded,
+                            color: MyColors.profileforeground),
                       )
                     : profilewidget(profile.photourl!, md.size.width * 0.1),
                 AnimatedOpacity(
@@ -188,7 +209,7 @@ class _FabActionsState extends State<FabActions> {
   }
 
   void createGroup() async {
-    if (selectedprofiles.length <= 1) {
+    if (selectedprofiles.length < 2) {
       showbasicdialog(context, "Select more than 1 people",
           "You have to select more than 1 people to create a group");
       return;
@@ -201,12 +222,16 @@ class _FabActionsState extends State<FabActions> {
             admins: [widget.profile],
           ),
         ));
+    if (chatroom != null) {
+      if (!mounted) return;
+      Navigator.of(context).pop(chatroom);
+    }
   }
 
   void createChatRoom() async {
     String phone = "";
     String? result;
-    await showdialog(
+    bool? response = await showdialog(
         context,
         const Text("add chatroom"),
         textfieldmaterial(
@@ -218,41 +243,32 @@ class _FabActionsState extends State<FabActions> {
           maxlength: 10,
         ),
         [
-          alertdialogactionbutton("add", () async {
-            if (phone.length < 10) return;
+          alertdialogactionbutton("ADD", () async {
+            if (phone.length < 10) {
+              Toast("too short!!");
+              return;
+            }
             EasyLoading.show(status: "searching");
             result = await Database.getuid(phone);
             EasyLoading.dismiss();
             if (!mounted) return;
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(true);
           }),
-          alertdialogactionbutton("cancel", () {
+          alertdialogactionbutton("CANCEL", () {
             Navigator.of(context).pop(false);
           }),
         ]);
     if (!mounted) return;
-    if (result != null) {
+    if (result != null && response) {
       if (phone == widget.profile.getPhoneNumber) {
-        showbasicdialog(
-          context,
-          "forbidden",
-          "you cannot add your own phone no",
-        );
+        Toast("you can't add your own number!");
         return;
       }
-      await showbasicdialog(
-        context,
-        "added",
-        "given phone number was added successfully !",
-      );
+      Toast("chatroom added successfully!");
       addchatroom(phone);
     } else {
       if (phone.length < 10) return;
-      showbasicdialog(
-        context,
-        "failed",
-        "given number doesnt exist yet !!",
-      );
+      Toast("given number doesn't exist!!");
     }
   }
 
@@ -325,6 +341,9 @@ class _FabActionsState extends State<FabActions> {
       connectedPersons: [otherprofile, widget.profile],
       chats: [],
     );
+    widget.user.mediavisibility[otherprofile.getEmail] = true;
+    await Database.setmediavisibility(
+        FirebaseAuth.instance.currentUser!.uid, widget.user);
     await Database.writechatroom(chatRoom).whenComplete(() {
       if (mounted) Navigator.of(context).pop(chatRoom);
     });

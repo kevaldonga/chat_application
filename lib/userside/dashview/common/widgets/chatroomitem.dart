@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
 import '../../../chatroom/common/functions/formatdate.dart';
-import '../../../profiles/common/widgets/getprofilewidget.dart';
+import '../../../profiles/common/widgets/getprofilecircle.dart';
 import 'notificationbubble.dart';
 
 class ChatRoomItem extends StatelessWidget {
@@ -63,7 +63,7 @@ class ChatRoomItem extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  profile(md),
+                  profilewidget(url, md.size.width * 0.12),
                   SizedBox(width: md.size.width * 0.08),
                   middleactions(),
                   endactions(md),
@@ -85,7 +85,13 @@ class ChatRoomItem extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (date != null)
-            Center(widthFactor: 0, child: Text(formatdate(date!, md))),
+            Center(
+                widthFactor: 0,
+                child: Text(
+                  formatdate(date!, md),
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                )),
           notificationcount == 0 && read == null
               ? Container()
               : notificationcount == 0
@@ -138,13 +144,5 @@ class ChatRoomItem extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget profile(MediaQueryData md) {
-    return url == null && url == "null"
-        ? const CircleAvatar(
-            child: Icon(Icons.face, color: MyColors.primarySwatch),
-          )
-        : profilewidget(url!, md.size.width * 0.12);
   }
 }
