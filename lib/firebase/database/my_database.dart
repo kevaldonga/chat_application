@@ -56,7 +56,6 @@ class Database {
     // get uids by phone no given in profiles
     for (int i = 0; i < chatroom.connectedPersons.length; i++) {
       String? uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
-      if (uid == null) continue;
       uids.add(uid);
     }
 
@@ -95,11 +94,9 @@ class Database {
     // get groupinfo if available
     GroupInfo? groupinfo;
     if (data?["isitgroup"] ?? false) {
-      Map<String, dynamic>? data = {};
-      await _db?.collection("groupinfo").doc(id).get().then((value) {
-        data = value.data();
+      await Database.readgroupinfo(id).then((value) {
+        groupinfo = value;
       });
-      groupinfo = GroupInfo.fromMap(data);
     }
 
     // gets all chats ids
@@ -300,12 +297,8 @@ class Database {
     // retrive groupinfos by ids
     List<GroupInfo> groupinfos = [];
     for (int i = 0; i < commongroupids.length; i++) {
-      await _db
-          ?.collection("groupinfo")
-          .doc(commongroupids[i])
-          .get()
-          .then((value) {
-        groupinfos.add(GroupInfo.fromMap(value.data()));
+      await Database.readgroupinfo(commongroupids[i]).then((value) {
+        groupinfos.add(value);
       });
     }
     return groupinfos;
@@ -364,5 +357,49 @@ class Database {
     var data = await _db?.collection("groupinfo").doc(docID).get();
     if (data == null) return false;
     return data.exists;
+  }
+
+  static Future<GroupInfo> readgroupinfo(String chatroomid) async {
+    _db ??= FirebaseFirestore.instance;
+    GroupInfo? groupinfo;
+    await _db?.collection("groupinfo").doc(chatroomid).get().then((value) {
+      groupinfo = GroupInfo.fromMap(value.data());
+    });
+    return groupinfo!;
+  }
+
+  static Future<void> writegroupinfo(String id, GroupInfo groupinfo) async {
+    _db ??= FirebaseFirestore.instance;
+    await _db?.collection("groupinfo").doc(id).set(groupinfo.toMap());
+  }
+
+  static Future<void> updateparticipants(
+    String uid,
+    String chatroomid,
+    bool shouldadd,
+  ) async {
+    _db ??= FirebaseFirestore.instance;
+    // should add is false then remove the user
+
+    // first of all remove him from chatroom connectedpersons
+    await _db?.collection("chatrooms").doc(chatroomid).set(
+      {
+        "connectedpersons": FieldValue.arrayRemove([uid]),
+      },
+      SetOptions(merge: true),
+    );
+
+    // then remove the chatroom from his profile
+    await _db?.collection("connectedpersons").doc(uid).set(
+      {
+        "chatroomids": FieldValue.arrayRemove([chatroomid])
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  static void updatestatus(String phonenno, int status) async {
+    _db ??= FirebaseFirestore.instance;
+    _db?.collection("status").doc(phonenno).set({"status": status});
   }
 }

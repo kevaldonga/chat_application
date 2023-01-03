@@ -17,13 +17,13 @@ class Profile {
 
   set setPhoneNumber(phoneNumber) => _phoneNumber = phoneNumber;
 
-  Profile(
-      {required String email,
-      required String name,
-      required String phoneNumber,
-      this.photourl,
-      this.bio})
-      : _email = email,
+  Profile({
+    required String email,
+    required String name,
+    required String phoneNumber,
+    this.photourl,
+    this.bio,
+  })  : _email = email,
         _name = name,
         _phoneNumber = phoneNumber;
 
@@ -35,7 +35,9 @@ class Profile {
         photourl = data["photourl"].toString().isEmpty
             ? null
             : data["photourl"].toString(),
-        bio = data["bio"].toString().isEmpty ? null : data["bio"].toString();
+        bio = data["bio"] != null && data["bio"] != "null" && data["bio"] == ""
+            ? data["bio"]
+            : null;
 
   Map<String, String?> toMap() {
     return {

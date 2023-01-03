@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 Widget profilewidget(String? url, final double size) {
   return ClipOval(
     clipBehavior: Clip.antiAlias,
-    child: Container(
-        color: Colors.white,
+    child: SizedBox(
         width: size,
         height: size,
         child: url == null || url == "null"

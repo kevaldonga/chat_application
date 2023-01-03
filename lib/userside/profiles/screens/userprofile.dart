@@ -1,20 +1,22 @@
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chat.dart';
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/userside/profiles/common/widgets/chatroom_media.dart';
 import 'package:chatty/userside/profiles/common/widgets/commongrouplist.dart';
 import 'package:chatty/userside/profiles/common/widgets/mediavisibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../assets/logic/profile.dart';
+import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../common/widgets/animatedappbar.dart';
 import '../common/widgets/bio.dart';
 
 class UserProfile extends StatelessWidget {
+  String chatroomid;
   final String myphoneno;
-  final Object herotag;
   final Profile profile;
   final List<Chat> chats;
   final Map<String, String> sentData;
@@ -23,11 +25,11 @@ class UserProfile extends StatelessWidget {
 
   UserProfile({
     Key? key,
+    required this.chatroomid,
     required this.myphoneno,
     required this.user,
     required this.sentData,
     required this.chats,
-    required this.herotag,
     required this.profile,
   }) : super(key: key);
 
@@ -46,16 +48,14 @@ class UserProfile extends StatelessWidget {
         ),
         child: SafeArea(
           child: Scaffold(
-            extendBodyBehindAppBar: true,
             body: CustomScrollView(
               slivers: [
                 SliverPersistentHeader(
                   delegate: CustomAppbar(
-                    herotag: herotag,
+                    herotag: chatroomid.toString(),
                     name: profile.getName,
                     screenWidth: MediaQuery.of(context).size.width,
                     url: profile.photourl,
-                    phoneno: profile.getPhoneNumber,
                     onbackpressed: () {
                       onbackpressed(context);
                     },
@@ -66,12 +66,12 @@ class UserProfile extends StatelessWidget {
                   child: Column(
                     children: [
                       PhoneAndName(
-                          phoneno: profile.getPhoneNumber,
+                          description: profile.getPhoneNumber,
                           name: profile.getName),
                       profileOperations(context),
                       bio(bio: profile.bio, name: profile.getName),
                       MediaVisibility(
-                        email: profile.getEmail,
+                        id: chatroomid,
                         user: user,
                       ),
                     ],
@@ -89,6 +89,9 @@ class UserProfile extends StatelessWidget {
                   child: CommonGroupList(
                     phonenos: [myphoneno, profile.getPhoneNumber],
                   ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: md.size.height * 0.4),
                 )
               ],
             ),
@@ -107,9 +110,13 @@ class UserProfile extends StatelessWidget {
           icon: Icons.call_rounded,
           label: "call",
           backgroundcolor: Colors.green,
-          onclick: () {
-            launchUrl(Uri.parse("tel:${profile.getPhoneNumber}"),
-                mode: LaunchMode.externalNonBrowserApplication);
+          onclick: () async {
+            bool isGranted = await Permission.phone.request().isGranted;
+            if (isGranted) {
+              intent.Intent.call(profile.getPhoneNumber);
+            } else {
+              Toast("allow permission to use this functionality");
+            }
           },
         ),
         profileoperationWidget(
@@ -176,6 +183,6 @@ class UserProfile extends StatelessWidget {
   }
 
   void onbackpressed(BuildContext context) {
-    Navigator.of(context).pop(user);
+    Navigator.of(context).pop({"firebaseuser": user});
   }
 }

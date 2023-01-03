@@ -8,9 +8,9 @@ import '../../../../assets/colors/colors.dart';
 import '../../../../assets/logic/FirebaseUser.dart';
 
 class MediaVisibility extends StatefulWidget {
-  String email;
+  String id;
   FirebaseUser user;
-  MediaVisibility({super.key, required this.user, required this.email});
+  MediaVisibility({super.key, required this.user, required this.id});
 
   @override
   State<MediaVisibility> createState() => _MediaVisibilityState();
@@ -21,7 +21,7 @@ class _MediaVisibilityState extends State<MediaVisibility> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.only(top: 15, bottom: 15, left: 10, right: 10),
+      margin: const EdgeInsets.only(top: 15, left: 10, right: 10),
       width: double.maxFinite,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(13),
@@ -35,13 +35,13 @@ class _MediaVisibilityState extends State<MediaVisibility> {
           borderRadius: BorderRadius.circular(13),
           onTap: () async {
             await showdialog(
-              context,
-              const Text(
+              context: context,
+              title: const Text(
                 "Do you want your media to be displayed in gallery ?",
                 style:
                     TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
               ),
-              StatefulBuilder(
+              contents: StatefulBuilder(
                 builder: (context, insidestate) {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -53,12 +53,11 @@ class _MediaVisibilityState extends State<MediaVisibility> {
                         title: const Text("Yes"),
                         value: true,
                         groupValue:
-                            widget.user.mediavisibility[widget.email] ?? true,
+                            widget.user.mediavisibility[widget.id] ?? true,
                         onChanged: (newvalue) {
                           if (newvalue == null) return;
                           insidestate(() {
-                            widget.user.mediavisibility[widget.email] =
-                                newvalue;
+                            widget.user.mediavisibility[widget.id] = newvalue;
                           });
                         },
                       ),
@@ -68,12 +67,11 @@ class _MediaVisibilityState extends State<MediaVisibility> {
                         title: const Text("No"),
                         value: false,
                         groupValue:
-                            widget.user.mediavisibility[widget.email] ?? true,
+                            widget.user.mediavisibility[widget.id] ?? true,
                         onChanged: (newvalue) {
                           if (newvalue == null) return;
                           insidestate(() {
-                            widget.user.mediavisibility[widget.email] =
-                                newvalue;
+                            widget.user.mediavisibility[widget.id] = newvalue;
                           });
                         },
                       ),
@@ -81,11 +79,11 @@ class _MediaVisibilityState extends State<MediaVisibility> {
                   );
                 },
               ),
-              [
+              actions: [
                 alertdialogactionbutton("OK", () {
                   setState(() {
                     Navigator.of(context)
-                        .pop(widget.user.mediavisibility[widget.email] ?? true);
+                        .pop(widget.user.mediavisibility[widget.id] ?? true);
                   });
                   Database.setmediavisibility(
                       FirebaseAuth.instance.currentUser!.uid, widget.user);
@@ -110,9 +108,7 @@ class _MediaVisibilityState extends State<MediaVisibility> {
               ),
               const SizedBox(height: 5),
               Text(
-                widget.user.mediavisibility[widget.email] ?? true
-                    ? "On"
-                    : "Off",
+                widget.user.mediavisibility[widget.id] ?? true ? "On" : "Off",
                 softWrap: true,
                 style: const TextStyle(
                   fontSize: 15,

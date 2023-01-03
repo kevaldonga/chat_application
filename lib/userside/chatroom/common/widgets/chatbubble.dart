@@ -6,13 +6,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/constants/chatbubble_position.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
 import '../../../../assets/logic/chat.dart';
 import '../../../../assets/logic/profile.dart';
+import '../../../../constants/enumFIleType.dart';
 import '../functions/formatdate.dart';
 
 class ChatBubble extends StatefulWidget {
@@ -197,8 +197,11 @@ class _ChatBubbleState extends State<ChatBubble> {
     initfilepath();
     String path = widget.issentfromme
         ? widget.chat.fileinfo!.path!
-        : "storage/emulated/0/Download/${widget.chat.fileinfo!.filename}";
+        : "storage/emulated/0/Download/chatty/${widget.chat.fileinfo!.filename}";
     widget.chat.fileinfo!.fileexist = File(path).existsSync();
+    if (widget.chat.fileinfo!.fileexist) {
+      widget.chat.fileinfo!.file = File(path);
+    }
     bool shoulddownload = !widget.chat.fileinfo!.fileexist &&
         !widget.issentfromme &&
         download == null;
@@ -363,7 +366,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   void filedownloadtostorage() async {
     FirebaseStorage storage = FirebaseStorage.instance;
     String mydir =
-        "storage/emulated/0/Download/${widget.chat.fileinfo!.filename}";
+        "storage/emulated/0/Download/chatty/${widget.chat.fileinfo!.filename}";
     File file = File(mydir);
     // creates the file first before writing anything
     file = await file.create(recursive: true);
@@ -374,6 +377,7 @@ class _ChatBubbleState extends State<ChatBubble> {
       setState(() {});
     }).onDone(() {
       widget.chat.fileinfo!.file = file;
+      widget.chat.fileinfo!.fileexist = true;
     });
     Database.updatechat(widget.chat);
   }

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
@@ -9,18 +11,20 @@ import 'package:chatty/userside/profiles/screens/groupprofile.dart';
 import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:chatty/userside/profiles/screens/userprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
+import '../../../assets/SystemChannels/toast.dart';
 import '../../../assets/colors/colors.dart';
 import '../../../assets/logic/FirebaseUser.dart';
 import '../../../assets/logic/chat.dart';
+import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../../../constants/chatbubble_position.dart';
+import '../../../constants/enumFIleType.dart';
 import '../../dashview/common/widgets/imageview.dart';
 import '../../dashview/common/widgets/textfield_main.dart';
 import '../../profiles/common/functions/compressimage.dart';
@@ -34,7 +38,7 @@ import '../common/widgets/chatroomactivity_shimmer.dart';
 import '../common/widgets/sharebottomsheet.dart';
 
 class ChatRoomActivity extends StatefulWidget {
-  final ChatRoom chatroom;
+  ChatRoom chatroom;
   FirebaseUser user;
   ChatRoomActivity({
     super.key,
@@ -46,7 +50,12 @@ class ChatRoomActivity extends StatefulWidget {
   State<ChatRoomActivity> createState() => _ChatRoomActivityState();
 }
 
-class _ChatRoomActivityState extends State<ChatRoomActivity> {
+class Status {
+  static const int online = 1, offline = 0, typing = 2;
+}
+
+class _ChatRoomActivityState extends State<ChatRoomActivity>
+    with WidgetsBindingObserver {
   late FirebaseAuth auth;
   late FirebaseFirestore db;
   late Profile myprofile;
@@ -58,10 +67,15 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   final ScrollController _scrollcontroller = ScrollController();
   bool animationrunning = false;
   bool firsttime = true;
+  late Map<String, int> statuses = {}; // also include my status
+
+  late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>
+      listener; // {"myphoneno" : online(1)/typing(2)/offline(0)}
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     auth = FirebaseAuth.instance;
     db = FirebaseFirestore.instance;
     canishowfab = false;
@@ -80,10 +94,31 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller.dispose();
     _scrollcontroller.removeListener(scrollcontrollerlistener);
     _scrollcontroller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        // if you close app with keybaord on it would stay on typing status
+        // so have to hide the keyboard first
+        unfocus();
+        statuses[myprofile.getPhoneNumber] = Status.offline;
+        Database.updatestatus(
+            myprofile.getPhoneNumber, Status.offline); // set to offline
+        break;
+      case AppLifecycleState.resumed:
+        statuses[myprofile.getPhoneNumber] = Status.online;
+        Database.updatestatus(
+            myprofile.getPhoneNumber, Status.online); // set to online
+    }
   }
 
   @override
@@ -103,6 +138,14 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
       firsttime = false;
     } else if (iskeyboardvisible && !animationrunning) {
       scrolltobottom();
+    }
+    String myphoneno = myprofile.getPhoneNumber;
+    if (iskeyboardvisible && statuses[myphoneno] == Status.online) {
+      statuses[myphoneno] = Status.typing; // set to typing
+      Database.updatestatus(myphoneno, Status.typing);
+    } else if (!iskeyboardvisible && statuses[myphoneno] == Status.typing) {
+      statuses[myphoneno] = Status.online;
+      Database.updatestatus(myphoneno, Status.online);
     }
     return WillPopScope(
       onWillPop: () async {
@@ -170,19 +213,30 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) {
                             return widget.chatroom.isitgroup
-                                ? const GroupProfile()
+                                ? GroupProfile(
+                                    myphoneno: myprofile.getPhoneNumber,
+                                    mediachats: getchatroomfiles(),
+                                    sentData: getsentfromdata(),
+                                    user: widget.user,
+                                    chatroom: widget.chatroom,
+                                  )
                                 : UserProfile(
+                                    chatroomid: widget.chatroom.id,
                                     myphoneno: myprofile.getPhoneNumber,
                                     user: widget.user,
                                     chats: getchatroomfiles(),
-                                    herotag: widget.chatroom.id,
                                     profile: otherprofile,
                                     sentData: getsentfromdata(),
                                   );
                           },
                         )).then((value) {
                           if (value == null) return;
-                          widget.user = value;
+                          if (value["firebaseuser"] != null) {
+                            widget.user = value["firebaseuser"];
+                          }
+                          if (value["chatroom"] != null) {
+                            widget.chatroom = value["chatroom"];
+                          }
                         });
                       },
                       focusColor: MyColors.focusColor,
@@ -408,16 +462,27 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   Widget topactions(BuildContext context) {
-    String? photourl = !widget.chatroom.isitgroup
-        ? getotherprofile().photourl
-        : widget.chatroom.groupinfo!.photourl;
-    String? title = !widget.chatroom.isitgroup
-        ? getotherprofile().getName
-        : widget.chatroom.groupinfo!.name;
+    Profile? otherprofile;
+    String? photourl;
+    String? title;
+    String? status;
+    if (widget.chatroom.isitgroup) {
+      photourl = widget.chatroom.groupinfo!.photourl;
+      title = widget.chatroom.groupinfo!.name;
+      status = decodegroupstatus();
+    } else {
+      otherprofile = getotherprofile();
+      photourl = otherprofile.photourl;
+      title = otherprofile.getName;
+      status = decodestatus(statuses[otherprofile.getPhoneNumber]);
+    }
+
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       scrollDirection: Axis.horizontal,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           IconButton(
               onPressed: () {
@@ -428,13 +493,28 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
           const SizedBox(width: 20),
           profilewidget(photourl, 45),
           const SizedBox(width: 20),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w400,
-              fontSize: 20,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 20,
+                ),
+              ),
+              if (status != null && status != "offline")
+                Text(
+                  status,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -596,6 +676,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
     myprofile = getmyprofile();
     markasallread();
     listentochatroomchanges();
+    listentostatuses();
   }
 
   void markasallread() {
@@ -629,23 +710,34 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   void pickfromgallery() async {
     Navigator.maybePop(context);
-    FilePickerResult? result;
-    result = await FilePicker.platform
-        .pickFiles(allowMultiple: false, type: FileType.image);
-    if (result == null) return;
-    file = await compressimage(File(result.files.first.path!), 80);
-    sendmessage(type: FileType.image);
+    Picker picker = Picker(onResult: (value) async {
+      if (value != null) {
+        file = await compressimage(value, 80);
+        sendmessage(type: FileType.image);
+      }
+    });
+    picker.pickimage();
   }
 
   void pickfromfiles() async {
     Navigator.maybePop(context);
-    FilePickerResult? result = await FilePicker.platform
-        .pickFiles(allowMultiple: false, type: FileType.any);
-    if (result == null) return;
-    // files over the 20MB are not allowed for now
-    if (result.files.first.size > 20971520) return;
-    file = File(result.files.first.path!);
-    sendmessage(type: FileType.media, name: result.files.first.name);
+    bool isgranted = await Permission.manageExternalStorage.request().isGranted;
+    if (!isgranted) {
+      Toast("allow the permission to send files");
+      return;
+    }
+    Picker picker = Picker(onResult: (result) {
+      if (result == null) {
+        return;
+      }
+      if (result.lengthSync() > 20971520) {
+        // files over the 20MB are not allowed for now
+        Toast("file is too big too send !!");
+      }
+      file = result;
+      sendmessage(type: FileType.media, name: getfilename(file!));
+    });
+    picker.pickfile();
   }
 
   void pickfromcamera() {
@@ -707,16 +799,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
   }
 
   void openfile(Chat chat) {
-    File file = File("storage/emulated/0/Download/${chat.fileinfo!.filename}");
-    if (chat.fileinfo!.fileexist) {
-      if (chat.fileinfo!.file != null) {
-        log("file:${chat.fileinfo!.file!.path}");
-        // ignore: deprecated_member_use
-        launch("file:${chat.fileinfo!.file!.path}");
-      } else if (file.existsSync() && file.lengthSync() != 0) {
-        // ignore: deprecated_member_use
-        launch("file:${file.path}");
-      }
+    // if file exist in at the moment open it
+    if (chat.fileinfo!.file != null) {
+      intent.Intent.openfile(chat.fileinfo!.file!);
+      return;
+    } else {
+      Toast("file doesnt exist !!");
     }
   }
 
@@ -742,5 +830,82 @@ class _ChatRoomActivityState extends State<ChatRoomActivity> {
 
   void unfocus() {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
+  }
+
+  void listentostatuses() {
+    // intialize all status to offline first
+    for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
+      statuses[widget.chatroom.connectedPersons[i].getPhoneNumber] = 0;
+    }
+    // listen to changes
+    statuses.forEach((key, value) {
+      listener = db.collection("status").doc(key).snapshots().listen((event) {
+        statuses[key] = event.data()?.cast<String, int>()["status"] ?? 0;
+        log("$key : ${statuses[key]} updated");
+        if (!mounted) return;
+        setState(() {});
+      });
+    });
+  }
+
+  String decodestatus(int? status) {
+    if (status == null) {
+      return "offline";
+    }
+    switch (status) {
+      case 0:
+        return "offline";
+      case 1:
+        return "online";
+      case 2:
+        return "typing";
+      default:
+        return "offline";
+    }
+  }
+
+  String? decodegroupstatus() {
+    Map<String, int> typingmembers = {};
+    statuses.forEach((key, value) {
+      if (value == 2) {
+        typingmembers[key] = value;
+      }
+    });
+    // remove my profile
+    typingmembers.remove(myprofile.getPhoneNumber);
+
+    // if its empty return
+    if (typingmembers.isEmpty) {
+      return null;
+    }
+
+    // get all of their profiles by their phoneno
+    List<Profile> typingprofiles = [];
+    for (Profile profile in widget.chatroom.connectedPersons) {
+      if (typingmembers.containsKey(profile.getPhoneNumber)) {
+        typingprofiles.add(profile);
+      }
+    }
+    String finalStatusString = "";
+    for (int i = 0; i < typingprofiles.length; i++) {
+      finalStatusString += typingprofiles[i].getName;
+      if (i != typingprofiles.length - 1) {
+        finalStatusString += ", ";
+      } else {
+        finalStatusString += " ";
+      }
+    }
+
+    // check if only one member is typing or more that that
+    if (typingprofiles.length == 1) {
+      finalStatusString += "is typing";
+    } else {
+      finalStatusString += "are typing";
+    }
+    return finalStatusString;
+  }
+
+  String getfilename(File file) {
+    return file.uri.pathSegments.last;
   }
 }

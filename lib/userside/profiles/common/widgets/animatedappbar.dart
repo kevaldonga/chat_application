@@ -1,25 +1,31 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 import '../../../../assets/colors/colors.dart';
+import 'buildcircle.dart';
 import 'getprofilecircle.dart';
 
 class CustomAppbar extends SliverPersistentHeaderDelegate {
+  bool areyouadmin;
   final Object herotag;
   final String name;
   final String? url;
-  final String phoneno;
   double screenWidth;
   Tween<double>? profilePicTranslateTween;
   final VoidCallback onbackpressed;
+  VoidCallback? onprofiletap;
+  File? file;
 
   CustomAppbar({
+    this.onprofiletap,
+    this.url,
+    this.areyouadmin = false,
+    this.file,
     required this.onbackpressed,
     required this.herotag,
     required this.screenWidth,
-    this.url,
-    required this.phoneno,
     required this.name,
   }) {
     profilePicTranslateTween =
@@ -36,6 +42,8 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
   static final phoneNumberFontSizeTween = Tween<double>(begin: 20.0, end: 16.0);
 
   static final profileImageRadiusTween = Tween<double>(begin: 3.5, end: 1.0);
+
+  static final editIconTween = Tween<double>(begin: 1, end: 0);
 
   @override
   Widget build(
@@ -92,7 +100,42 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
           ..scale(
             profileImageRadiusTween.transform(relativeFullScrollOffset),
           ),
-        child: Hero(tag: herotag, child: profilewidget(url, 40)));
+        child: GestureDetector(
+          onTap: areyouadmin ? onprofiletap : null,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Hero(
+                  tag: herotag,
+                  child: file != null
+                      ? ClipOval(
+                          child: SizedBox.fromSize(
+                            size: const Size(40, 40),
+                            child: Image.file(file!, fit: BoxFit.cover),
+                          ),
+                        )
+                      : profilewidget(url, 40)),
+              if (areyouadmin)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Opacity(
+                    opacity: editIconTween.transform(relativeFullScrollOffset),
+                    child: buildcircle(
+                      color: Colors.white,
+                      padding: 1,
+                      child: buildcircle(
+                        color: MyColors.primarySwatch,
+                        padding: 3,
+                        child: const Icon(Icons.edit,
+                            size: 6, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ));
   }
 
   Widget displayName(double relativeFullScrollOffset, String name) {
@@ -135,8 +178,9 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
 }
 
 class PhoneAndName extends StatelessWidget {
-  final String phoneno, name;
-  const PhoneAndName({Key? key, required this.phoneno, required this.name})
+  final String? description;
+  final String name;
+  const PhoneAndName({Key? key, required this.description, required this.name})
       : super(key: key);
 
   @override
@@ -153,12 +197,13 @@ class PhoneAndName extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          phoneno,
-          style: const TextStyle(
-            fontSize: 16,
+        if (description != null)
+          Text(
+            description!,
+            style: const TextStyle(
+              fontSize: 16,
+            ),
           ),
-        ),
         const SizedBox(height: 30),
       ],
     );

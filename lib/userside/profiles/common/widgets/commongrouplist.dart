@@ -3,8 +3,7 @@ import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/dashview/common/widgets/chatroomitem_shimmer.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../assets/colors/colors.dart';
-import 'getprofilecircle.dart';
+import 'groupinfoitem.dart';
 
 class CommonGroupList extends StatefulWidget {
   final List<String> phonenos;
@@ -31,7 +30,7 @@ class _CommonGroupListState extends State<CommonGroupList> {
     md = MediaQuery.of(context);
     return Container(
       padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.only(top: 15, bottom: 15, left: 10, right: 10),
+      margin: const EdgeInsets.only(left: 10, right: 10, top: 15),
       width: double.maxFinite,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(13),
@@ -65,7 +64,11 @@ class _CommonGroupListState extends State<CommonGroupList> {
             ),
           if (intialized)
             ...List.generate(commongroups!.length, (index) {
-              return chatroomitem(commongroups![index]);
+              return chatroomitem(
+                  url: commongroups![index].photourl,
+                  name: commongroups![index].name,
+                  bio: commongroups![index].bio,
+                  md: md);
             }),
         ],
       ),
@@ -85,55 +88,5 @@ class _CommonGroupListState extends State<CommonGroupList> {
       if (!mounted) return;
       setState(() {});
     });
-  }
-
-  Widget chatroomitem(GroupInfo groupinfo) {
-    return Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        width: md.size.width,
-        color: Colors.white,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            profilewidget(groupinfo.photourl, md.size.width * 0.12),
-            SizedBox(width: md.size.width * 0.08),
-            middleactions(groupinfo),
-          ],
-        ));
-  }
-
-  Widget middleactions(GroupInfo groupinfo) {
-    return Container(
-      constraints: BoxConstraints.loose(Size.fromWidth(md.size.width * 0.5)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // group name
-          Text(
-            groupinfo.name,
-            softWrap: false,
-            overflow: TextOverflow.fade,
-            style: const TextStyle(
-              fontSize: 19,
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          // group bio
-          if (groupinfo.bio != null)
-            Text(
-              groupinfo.bio!,
-              softWrap: false,
-              style: const TextStyle(
-                fontSize: 15,
-                color: MyColors.textsecondary,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

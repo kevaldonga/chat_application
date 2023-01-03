@@ -1,8 +1,8 @@
 class FirebaseUser {
   Map<String, bool> mediavisibility;
   // {
-  // "publicemailid" : true,
-  // "privateemailid"  : false,
+  // "chatroomid" : true,
+  // "chatroomid2"  : false,
   // }
 
   FirebaseUser({

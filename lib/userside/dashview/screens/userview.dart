@@ -5,7 +5,7 @@ import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/assets/logic/toast.dart';
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
@@ -262,16 +262,17 @@ class _UserViewState extends State<UserView> {
             break;
           case Profileop.signout:
             bool yousure = await showdialog(
-                context,
-                const Text("Are you sure ?"),
-                const Text("Are you sure you want to sign out ? "), [
-              alertdialogactionbutton("BACK", () {
-                Navigator.of(context).pop(false);
-              }),
-              alertdialogactionbutton("YES", () {
-                Navigator.of(context).pop(true);
-              }),
-            ]);
+                context: context,
+                title: const Text("Are you sure ?"),
+                contents: const Text("Are you sure you want to sign out ? "),
+                actions: [
+                  alertdialogactionbutton("BACK", () {
+                    Navigator.of(context).pop(false);
+                  }),
+                  alertdialogactionbutton("YES", () {
+                    Navigator.of(context).pop(true);
+                  }),
+                ]);
             if (yousure) {
               cancellisteners();
               await AuthFirebase.signout();

@@ -27,7 +27,7 @@ Widget bio({required String? bio, required String name}) {
         Text(
           bio != null && bio != "null"
               ? bio
-              : "$name haven't specified the bio yet.",
+              : "bio haven't been specified yet.",
           softWrap: true,
           style: const TextStyle(
             fontSize: 15,

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/assets/logic/Toast.dart';
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -135,7 +135,7 @@ class _ImageViewState extends State<ImageView> {
     GallerySaver.saveImage(path).then((value) {
       Toast("image saved successfully!");
     }).onError((error, stackTrace) {
-      Toast("These was error occured - $error");
+      Toast("There was error occured - $error");
     });
   }
 }

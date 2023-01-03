@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:file_picker/file_picker.dart';
+// import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -62,10 +63,11 @@ class _MyProfileState extends State<MyProfile> {
       onWillPop: () async {
         isdatachanged();
         bool a = await showdialog(
-          context,
-          const Text("Are you sure ?"),
-          const Text("are you sure you want to update your profile ?"),
-          [
+          context: context,
+          title: const Text("Are you sure ?"),
+          contents:
+              const Text("are you sure you want to update your profile ?"),
+          actions: [
             alertdialogactionbutton(
                 "YES", () => Navigator.of(context).pop(true)),
             alertdialogactionbutton(
@@ -112,13 +114,9 @@ class _MyProfileState extends State<MyProfile> {
 
   Widget _profilewidget(MediaQueryData md) {
     return GestureDetector(
-      onTap: () async {
-        FilePickerResult? picker;
-        picker = await FilePicker.platform
-            .pickFiles(allowMultiple: false, type: FileType.image);
-        if (picker == null) return;
-        file = await compressimage(File(picker.files.single.path!), 80);
-        setState(() {});
+      onTap: () {
+        Picker picker = Picker(onResult: onFileResult);
+        picker.pickimage();
       },
       child: Stack(
         children: [
@@ -299,5 +297,13 @@ class _MyProfileState extends State<MyProfile> {
         file == null) {
       Navigator.of(context).pop(widget.profile);
     }
+  }
+
+  void onFileResult(File? value) async {
+    if (value == null) {
+      return;
+    }
+    file = await compressimage(value, 80);
+    setState(() {});
   }
 }

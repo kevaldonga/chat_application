@@ -1,7 +1,7 @@
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/toast.dart';
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -232,9 +232,9 @@ class _FabActionsState extends State<FabActions> {
     String phone = "";
     String? result;
     bool? response = await showdialog(
-        context,
-        const Text("add chatroom"),
-        textfieldmaterial(
+        context: context,
+        title: const Text("add chatroom"),
+        contents: textfieldmaterial(
           keyboardtype: TextInputType.number,
           label: "phoneno",
           onchanged: (value) {
@@ -242,7 +242,7 @@ class _FabActionsState extends State<FabActions> {
           },
           maxlength: 10,
         ),
-        [
+        actions: [
           alertdialogactionbutton("ADD", () async {
             if (phone.length < 10) {
               Toast("too short!!");
@@ -332,7 +332,7 @@ class _FabActionsState extends State<FabActions> {
       }
     }
     // get personal info like email, name by uid
-    String uid = await Database.getuid(phone) ?? "";
+    String uid = await Database.getuid(phone);
     late Profile otherprofile;
     await getpersonalinfo(uid).then((value) {
       otherprofile = Profile.fromMap(data: value);
