@@ -23,13 +23,14 @@ class ChatBubble extends StatefulWidget {
   Chat chat;
   Profile? profile;
   bool mediavisibility;
-  final Directory dir;
+  final String documentpath, mediapath;
   ChatBubble({
     super.key,
     this.profile,
     this.margin,
     required this.mediavisibility,
-    required this.dir,
+    required this.documentpath,
+    required this.mediapath,
     required this.chat,
     required this.position,
     required this.issentfromme,
@@ -197,14 +198,14 @@ class _ChatBubbleState extends State<ChatBubble> {
     initfilepath();
     String path = widget.issentfromme
         ? widget.chat.fileinfo!.path!
-        : "storage/emulated/0/Download/chatty/${widget.chat.fileinfo!.filename}";
+        : widget.mediavisibility
+            ? "${widget.mediapath}/files/FILE${widget.chat.fileinfo!.filename}"
+            : "${widget.documentpath}/files/FILE${widget.chat.fileinfo!.filename}";
     widget.chat.fileinfo!.fileexist = File(path).existsSync();
     if (widget.chat.fileinfo!.fileexist) {
       widget.chat.fileinfo!.file = File(path);
     }
-    bool shoulddownload = !widget.chat.fileinfo!.fileexist &&
-        !widget.issentfromme &&
-        download == null;
+    bool shoulddownload = !widget.chat.fileinfo!.fileexist && download == null;
     final contentcolor =
         widget.issentfromme ? Colors.white : MyColors.primarySwatch;
     return Padding(
@@ -365,8 +366,9 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   void filedownloadtostorage() async {
     FirebaseStorage storage = FirebaseStorage.instance;
-    String mydir =
-        "storage/emulated/0/Download/chatty/${widget.chat.fileinfo!.filename}";
+    String mydir = widget.mediavisibility
+        ? "${widget.mediapath}/files/${widget.chat.fileinfo!.filename}"
+        : "${widget.documentpath}/files/FILE${widget.chat.fileinfo!.filename}";
     File file = File(mydir);
     // creates the file first before writing anything
     file = await file.create(recursive: true);
@@ -386,7 +388,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     initimageexist();
     if (widget.chat.fileinfo!.fileexist) return;
     FirebaseStorage storage = FirebaseStorage.instance;
-    File file = File("${widget.dir.path}/images/IMG${widget.chat.id}.jpg");
+    File file = File("${widget.documentpath}/images/IMG${widget.chat.id}.jpg");
     file = await file.create(recursive: true);
     storage
         .ref("/chats/${widget.chat.id}")
@@ -410,7 +412,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     GallerySaver.saveImage(widget.chat.fileinfo!.file!.path,
             albumName: "chatty", toDcim: true)
         .whenComplete(() {
-      log("file has been stored");
+      log("image ${widget.chat.id} has been stored");
       widget.chat.fileinfo!.fileexist = true;
       Database.updatechat(widget.chat);
     });
@@ -430,7 +432,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
   void initimageexist() {
-    String path = "${widget.dir.path}/images/IMG${widget.chat.id}.jpg";
+    String path = "${widget.documentpath}/images/IMG${widget.chat.id}.jpg";
     final File file = File(path);
     widget.chat.fileinfo!.fileexist = file.existsSync();
     if (widget.chat.fileinfo!.fileexist) {

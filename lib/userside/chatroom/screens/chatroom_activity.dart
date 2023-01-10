@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
@@ -15,14 +16,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../assets/SystemChannels/toast.dart';
 import '../../../assets/colors/colors.dart';
 import '../../../assets/logic/FirebaseUser.dart';
 import '../../../assets/logic/chat.dart';
-import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../../../constants/chatbubble_position.dart';
 import '../../../constants/enumFIleType.dart';
 import '../../dashview/common/widgets/imageview.dart';
@@ -32,6 +31,7 @@ import '../../profiles/common/functions/getpersonalinfo.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/functions/formatdate.dart';
 import '../common/functions/generateid.dart';
+import '../common/functions/openfile.dart';
 import '../common/functions/sameday.dart';
 import '../common/widgets/chatbubble.dart';
 import '../common/widgets/chatroomactivity_shimmer.dart';
@@ -60,7 +60,8 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   late FirebaseFirestore db;
   late Profile myprofile;
   late bool canishowfab;
-  Directory? dir;
+  String? documentpath;
+  String? mediapath;
   late VoidCallback scrollcontrollerlistener;
   File? file;
   TextEditingController controller = TextEditingController();
@@ -123,7 +124,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
   @override
   Widget build(BuildContext context) {
-    if (dir == null) {
+    if (documentpath == null || mediapath == null) {
       return Container();
     }
     ThemeData theme = Theme.of(context);
@@ -149,7 +150,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     }
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(widget.chatroom);
+        onbackpressed();
         return false;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -372,7 +373,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       height: md.size.height * 0.78 - md.viewInsets.bottom,
       padding: const EdgeInsets.only(left: 16, right: 16),
       alignment: Alignment.bottomCenter,
-      child: dir == null
+      child: documentpath == null || mediapath == null
           ? ShimmerChatRoomActivity()
           : ListView.separated(
               addAutomaticKeepAlives: false,
@@ -419,10 +420,11 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                               ? 10
                               : 0),
                       child: ChatBubble(
-                          mediavisibility: widget.user.mediavisibility[
-                                  getotherprofile().getEmail] ??
-                              true,
-                          dir: dir!,
+                          mediavisibility:
+                              widget.user.mediavisibility[widget.chatroom.id] ??
+                                  true,
+                          documentpath: documentpath!,
+                          mediapath: mediapath!,
                           profile: widget.chatroom.isitgroup
                               ? getotherprofile(currentchat.sentFrom)
                               : null,
@@ -486,7 +488,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         children: [
           IconButton(
               onPressed: () {
-                Navigator.of(context).pop(widget.chatroom);
+                onbackpressed();
               },
               icon: const Icon(Icons.arrow_back_ios_rounded,
                   color: MyColors.primarySwatch)),
@@ -668,12 +670,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     });
   }
 
-  void init() {
-    getApplicationDocumentsDirectory().then((val) {
-      dir = val;
-      scrolltobottom();
-    });
+  void init() async {
+    documentpath = await PathProvider.documentDirectory();
+    mediapath = await PathProvider.mediaDirectory();
+    scrolltobottom();
     myprofile = getmyprofile();
+    statuses[myprofile.getPhoneNumber] = Status.online;
+    Database.updatestatus(myprofile.getPhoneNumber, Status.online);
     markasallread();
     listentochatroomchanges();
     listentostatuses();
@@ -769,7 +772,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     } else if (widget.chatroom.chats[index].fileinfo?.type == FileType.image) {
       openImage(widget.chatroom.chats[index]);
     } else {
-      openfile(widget.chatroom.chats[index]);
+      openfile(widget.chatroom.chats[index].fileinfo!.file!);
     }
   }
 
@@ -795,16 +798,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
             duration: const Duration(milliseconds: 200),
             _scrollcontroller.position.maxScrollExtent + 30);
       });
-    }
-  }
-
-  void openfile(Chat chat) {
-    // if file exist in at the moment open it
-    if (chat.fileinfo!.file != null) {
-      intent.Intent.openfile(chat.fileinfo!.file!);
-      return;
-    } else {
-      Toast("file doesnt exist !!");
     }
   }
 
@@ -907,5 +900,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
   String getfilename(File file) {
     return file.uri.pathSegments.last;
+  }
+
+  void onbackpressed() {
+    statuses[myprofile.getPhoneNumber] = Status.offline;
+    Database.updatestatus(myprofile.getPhoneNumber, Status.offline);
+    listener.cancel();
+    log("canceled status listener");
+    Navigator.of(context).pop(widget.chatroom);
   }
 }

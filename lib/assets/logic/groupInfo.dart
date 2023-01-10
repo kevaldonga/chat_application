@@ -20,6 +20,7 @@ class GroupInfo {
       if (photourl != null) "photourl": photourl,
       if (bio != null) "bio": bio,
       "admins": admins,
+      if (bio != "" && bio != null) "bio": bio,
     };
   }
 

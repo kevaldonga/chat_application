@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/userside/chatroom/common/functions/openfile.dart';
 import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../../assets/colors/colors.dart';
 import '../../../../assets/logic/chat.dart';
@@ -24,6 +25,7 @@ class ImageView extends StatefulWidget {
 
 enum popupmenu {
   save,
+  viewinGallery,
 }
 
 class _ImageViewState extends State<ImageView> {
@@ -47,15 +49,28 @@ class _ImageViewState extends State<ImageView> {
               itemBuilder: (context) {
                 return [
                   popupMenuItem(
-                      value: popupmenu.save,
-                      child: Row(
-                        children: const [
-                          Icon(Icons.save, color: MyColors.seconadaryswatch),
-                          SizedBox(width: 30),
-                          Text("save"),
-                        ],
-                      ),
-                      height: 20),
+                    value: popupmenu.save,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.save, color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("save"),
+                      ],
+                    ),
+                    height: 20,
+                  ),
+                  popupMenuItem(
+                    value: popupmenu.viewinGallery,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.remove_red_eye,
+                            color: MyColors.seconadaryswatch),
+                        SizedBox(width: 30),
+                        Text("view in gallery"),
+                      ],
+                    ),
+                    height: 20,
+                  ),
                 ];
               },
               onSelected: (value) async {
@@ -66,21 +81,22 @@ class _ImageViewState extends State<ImageView> {
                       saveimage(widget.chat.fileinfo!.file!.path);
                     } else {
                       // save image first to temp directory from cloud
-                      final dir = await getTemporaryDirectory();
-                      String path =
-                          "${dir.path}/chatty/images/IMG${widget.chat.id}.jpg";
-                      File file = File(path);
-                      file = await file.create(recursive: true).then((value) {
-                        file = value;
-                        FirebaseStorage.instance
-                            .ref("chats/${widget.chat.id}")
-                            .writeToFile(value)
-                            .whenComplete(() {
-                          saveimage(value.path);
-                        });
-                        return value;
+                      downloadimagetotemp(whenComplete: (file) {
+                        saveimage(file.path);
                       });
                     }
+                    break;
+                  case popupmenu.viewinGallery:
+                    if (widget.chat.fileinfo!.file != null) {
+                      // open the file
+                      openfile(widget.chat.fileinfo!.file!);
+                    } else {
+                      // download image to temporary directory
+                      downloadimagetotemp(whenComplete: (file) {
+                        openfile(file);
+                      });
+                    }
+                    break;
                 }
               },
               child: const Icon(Icons.more_vert_rounded, color: Colors.white),
@@ -136,6 +152,24 @@ class _ImageViewState extends State<ImageView> {
       Toast("image saved successfully!");
     }).onError((error, stackTrace) {
       Toast("There was error occured - $error");
+    });
+  }
+
+  Future<File> savetoTempPath() async {
+    String? temppath = await PathProvider.tempDirectory();
+    String path = "$temppath/IMG${widget.chat.id}.jpg";
+    File file = File(path);
+    return file;
+  }
+
+  void downloadimagetotemp({required Function(File file) whenComplete}) async {
+    File file = await savetoTempPath();
+    file = await file.create(recursive: true);
+    FirebaseStorage.instance
+        .ref("chats/${widget.chat.id}")
+        .writeToFile(file)
+        .whenComplete(() {
+      whenComplete(file);
     });
   }
 }

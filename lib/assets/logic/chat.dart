@@ -55,7 +55,7 @@ class Chat {
       "time": _time.toString(),
       "sentfrom": _sentFrom,
       "read": _read,
-      if (text != "") "text": _text,
+      if (text != "" && text != null) "text": _text,
     };
     if (fileinfo == null) return data;
     if (fileinfo!.path != null && fileinfo!.path != "null") {
@@ -73,7 +73,7 @@ class Chat {
 
   @override
   String toString() {
-    return "id = $_id || filename = ${fileinfo?.filename} || fileexist = ${fileinfo?.fileexist} || url = ${fileinfo?.url} || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
+    return "id = $_id || fileinfo = $fileinfo || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
   }
 }
 

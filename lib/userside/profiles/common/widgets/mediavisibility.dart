@@ -20,7 +20,6 @@ class _MediaVisibilityState extends State<MediaVisibility> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
       margin: const EdgeInsets.only(top: 15, left: 10, right: 10),
       width: double.maxFinite,
       decoration: BoxDecoration(
@@ -94,29 +93,32 @@ class _MediaVisibilityState extends State<MediaVisibility> {
               ],
             );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Media visibility",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Media visibility",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                widget.user.mediavisibility[widget.id] ?? true ? "On" : "Off",
-                softWrap: true,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: MyColors.textsecondary,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 5),
+                Text(
+                  widget.user.mediavisibility[widget.id] ?? true ? "On" : "Off",
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: MyColors.textsecondary,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

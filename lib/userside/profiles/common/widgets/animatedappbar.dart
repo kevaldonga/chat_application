@@ -190,7 +190,7 @@ class PhoneAndName extends StatelessWidget {
       children: [
         const SizedBox(height: 35),
         Text(
-          "~$name",
+          name,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,

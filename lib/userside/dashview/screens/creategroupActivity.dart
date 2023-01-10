@@ -93,8 +93,8 @@ class _CreateGroupState extends State<CreateGroup> {
           foregroundColor: Colors.white,
           splashColor: const Color.fromARGB(255, 105, 103, 208),
           onPressed: () {
-            if (groupname.text.isEmpty || groupdescription.text.isEmpty) {
-              Toast("fill the fields before submitting !");
+            if (groupname.text.isEmpty) {
+              Toast("group must have a name");
               return;
             }
             creategroup();
@@ -345,6 +345,7 @@ class _CreateGroupState extends State<CreateGroup> {
           GestureDetector(
             onTap: () {
               setState(() {
+                widget.users.add(profile);
                 widget.admins.remove(profile);
               });
             },
@@ -385,6 +386,7 @@ class _CreateGroupState extends State<CreateGroup> {
         setState(() {
           scrolltoend();
           widget.admins.add(profile);
+          widget.users.remove(profile);
         });
       },
       child: Padding(
@@ -440,7 +442,10 @@ class _CreateGroupState extends State<CreateGroup> {
       connectedPersons: widget.admins + widget.users,
       chats: [],
       groupinfo: GroupInfo(
-          photourl: url, name: groupname.text, admins: getadminsphoneno()),
+          photourl: url,
+          name: groupname.text,
+          bio: groupdescription.text,
+          admins: getadminsphoneno()),
     );
     Database.writechatroom(chatroom).whenComplete(() {
       EasyLoading.dismiss();

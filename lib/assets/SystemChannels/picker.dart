@@ -21,6 +21,7 @@ class Picker {
 
   void pickimage() async {
     var path = await _channel.invokeMethod("imagepicker", {"multiple": false});
+    log("image picked $path");
     onResult(File(path));
   }
 }
