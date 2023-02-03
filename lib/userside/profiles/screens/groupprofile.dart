@@ -6,6 +6,7 @@ import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/profiles/common/functions/setprofileimage.dart';
 import 'package:chatty/userside/profiles/common/widgets/animatedappbar.dart';
 import 'package:chatty/userside/profiles/common/widgets/groupinfoitem.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,7 @@ class GroupProfile extends StatefulWidget {
 }
 
 class _GroupProfileState extends State<GroupProfile> {
+  String? name, bio;
   File? file;
   late MediaQueryData md;
   late bool amIadmin;
@@ -98,7 +100,7 @@ class _GroupProfileState extends State<GroupProfile> {
                         description: null,
                         name: widget.chatroom.groupinfo!.name,
                       ),
-                      bio(
+                      bioWidget(
                         bio: widget.chatroom.groupinfo!.bio,
                         name: widget.chatroom.groupinfo!.name,
                       ),
@@ -131,7 +133,23 @@ class _GroupProfileState extends State<GroupProfile> {
     );
   }
 
-  void onbackpressed(context) {
+  void onbackpressed(context) async {
+    bool diditchange = file != null || name != null || bio != null;
+    if (diditchange) {
+      Toast("saving info...");
+    }
+    if (file != null) {
+      String url = await setuserprofile(file!);
+      widget.chatroom.groupinfo!.photourl = url;
+    }
+    if (name != null) {
+      widget.chatroom.groupinfo!.name = name!;
+    }
+    if (bio != null) {
+      widget.chatroom.groupinfo!.bio = bio!;
+    }
+    await Database.writegroupinfo(
+        widget.chatroom.id, widget.chatroom.groupinfo!);
     Navigator.of(context)
         .pop({"chatroom": widget.chatroom, "firebaseuser": widget.user});
   }

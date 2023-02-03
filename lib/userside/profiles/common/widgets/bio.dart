@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../assets/colors/colors.dart';
 
-Widget bio({required String? bio, required String name}) {
+Widget bioWidget({required String? bio, required String name}) {
   return Container(
     padding: const EdgeInsets.all(15),
     margin: const EdgeInsets.only(top: 25, left: 10, right: 10),

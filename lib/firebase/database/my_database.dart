@@ -2,19 +2,22 @@ import 'dart:developer';
 
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/groupInfo.dart';
+import 'package:chatty/hive%20database/database_hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:flutter/foundation.dart';
 import '../../assets/logic/chat.dart';
 import '../../assets/logic/profile.dart';
-import '../../userside/profiles/common/functions/getpersonalinfo.dart';
 
 class Database {
   static FirebaseFirestore? _db;
 
-  static Future<void> writechat(
-      {required Chat chat, required String chatroomid}) async {
+  static Future<void> writechat({
+    required Chat chat,
+    required String chatroomid,
+  }) async {
     _db ??= FirebaseFirestore.instance;
     // write it globally
     await _db?.collection("chats").doc(chat.id).set(chat.toMap());
@@ -24,6 +27,7 @@ class Database {
     await _db?.collection("chatrooms").doc(chatroomid).update({
       "chatids": FieldValue.arrayUnion([chat.id])
     });
+    await MyHive.writechat(chat: chat, chatroomid: chatroomid);
     log("written chat $chat");
   }
 
@@ -33,20 +37,35 @@ class Database {
     // update it only by its id
     // dont need anything
     await _db?.collection("chats").doc(chat.id).update(chat.toMap());
+    await MyHive.updatechat(chat);
     log("updated chat $chat");
   }
 
   static Future<Chat?> readchat(String id) async {
+    Chat? chat = await MyHive.readchat(id);
+
+    // only changable item is read in chat
+    // we first check if that property can be changed now or not
+    // like if read is true it cant be false now so it is safe to read from storage
+    if (chat != null && chat.isread) {
+      return chat;
+    }
     _db ??= FirebaseFirestore.instance;
-    Map<String, dynamic>? chat = {};
+    Map<String, dynamic>? data = {};
     await _db?.collection("chats").doc(id).get().then((value) {
-      chat = value.data();
+      data = value.data();
     });
-    if (chat == null) {
+    if (data == null) {
       return null;
     }
+    chat = Chat.fromMap(chat: data!);
+
+    // now check if read is changed or not so we can finally update chat on storage
+    if (chat.isread) {
+      await MyHive.updatechat(chat);
+    }
     log("retrived chat $chat");
-    return Chat.fromMap(chat: chat!);
+    return chat;
   }
 
   static Future<void> writechatroom(ChatRoom chatroom) async {
@@ -83,82 +102,132 @@ class Database {
         "chatroomids": FieldValue.arrayUnion([chatroom.id]),
       }, SetOptions(merge: true));
     }
+    await MyHive.writechatroom(chatroom);
   }
 
-  static Future<ChatRoom> readchatroom({required String id}) async {
+  static Future<ChatRoom?> readchatroom({
+    required String id,
+    required Profile myprofile,
+  }) async {
+    ChatRoom? chatroom = await MyHive.readchatroom(id);
+
     _db ??= FirebaseFirestore.instance;
-    Map<String, dynamic>? data = {};
+
+    Map<String, dynamic> data = {};
     await _db?.collection("chatrooms").doc(id).get().then((value) {
-      data = value.data();
+      data = value.data() ?? {};
     });
-    // get groupinfo if available
+
+    // check if data is empty just return storage copy of chatroom
+    if (data.isEmpty) {
+      return chatroom;
+    }
+    List<Chat> chats = [];
+    if (chatroom != null) {
+      // check for chats added or removed
+      List<String> firestorechats = data["chatids"];
+      List<String> hivechats = List.generate(chatroom.chats.length, (index) {
+        return chatroom.chats[index].id;
+      });
+
+      if (firestorechats.length > hivechats.length) {
+        List<String> chatstobeadded = subtractcommon(firestorechats, hivechats);
+        for (int i = 0; i < chatstobeadded.length; i++) {
+          Chat? chat = await readchat(id);
+          if (chat != null) {
+            chatroom.chats.add(chat);
+            // write new chat to storage
+            await MyHive.writechat(chat: chat, chatroomid: chatroom.id);
+          }
+        }
+      } else if (firestorechats.length < hivechats.length) {
+        // these chats will be added to firestore from storage
+        List<String> chatstobeadded = subtractcommon(hivechats, firestorechats);
+        for (int i = 0; i < chatstobeadded.length; i++) {
+          await writechat(
+              chat: chatroom.chats
+                  .where((element) => element.id == chatstobeadded[i])
+                  .first,
+              chatroomid: id);
+        }
+      }
+    } else {
+      // gets all chats ids
+      List<dynamic> chatids = data["chatids"] ?? [];
+
+      // get chats by its ids
+      for (int i = 0; i < chatids.length; i++) {
+        Chat? chat = await Database.readchat(chatids[i]);
+        if (chat == null) continue;
+        await MyHive.writechat(chat: chat, chatroomid: id);
+        chats.add(chat);
+      }
+    }
     GroupInfo? groupinfo;
-    if (data?["isitgroup"] ?? false) {
+    if (data["isitgroup"] ?? false) {
       await Database.readgroupinfo(id).then((value) {
         groupinfo = value;
       });
     }
 
-    // gets all chats ids
-    List<dynamic> chatids = data?["chatids"] ?? [];
-    List<Chat> chats = [];
-
-    // get chats by its ids
-    for (int i = 0; i < chatids.length; i++) {
-      Chat? chat = await Database.readchat(chatids[i]);
-      if (chat == null) continue;
-      chats.add(chat);
-    }
-
     // get personal info by getting uids of both parties
-    List<dynamic> uids = data?["connectedpersons"];
-    List<Profile> profiles = [];
+    List<dynamic> uids = data["connectedpersons"];
+    // remove my uid so I dont have to read it again and again
+    uids.remove(FirebaseAuth.instance.currentUser?.uid);
+
+    // we have remove my profile from getting read from database
+    // so we have to manually add it here
+    List<Profile> profiles = [myprofile];
     for (int i = 0; i < uids.length; i++) {
-      profiles.add(Profile.fromMap(data: await getpersonalinfo(uids[i])));
+      profiles.add(await getpersonalinfo(uids[i]));
     }
+
     return ChatRoom(
       id: id,
       connectedPersons: profiles,
-      chats: chats,
+      chats: chatroom == null ? chats : chatroom.chats,
       groupinfo: groupinfo,
     );
   }
 
   static Future<void> writepersonalinfo(Profile profile) async {
     _db ??= FirebaseFirestore.instance;
-    await _db
-        ?.collection("users")
-        .doc(FirebaseAuth.instance.currentUser?.uid)
-        .set(profile.toMap());
+    final String uid = FirebaseAuth.instance.currentUser!.uid;
+    await _db?.collection("users").doc(uid).set(profile.toMap());
+    await MyHive.writepersonalinfo(uid, profile);
     log("inserted value of $profile");
   }
 
   static Future<String> getuid(String phoneno) async {
-    _db = FirebaseFirestore.instance;
-    DocumentSnapshot<Map<String, dynamic>>? data;
-    data = await _db?.collection("userquickinfo").doc(phoneno).get();
-    return data!.data()?["uid"];
+    String? uid = await MyHive.getuid(phoneno);
+    if (uid != null) {
+      return uid;
+    }
+    _db ??= FirebaseFirestore.instance;
+    DocumentSnapshot<Map<String, dynamic>>? data =
+        await _db?.collection("userquickinfo").doc(phoneno).get();
+    await MyHive.setuid(phoneno, data?.data()?["uid"]);
+    return data?.data()?["uid"];
   }
 
   static Future<void> setuid(String phoneno, String uid) async {
-    _db = FirebaseFirestore.instance;
+    _db ??= FirebaseFirestore.instance;
     await _db?.collection("userquickinfo").doc(phoneno).set({"uid": uid});
+    await MyHive.setuid(phoneno, uid);
   }
 
   static Future<List<ChatRoom>?> retrivechatrooms({
+    required Profile myprofile,
     required String uid,
-    Map<String, dynamic>? snapshot,
   }) async {
+    // you dont need to use hive replica function for this
+    // reading chatroom function will handle that automatically
     _db ??= FirebaseFirestore.instance;
     // retrive all ids of connectedchatrooms
     List<dynamic>? chatroomids = [];
-    if (snapshot == null) {
-      await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
-        chatroomids = value.data()?["chatroomids"];
-      });
-    } else {
-      chatroomids = snapshot["chatroomsids"];
-    }
+    await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
+      chatroomids = value.data()?["chatroomids"];
+    });
     if (chatroomids == null) {
       log("chat ids are null");
       return null;
@@ -166,20 +235,23 @@ class Database {
     // retrive all chatrooms by its ids
     List<ChatRoom> chatrooms = [];
     for (int i = 0; i < chatroomids!.length; i++) {
-      chatrooms.add(await Database.readchatroom(id: chatroomids![i]));
+      ChatRoom? chatroom =
+          await readchatroom(id: chatroomids![i], myprofile: myprofile);
+      if (chatroom == null) {
+        continue;
+      }
+      chatrooms.add(chatroom);
     }
     return chatrooms;
   }
 
-  static Future<void> markchatsread(List<Chat> chats, String phoneno) async {
-    _db = FirebaseFirestore.instance;
+  static Future<void> markchatread(Chat chat) async {
+    _db ??= FirebaseFirestore.instance;
 
-    // update all chats individualy by its ids
-    for (int i = 0; i < chats.length; i++) {
-      if (chats[i].sentFrom != phoneno && !chats[i].isread) {
-        await _db?.collection("chats").doc(chats[i].id).update({"read": true});
-      }
+    if (!chat.isread) {
+      await _db?.collection("chats").doc(chat.id).update({"read": true});
     }
+    await MyHive.markchatread(chat);
   }
 
   static Future<List<Chat>> refreshchatroom(
@@ -197,7 +269,7 @@ class Database {
     // and retrive chats from that ids
     for (int i = 0; i < latestchatids.length; i++) {
       if (!chatids.contains(latestchatids[i])) {
-        await Database.readchat(latestchatids[i]).then((value) {
+        await readchat(latestchatids[i]).then((value) {
           chats.add(value!);
         });
       }
@@ -206,7 +278,9 @@ class Database {
   }
 
   static Future<List<ChatRoom>> chatroomidsListener(
-      Map<String, dynamic>? snapshot, List<ChatRoom> chatrooms) async {
+      Map<String, dynamic>? snapshot,
+      List<ChatRoom> chatrooms,
+      Profile myprofile) async {
     _db ??= FirebaseFirestore.instance;
 
     // return if snapshot is null
@@ -230,7 +304,7 @@ class Database {
     // check if need to add or remvoe
     if (newchatroomsids.length < oldchatroomids.length) {
       List<String> idstoberemoved =
-          oldchatroomids.toSet().difference(newchatroomsids.toSet()).toList();
+          subtractcommon(oldchatroomids, newchatroomsids.cast());
 
       // remove chatrooms
       for (int i = 0; i < chatrooms.length; i++) {
@@ -241,15 +315,18 @@ class Database {
       }
       return chatrooms;
     } else {
-      List<String> idstobeadded = newchatroomsids
-          .toSet()
-          .difference(oldchatroomids.toSet())
-          .toList()
-          .cast();
+      List<String> idstobeadded =
+          subtractcommon(newchatroomsids.cast(), oldchatroomids);
 
       // add chatrooms
       for (int i = 0; i < idstobeadded.length; i++) {
-        await Database.readchatroom(id: idstobeadded[i]).then((value) {
+        await readchatroom(id: idstobeadded[i], myprofile: myprofile)
+            .then((value) {
+          // here just throw error if its null
+          if (value == null) {
+            throw ErrorDescription(
+                "there was error occured trying to retrive chatroom from firebase ${idstobeadded[i]}");
+          }
           // check if it exist
           bool shouldadd = true;
           inner:
@@ -269,13 +346,19 @@ class Database {
     }
   }
 
-  static Future<FirebaseUser> readFirebaseUser(String uid) async {
+  static Future<FirebaseUser> readMediavisibility(String uid) async {
+    FirebaseUser? user = await MyHive.readMediavisibility(uid);
+    if (user != null) {
+      return user;
+    }
     _db ??= FirebaseFirestore.instance;
     Map<String, dynamic> mediavisibility = {};
     await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
       mediavisibility = value.data()?["mediavisibility"] ?? {};
     });
-    return FirebaseUser(mediavisibility: mediavisibility.cast<String, bool>());
+    user = FirebaseUser(mediavisibility: mediavisibility.cast<String, bool>());
+    await MyHive.setmediavisibility(uid, user);
+    return user;
   }
 
   static Future<void> setmediavisibility(
@@ -287,6 +370,7 @@ class Database {
         ?.collection("connectedchatrooms")
         .doc(myuid)
         .set(user.toMap(), SetOptions(merge: true));
+    await MyHive.setmediavisibility(myuid, user);
   }
 
   static Future<List<GroupInfo>> intializeCommonGroups(
@@ -297,7 +381,7 @@ class Database {
     // retrive groupinfos by ids
     List<GroupInfo> groupinfos = [];
     for (int i = 0; i < commongroupids.length; i++) {
-      await Database.readgroupinfo(commongroupids[i]).then((value) {
+      await readgroupinfo(commongroupids[i]).then((value) {
         groupinfos.add(value);
       });
     }
@@ -330,13 +414,8 @@ class Database {
     });
 
     // extract commmon chatrooms ids
-    List<String> commonchatroomsids = [];
-    for (int i = 0; i < mychatroomsids.length; i++) {
-      if (userchatroomsids.contains(mychatroomsids[i])) {
-        commonchatroomsids.add(mychatroomsids[i]);
-        continue;
-      }
-    }
+    List<String> commonchatroomsids =
+        extractcommon(userchatroomsids.cast(), mychatroomsids.cast());
 
     // get common groupchatroom ids
     List<String> commongroupids = [];
@@ -348,29 +427,42 @@ class Database {
 
     // intialize group infos
     List<GroupInfo> groupinfos = [];
-    groupinfos = await Database.intializeCommonGroups(commongroupids);
+    groupinfos = await intializeCommonGroups(commongroupids);
     return groupinfos;
   }
 
   static Future<bool> checkExist(String docID) async {
     _db ??= FirebaseFirestore.instance;
     var data = await _db?.collection("groupinfo").doc(docID).get();
-    if (data == null) return false;
-    return data.exists;
+    return data?.exists ?? false;
   }
 
   static Future<GroupInfo> readgroupinfo(String chatroomid) async {
-    _db ??= FirebaseFirestore.instance;
+    // first read groupinfo from firebase and if that comes out null
+    // then we will return groupinfo from storage
     GroupInfo? groupinfo;
-    await _db?.collection("groupinfo").doc(chatroomid).get().then((value) {
-      groupinfo = GroupInfo.fromMap(value.data());
+    _db ??= FirebaseFirestore.instance;
+    await _db
+        ?.collection("groupinfo")
+        .doc(chatroomid)
+        .get()
+        .then((value) async {
+      if (value.data()?.isEmpty ?? true) {
+        groupinfo = await MyHive.readgroupinfo(chatroomid);
+      } else {
+        groupinfo = GroupInfo.fromMap(value.data());
+      }
     });
+    if (groupinfo == null) {
+      throw ErrorDescription("groupinfo was found null please try again later");
+    }
     return groupinfo!;
   }
 
   static Future<void> writegroupinfo(String id, GroupInfo groupinfo) async {
     _db ??= FirebaseFirestore.instance;
     await _db?.collection("groupinfo").doc(id).set(groupinfo.toMap());
+    await MyHive.writegroupinfo(id, groupinfo);
   }
 
   static Future<void> updateparticipants(
@@ -399,7 +491,48 @@ class Database {
   }
 
   static void updatestatus(String phonenno, int status) async {
+    // dont need hive storage replica for status
+    // cause if you are without internet everyone will be offline
+    // reading from storage also will read wrong values
+    // so better not show read them
     _db ??= FirebaseFirestore.instance;
     _db?.collection("status").doc(phonenno).set({"status": status});
+  }
+
+  static Future<Profile> getpersonalinfo(String uid) async {
+    Map<String, dynamic>? data;
+    _db ??= FirebaseFirestore.instance;
+    Profile profile;
+    DocumentSnapshot snapshot = await _db!.collection("users").doc(uid).get();
+    data = snapshot.data() as Map<String, dynamic>?;
+    data ??= await MyHive.getpersonalinfo(uid);
+    if (data == null) {
+      throw ErrorDescription("couldn't get personal info $uid try again later");
+    }
+    profile = Profile.fromMap(data: data);
+    await MyHive.writepersonalinfo(uid, profile);
+    return profile;
+  }
+
+  static List<String> extractcommon(List<String> parent, List<String> child) {
+    List<String> common = [];
+    for (int i = 0; i < child.length; i++) {
+      if (parent.contains(child[i])) {
+        common.add(child[i]);
+        continue;
+      }
+    }
+    return common;
+  }
+
+  static List<String> subtractcommon(List<String> parent, List<String> child) {
+    List<String> unique = [];
+    for (int i = 0; i < parent.length; i++) {
+      if (!child.contains(parent[i])) {
+        unique.add(parent[i]);
+        continue;
+      }
+    }
+    return unique;
   }
 }

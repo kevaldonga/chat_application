@@ -20,7 +20,6 @@ import '../../../assets/alertdialog/alertdialog.dart';
 import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../firebase/database/my_database.dart';
 import '../../chatroom/screens/chatroom_activity.dart';
-import '../../profiles/common/functions/getpersonalinfo.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/widgets/chatroomitem.dart';
 import '../common/widgets/chatroomitem_shimmer.dart';
@@ -38,7 +37,7 @@ class UserView extends StatefulWidget {
 class _UserViewState extends State<UserView> {
   TextEditingController searchcontroller = TextEditingController();
   late FirebaseAuth auth;
-  late Profile profile;
+  Profile? profile;
   bool initialized = false;
   late FirebaseUser user;
   List<ChatRoom> chatrooms = [];
@@ -65,10 +64,10 @@ class _UserViewState extends State<UserView> {
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
     ThemeData theme = Theme.of(context);
-    if (snapshot == null) {
+    if (profile == null) {
       EasyLoading.show();
     }
-    return snapshot == null
+    return profile == null
         ? AnnotatedRegion<SystemUiOverlayStyle>(
             value: const SystemUiOverlayStyle(
               systemNavigationBarColor: Colors.white,
@@ -233,7 +232,7 @@ class _UserViewState extends State<UserView> {
             pauselisteners();
             profile = await Navigator.push(context,
                 MaterialPageRoute(builder: (context) {
-              return MyProfile(profile: profile);
+              return MyProfile(profile: profile!);
             }));
             resumelisteners();
             setState(() {});
@@ -241,7 +240,8 @@ class _UserViewState extends State<UserView> {
 
           case Profileop.refresh:
             initialized = false;
-            await Database.retrivechatrooms(uid: auth.currentUser!.uid)
+            await Database.retrivechatrooms(
+                    uid: auth.currentUser!.uid, myprofile: profile!)
                 .then((value) {
               chatrooms = value ?? [];
               initialized = true;
@@ -282,7 +282,7 @@ class _UserViewState extends State<UserView> {
             }
         }
       },
-      child: Center(child: profilewidget(profile.photourl, 35)),
+      child: Center(child: profilewidget(profile!.photourl, 35)),
     );
   }
 
@@ -308,7 +308,7 @@ class _UserViewState extends State<UserView> {
               ? chatrooms[index]
               : searchchatrooms[index];
           currentchatroom.sortchats();
-          String myphoneno = profile.getPhoneNumber;
+          String myphoneno = profile!.getPhoneNumber;
           bool? isread = currentchatroom.chats.isNotEmpty
               ? currentchatroom.chats.last.sentFrom == myphoneno
                   ? currentchatroom.chats.last.isread
@@ -360,8 +360,9 @@ class _UserViewState extends State<UserView> {
     });
   }
 
-  void retrivechatrooms() {
-    Database.retrivechatrooms(uid: auth.currentUser!.uid).then((value) {
+  void retrivechatrooms(Profile myprofile) {
+    Database.retrivechatrooms(uid: auth.currentUser!.uid, myprofile: myprofile)
+        .then((value) {
       chatrooms = value ?? [];
       initialized = true;
       setState(() {});
@@ -372,12 +373,11 @@ class _UserViewState extends State<UserView> {
 
   void init() {
     initfirebaseuser();
-    getpersonalinfo(auth.currentUser!.uid).then((value) {
+    Database.getpersonalinfo(auth.currentUser!.uid).then((value) {
       EasyLoading.dismiss();
-      snapshot = value;
-      profile = Profile.fromMap(data: snapshot!);
+      profile = value;
       setState(() {});
-      retrivechatrooms();
+      retrivechatrooms(profile!);
     });
   }
 
@@ -399,7 +399,7 @@ class _UserViewState extends State<UserView> {
     pauselisteners();
     await Navigator.push(context, MaterialPageRoute<ChatRoom?>(
       builder: (context) {
-        return FabActions(profile, chatrooms, user);
+        return FabActions(profile!, chatrooms, user);
       },
     )).then((newchatroom) {
       if (newchatroom == null) {
@@ -441,14 +441,6 @@ class _UserViewState extends State<UserView> {
     );
   }
 
-  void intializechatrooms(Map<String, dynamic> snapshot) async {
-    chatrooms = await Database.retrivechatrooms(
-          uid: auth.currentUser!.uid,
-          snapshot: snapshot,
-        ) ??
-        [];
-  }
-
   void listentochatroomchanges() {
     FirebaseFirestore db = FirebaseFirestore.instance;
     for (int i = 0; i < chatrooms.length; i++) {
@@ -486,7 +478,7 @@ class _UserViewState extends State<UserView> {
   }
 
   void initfirebaseuser() async {
-    user = await Database.readFirebaseUser(auth.currentUser!.uid);
+    user = await Database.readMediavisibility(auth.currentUser!.uid);
   }
 
   void listentoaddedtonewchatroom() {
@@ -496,7 +488,8 @@ class _UserViewState extends State<UserView> {
         .doc(auth.currentUser!.uid)
         .snapshots()
         .listen((event) {
-      Database.chatroomidsListener(event.data(), chatrooms).then((value) {
+      Database.chatroomidsListener(event.data(), chatrooms, profile!)
+          .then((value) {
         chatrooms = value;
         setState(() {});
       });

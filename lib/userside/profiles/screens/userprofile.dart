@@ -52,7 +52,7 @@ class UserProfile extends StatelessWidget {
               slivers: [
                 SliverPersistentHeader(
                   delegate: CustomAppbar(
-                    herotag: chatroomid.toString(),
+                    herotag: chatroomid,
                     name: profile.getName,
                     screenWidth: MediaQuery.of(context).size.width,
                     url: profile.photourl,
@@ -69,7 +69,7 @@ class UserProfile extends StatelessWidget {
                           description: profile.getPhoneNumber,
                           name: profile.getName),
                       profileOperations(context),
-                      bio(bio: profile.bio, name: profile.getName),
+                      bioWidget(bio: profile.bio, name: profile.getName),
                       MediaVisibility(
                         id: chatroomid,
                         user: user,

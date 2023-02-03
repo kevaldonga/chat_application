@@ -24,7 +24,7 @@ class GroupInfo {
     };
   }
 
-  GroupInfo.fromMap(Map<String, dynamic>? data)
+  GroupInfo.fromMap(Map<dynamic, dynamic>? data)
       : name = data!["name"],
         photourl = data["photourl"] != "null" ? data["photourl"] : null,
         bio = data["bio"] != "null" && data["bio"] != null ? data["bio"] : null,

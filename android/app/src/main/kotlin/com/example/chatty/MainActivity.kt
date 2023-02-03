@@ -2,6 +2,8 @@ package com.example.chatty
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
+import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
@@ -11,20 +13,30 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 
     lateinit var listener: (String) -> Unit
+    val CONTACT_REQUEST_CODE = 201
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == channelFilePicker.REQUEST_CODE_SINGLE && resultCode == RESULT_OK) {
             val fileUri = data?.data
             fileUri?.path ?: return
-            listener.invoke(UriUtils.getPathFromUri(context, fileUri)!!)
+            var uriutils = UriUtils()
+            listener.invoke(uriutils.getPath(fileUri, context)!!)
+        }
+        if (requestCode == CONTACT_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(context, "contact added successfully !", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "contact added canceled !", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        var mytoast: Toast = Toast(context)
 
         // toast
-        toastChannel()
+        toastChannel(mytoast)
 
         // call and open file
         callandFileChannel()
@@ -42,12 +54,16 @@ class MainActivity : FlutterActivity() {
                     if (call.method == "filepicker") {
                         // pick single file
                         var intent = Intent(Intent.ACTION_PICK)
-                        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
-                        // set type to following to accept all kids of files
                         intent.type = "*/*"
-                        intent = Intent.createChooser(intent, "Pick a File")
+                        // set type to following to accept all kids of files
+                        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
                         listener = { path -> result.success(path) }
-                        super.startActivityForResult(intent, channelFilePicker.REQUEST_CODE_SINGLE)
+                        if (intent.resolveActivity(packageManager) != null) {
+                            super.startActivityForResult(
+                                    intent,
+                                    channelFilePicker.REQUEST_CODE_SINGLE
+                            )
+                        }
                     } else if (call.method == "imagepicker") {
                         // pick single image
                         var intent =
@@ -88,16 +104,35 @@ class MainActivity : FlutterActivity() {
                         if (filepath != null) {
                             channelIntent.openfile(filepath, applicationContext)
                         }
+                    } else if (call.method == channelIntent.ADD_CONTACT) {
+                        val intent = Intent(ContactsContract.Intents.Insert.ACTION)
+                        intent.type = ContactsContract.RawContacts.CONTENT_TYPE
+                        intent.putExtra(
+                                ContactsContract.Intents.Insert.NAME,
+                                call.argument<String>("name")
+                        )
+                        intent.putExtra(
+                                ContactsContract.Intents.Insert.PHONE,
+                                call.argument<String>("phoneno")
+                        )
+                        intent.putExtra(
+                                ContactsContract.Intents.Insert.EMAIL,
+                                call.argument<String>("email")
+                        )
+                        startActivity(intent)
                     }
                 }
     }
 
-    private fun toastChannel() {
+    private fun toastChannel(mytoast: Toast) {
         MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, toast.CHANNEL)
                 .setMethodCallHandler { call, _ ->
                     if (call.method == toast.METHOD_TOAST) {
                         val message = call.argument<String>(toast.KEY_MESSAGE)
-                        Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                        mytoast.cancel()
+                        mytoast.setText(message)
+                        mytoast.duration = Toast.LENGTH_SHORT
+                        mytoast.show()
                     }
                 }
     }
@@ -111,8 +146,7 @@ class MainActivity : FlutterActivity() {
                         result.success(context.cacheDir.absolutePath)
                     } else if (call.method == channelpath.MEDIA) {
                         val appMediaDir =
-                                context.getExternalFilesDir(context.getPackageName() + "/media")
-                                        ?.getAbsolutePath()
+                                "${Environment.getExternalStorageDirectory()}/Android/media/${context.packageName}"
                         result.success(appMediaDir)
                     }
                 }

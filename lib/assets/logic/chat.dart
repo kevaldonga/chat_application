@@ -34,7 +34,7 @@ class Chat {
         _read = false,
         _sentFrom = sentFrom;
 
-  Chat.fromMap({required Map<String, dynamic> chat})
+  Chat.fromMap({required Map<dynamic, dynamic> chat})
       : _id = chat["id"]!,
         _time = DateTime.parse(chat["time"]!),
         _text = chat["text"],

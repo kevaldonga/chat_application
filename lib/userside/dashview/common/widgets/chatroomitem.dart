@@ -109,39 +109,44 @@ class ChatRoomItem extends StatelessWidget {
     return Flexible(
       flex: 5,
       fit: FlexFit.tight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SubstringHighlight(
-            overflow: TextOverflow.ellipsis,
-            caseSensitive: false,
-            maxLines: 1,
-            term: searchcontroller.text,
-            textStyleHighlight: const TextStyle(
-              color: MyColors.seconadaryswatch,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SubstringHighlight(
+              overflow: TextOverflow.ellipsis,
+              caseSensitive: false,
+              maxLines: 1,
+              term: searchcontroller.text,
+              textStyleHighlight: const TextStyle(
+                color: MyColors.seconadaryswatch,
+              ),
+              text: title,
+              textStyle: const TextStyle(
+                  fontSize: 19,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600),
             ),
-            text: title,
-            textStyle: const TextStyle(
-                fontSize: 19, color: Colors.black, fontWeight: FontWeight.w600),
-          ),
-          SubstringHighlight(
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            caseSensitive: false,
-            term: searchcontroller.text,
-            textStyleHighlight: const TextStyle(
-              color: MyColors.seconadaryswatch,
+            SubstringHighlight(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              caseSensitive: false,
+              term: searchcontroller.text,
+              textStyleHighlight: const TextStyle(
+                color: MyColors.seconadaryswatch,
+              ),
+              text: description,
+              textStyle: const TextStyle(
+                fontSize: 15,
+                color: MyColors.textsecondary,
+                fontWeight: FontWeight.normal,
+              ),
             ),
-            text: description,
-            textStyle: const TextStyle(
-              fontSize: 15,
-              color: MyColors.textsecondary,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

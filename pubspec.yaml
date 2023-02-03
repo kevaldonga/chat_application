@@ -51,6 +51,7 @@ dependencies:
   shimmer: ^2.0.0
   gallery_saver: ^2.3.2           # to save image to gallery
   permission_handler: ^10.2.0
+  hive: ^2.2.3
 
 dev_dependencies:
   flutter_test:

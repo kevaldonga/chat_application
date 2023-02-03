@@ -28,7 +28,7 @@ class Profile {
         _phoneNumber = phoneNumber;
 
   Profile.fromMap({
-    required Map<String, dynamic> data,
+    required Map<dynamic, dynamic> data,
   })  : _name = data["name"].toString(),
         _email = data["email"].toString(),
         _phoneNumber = data["phoneno"].toString(),

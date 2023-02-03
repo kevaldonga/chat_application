@@ -8,6 +8,7 @@ import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/chatroom/common/widgets/topactions.dart';
 import 'package:chatty/userside/profiles/screens/groupprofile.dart';
 import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:chatty/userside/profiles/screens/userprofile.dart';
@@ -27,7 +28,6 @@ import '../../../constants/enumFIleType.dart';
 import '../../dashview/common/widgets/imageview.dart';
 import '../../dashview/common/widgets/textfield_main.dart';
 import '../../profiles/common/functions/compressimage.dart';
-import '../../profiles/common/functions/getpersonalinfo.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/functions/formatdate.dart';
 import '../common/functions/generateid.dart';
@@ -36,6 +36,7 @@ import '../common/functions/sameday.dart';
 import '../common/widgets/chatbubble.dart';
 import '../common/widgets/chatroomactivity_shimmer.dart';
 import '../common/widgets/sharebottomsheet.dart';
+import '../../../assets/SystemChannels/intent.dart' as intent;
 
 class ChatRoomActivity extends StatefulWidget {
   ChatRoom chatroom;
@@ -148,6 +149,20 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       statuses[myphoneno] = Status.online;
       Database.updatestatus(myphoneno, Status.online);
     }
+    String? photourl;
+    String title;
+    String? status;
+    Profile otherprofile;
+    if (widget.chatroom.isitgroup) {
+      photourl = widget.chatroom.groupinfo!.photourl;
+      title = widget.chatroom.groupinfo!.name;
+      status = decodegroupstatus();
+    } else {
+      otherprofile = getotherprofile();
+      photourl = otherprofile.photourl;
+      title = otherprofile.getName;
+      status = decodestatus(statuses[otherprofile.getPhoneNumber]);
+    }
     return WillPopScope(
       onWillPop: () async {
         onbackpressed();
@@ -188,80 +203,88 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
           body: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-              Hero(
-                tag: widget.chatroom.id,
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 10,
-                        spreadRadius: 10,
-                        offset: Offset.fromDirection(12),
-                      )
-                    ],
-                    borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20)),
-                    color: Colors.white,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        unfocus();
-                        Profile otherprofile = getotherprofile();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return widget.chatroom.isitgroup
-                                ? GroupProfile(
-                                    myphoneno: myprofile.getPhoneNumber,
-                                    mediachats: getchatroomfiles(),
-                                    sentData: getsentfromdata(),
-                                    user: widget.user,
-                                    chatroom: widget.chatroom,
-                                  )
-                                : UserProfile(
-                                    chatroomid: widget.chatroom.id,
-                                    myphoneno: myprofile.getPhoneNumber,
-                                    user: widget.user,
-                                    chats: getchatroomfiles(),
-                                    profile: otherprofile,
-                                    sentData: getsentfromdata(),
-                                  );
-                          },
-                        )).then((value) {
-                          if (value == null) return;
-                          if (value["firebaseuser"] != null) {
-                            widget.user = value["firebaseuser"];
-                          }
-                          if (value["chatroom"] != null) {
-                            widget.chatroom = value["chatroom"];
-                          }
-                        });
-                      },
-                      focusColor: MyColors.focusColor,
-                      highlightColor: Colors.transparent,
-                      splashColor: MyColors.splashColor,
-                      child: Container(
-                        height: md.size.height * 0.11,
-                        width: md.size.width,
-                        padding: EdgeInsets.only(
-                            top: md.viewPadding.top, bottom: 12, left: 10),
-                        decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20))),
-                        child: topactions(context),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              topactions(context, md, title, status, photourl),
               chatslistview(md),
               bottomaction(md, iskeyboardvisible),
               SizedBox(height: md.viewInsets.bottom),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget topactions(BuildContext context, MediaQueryData md, String title,
+      String? status, String? photourl) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            spreadRadius: 10,
+            offset: Offset.fromDirection(12),
+          )
+        ],
+        borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
+        color: Colors.white,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            unfocus();
+            Profile otherprofile = getotherprofile();
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return widget.chatroom.isitgroup
+                    ? GroupProfile(
+                        myphoneno: myprofile.getPhoneNumber,
+                        mediachats: getchatroomfiles(),
+                        sentData: getsentfromdata(),
+                        user: widget.user,
+                        chatroom: widget.chatroom,
+                      )
+                    : UserProfile(
+                        chatroomid: widget.chatroom.id,
+                        myphoneno: myprofile.getPhoneNumber,
+                        user: widget.user,
+                        chats: getchatroomfiles(),
+                        profile: otherprofile,
+                        sentData: getsentfromdata(),
+                      );
+              },
+            )).then((value) {
+              if (value == null) return;
+              if (value["firebaseuser"] != null) {
+                widget.user = value["firebaseuser"];
+              }
+              if (value["chatroom"] != null) {
+                widget.chatroom = value["chatroom"];
+              }
+            });
+          },
+          focusColor: MyColors.focusColor,
+          highlightColor: Colors.transparent,
+          splashColor: MyColors.splashColor,
+          child: Container(
+            height: md.size.height * 0.11,
+            width: md.size.width,
+            padding:
+                EdgeInsets.only(top: md.viewPadding.top, bottom: 12, left: 10),
+            decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20))),
+            child: TopActions(
+              herotag: widget.chatroom.id,
+              title: title,
+              status: status,
+              photourl: photourl,
+              onbackpressed: onbackpressed,
+              isitgroup: widget.chatroom.isitgroup,
+            ),
           ),
         ),
       ),
@@ -336,6 +359,14 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                             icon: Icons.image,
                             ontap: pickfromgallery,
                           ),
+                          // contact
+                          if (!widget.chatroom.isitgroup)
+                            shareItem(
+                              context: context,
+                              backgroundcolor: MyColors.primarySwatch,
+                              icon: Icons.person_add_alt_rounded,
+                              ontap: addcontact,
+                            ),
                           // files
                           shareItem(
                             context: context,
@@ -459,66 +490,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         ),
         child: Text(formatdatebyday(widget.chatroom.chats[index + 1].time),
             style: const TextStyle(fontSize: 13)),
-      ),
-    );
-  }
-
-  Widget topactions(BuildContext context) {
-    Profile? otherprofile;
-    String? photourl;
-    String? title;
-    String? status;
-    if (widget.chatroom.isitgroup) {
-      photourl = widget.chatroom.groupinfo!.photourl;
-      title = widget.chatroom.groupinfo!.name;
-      status = decodegroupstatus();
-    } else {
-      otherprofile = getotherprofile();
-      photourl = otherprofile.photourl;
-      title = otherprofile.getName;
-      status = decodestatus(statuses[otherprofile.getPhoneNumber]);
-    }
-
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          IconButton(
-              onPressed: () {
-                onbackpressed();
-              },
-              icon: const Icon(Icons.arrow_back_ios_rounded,
-                  color: MyColors.primarySwatch)),
-          const SizedBox(width: 20),
-          profilewidget(photourl, 45),
-          const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w400,
-                  fontSize: 20,
-                ),
-              ),
-              if (status != null && status != "offline")
-                Text(
-                  status,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                  ),
-                ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -665,8 +636,8 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void setpersonalinfo() async {
-    await getpersonalinfo(auth.currentUser!.uid).then((value) {
-      myprofile = Profile.fromMap(data: value);
+    await Database.getpersonalinfo(auth.currentUser!.uid).then((value) {
+      myprofile = value;
     });
   }
 
@@ -677,21 +648,8 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     myprofile = getmyprofile();
     statuses[myprofile.getPhoneNumber] = Status.online;
     Database.updatestatus(myprofile.getPhoneNumber, Status.online);
-    markasallread();
     listentochatroomchanges();
     listentostatuses();
-  }
-
-  void markasallread() {
-    // only which are not sent by me
-    Database.markchatsread(widget.chatroom.chats, myprofile.getPhoneNumber)
-        .whenComplete(() {
-      for (int i = 0; i < widget.chatroom.chats.length; i++) {
-        if (widget.chatroom.chats[i].sentFrom != myprofile.getPhoneNumber) {
-          widget.chatroom.chats[i].setread = true;
-        }
-      }
-    });
   }
 
   void listentochatroomchanges() {
@@ -703,7 +661,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       Database.refreshchatroom(event.data()!, widget.chatroom.chats)
           .then((value) {
         widget.chatroom.chats = value;
-        markasallread();
         widget.chatroom.sortchats();
         scrolltobottom();
         if (mounted) setState(() {});
@@ -724,7 +681,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
   void pickfromfiles() async {
     Navigator.maybePop(context);
-    bool isgranted = await Permission.manageExternalStorage.request().isGranted;
+    bool isgranted = await Permission.storage.request().isGranted;
     if (!isgranted) {
       Toast("allow the permission to send files");
       return;
@@ -772,6 +729,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     } else if (widget.chatroom.chats[index].fileinfo?.type == FileType.image) {
       openImage(widget.chatroom.chats[index]);
     } else {
+      if (widget.chatroom.chats[index].fileinfo?.file == null) {
+        Toast("File appears to be missing");
+        return;
+      }
       openfile(widget.chatroom.chats[index].fileinfo!.file!);
     }
   }
@@ -830,6 +791,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
       statuses[widget.chatroom.connectedPersons[i].getPhoneNumber] = 0;
     }
+    statuses.remove(myprofile.getPhoneNumber);
     // listen to changes
     statuses.forEach((key, value) {
       listener = db.collection("status").doc(key).snapshots().listen((event) {
@@ -851,7 +813,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       case 1:
         return "online";
       case 2:
-        return "typing";
+        return "typing...";
       default:
         return "offline";
     }
@@ -891,9 +853,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
     // check if only one member is typing or more that that
     if (typingprofiles.length == 1) {
-      finalStatusString += "is typing";
+      finalStatusString += "is typing...";
     } else {
-      finalStatusString += "are typing";
+      finalStatusString += "are typing...";
     }
     return finalStatusString;
   }
@@ -908,5 +870,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     listener.cancel();
     log("canceled status listener");
     Navigator.of(context).pop(widget.chatroom);
+  }
+
+  void addcontact() {
+    Profile profile = getotherprofile();
+    intent.Intent.addcontact(profile);
   }
 }

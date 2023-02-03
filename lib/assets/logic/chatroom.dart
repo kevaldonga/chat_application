@@ -6,7 +6,7 @@ import 'groupInfo.dart';
 
 class ChatRoom {
   final String id;
-  final List<Profile> _connectedPersons;
+  List<Profile> _connectedPersons;
   List<Chat> chats;
   GroupInfo? groupinfo;
   bool isitgroup = false;
@@ -21,6 +21,9 @@ class ChatRoom {
   })  : id = id ?? generatedid(10),
         _connectedPersons = connectedPersons,
         isitgroup = groupinfo != null;
+
+  set setconnectedPersons(List<Profile> connectedPersons) =>
+      _connectedPersons = connectedPersons;
 
   List<Chat> sortchats() {
     chats.sort((a, b) {

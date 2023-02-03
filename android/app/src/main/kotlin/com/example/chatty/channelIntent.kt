@@ -9,6 +9,7 @@ import java.io.File
 
 class channelIntent {
     companion object {
+        const val ADD_CONTACT = "addcontact";
         const val OPEN_FILE = "openfile"
         const val CHANNEL = "flutter.io/intent"
         const val OPEN_FILE_KEY = "path"
@@ -62,7 +63,6 @@ class channelIntent {
                 // Other files
                 intent.setDataAndType(uri, "*/*")
             }
-            intent.clipData = ClipData.newRawUri(null, uri)
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)

@@ -12,7 +12,6 @@ import '../../../assets/alertdialog/textfield_material.dart';
 import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
 import '../../chatroom/screens/chatroom_activity.dart';
-import '../../profiles/common/functions/getpersonalinfo.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import 'creategroupActivity.dart';
 
@@ -334,8 +333,8 @@ class _FabActionsState extends State<FabActions> {
     // get personal info like email, name by uid
     String uid = await Database.getuid(phone);
     late Profile otherprofile;
-    await getpersonalinfo(uid).then((value) {
-      otherprofile = Profile.fromMap(data: value);
+    await Database.getpersonalinfo(uid).then((value) {
+      otherprofile = value;
     });
     ChatRoom chatRoom = ChatRoom(
       connectedPersons: [otherprofile, widget.profile],
