@@ -8,11 +8,14 @@ import 'buildcircle.dart';
 import 'getprofilecircle.dart';
 
 class CustomAppbar extends SliverPersistentHeaderDelegate {
+  bool isitgroup;
   bool areyouadmin;
   final Object herotag;
   final String name;
   final String? url;
   double screenWidth;
+  List<PopupMenuItem>? items;
+  Function(dynamic value)? onSelected;
   Tween<double>? profilePicTranslateTween;
   final VoidCallback onbackpressed;
   VoidCallback? onprofiletap;
@@ -23,6 +26,9 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
     this.url,
     this.areyouadmin = false,
     this.file,
+    this.items,
+    this.onSelected,
+    required this.isitgroup,
     required this.onbackpressed,
     required this.herotag,
     required this.screenWidth,
@@ -67,14 +73,27 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
                 ),
               ),
               // more
-              Positioned(
-                right: 0,
-                child: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.more_vert, size: 25),
-                  color: appbarIconColorTween.transform(relativeScroll),
+              if (items != null)
+                Positioned(
+                  right: 0,
+                  child: PopupMenuButton(
+                    clipBehavior: Clip.antiAlias,
+                    splashRadius: 20,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    enabled: true,
+                    itemBuilder: (context) {
+                      return items!;
+                    },
+                    onSelected: onSelected,
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 25,
+                      color: appbarIconColorTween.transform(relativeScroll),
+                    ),
+                  ),
                 ),
-              ),
               // name
               Positioned(
                   top: 15,
@@ -114,7 +133,7 @@ class CustomAppbar extends SliverPersistentHeaderDelegate {
                             child: Image.file(file!, fit: BoxFit.cover),
                           ),
                         )
-                      : profilewidget(url, 40)),
+                      : profilewidget(url, 40, isitgroup)),
               if (areyouadmin)
                 Positioned(
                   bottom: 0,

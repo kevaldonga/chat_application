@@ -65,6 +65,7 @@ class _CommonGroupListState extends State<CommonGroupList> {
           if (intialized)
             ...List.generate(commongroups!.length, (index) {
               return chatroomitem(
+                  isitgroup: true,
                   url: commongroups![index].photourl,
                   name: commongroups![index].name,
                   bio: commongroups![index].bio,

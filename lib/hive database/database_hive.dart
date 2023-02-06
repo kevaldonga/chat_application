@@ -39,7 +39,7 @@ class MyHive {
     await chatsbox?.put(chat.id, chat.toMap());
 
     var chatroomsbox = await _collection?.openBox("chatrooms");
-    Map<String, dynamic>? data = await chatroomsbox?.get(chatroomid);
+    Map<dynamic, dynamic>? data = await chatroomsbox?.get(chatroomid);
     List<dynamic> chatids = data?["chatids"] ?? [];
     chatids.add(chat.id);
     chatroomsbox?.put(chatroomid, data);
@@ -58,7 +58,7 @@ class MyHive {
     _collection ??= await init();
 
     final chatsbox = await _collection?.openBox("chats");
-    final data = await chatsbox?.get(id);
+    final data = await chatsbox?.get(id) ?? {};
     if (data == null || data.isEmpty) {
       return null;
     }
@@ -92,9 +92,9 @@ class MyHive {
     for (int i = 0; i < uids.length; i++) {
       final connectedchatroomsbox =
           await _collection?.openBox("connectedchatrooms");
-      Map<String, dynamic> chatroomids =
-          await connectedchatroomsbox?.get(uids[i]);
-      List<dynamic> uid = chatroomids["chatroomids"];
+      Map<dynamic, dynamic>? chatroomids =
+          await connectedchatroomsbox?.get(uids[i]) ?? {};
+      List<dynamic> uid = chatroomids?["chatroomids"] ?? [];
       uid.add(chatroom.id);
       await connectedchatroomsbox?.put(uids[i], chatroomids);
       log("written chatroom to storage $chatroom");
@@ -104,14 +104,14 @@ class MyHive {
   static Future<String?> getuid(String phoneno) async {
     _collection ??= await init();
     final userquickinfobox = await _collection?.openBox("userquickinfo");
-    final data = await userquickinfobox?.get(phoneno);
+    final data = await userquickinfobox?.get(phoneno) ?? {};
     return data?["uid"];
   }
 
   static Future<ChatRoom?> readchatroom(String id) async {
     _collection ??= await init();
     final chatroomsbox = await _collection?.openBox("chatrooms");
-    Map<String, dynamic>? data = await chatroomsbox?.get(id);
+    Map<dynamic, dynamic>? data = await chatroomsbox?.get(id);
     if (data == null) {
       return null;
     }
@@ -129,8 +129,11 @@ class MyHive {
       chats.add(chat);
     }
 
-    List<dynamic> uids = data["connectedchatrooms"];
+    List<dynamic> uids = data["connectedchatrooms"] ?? [];
     List<Profile> profiles = [];
+    if (uids.isEmpty) {
+      return null;
+    }
 
     for (int i = 0; i < uids.length; i++) {
       var data = await getpersonalinfo(uids[i]);
@@ -152,7 +155,7 @@ class MyHive {
     _collection ??= await init();
     GroupInfo? groupinfo;
     final groupinfobox = await _collection?.openBox("groupinfo");
-    Map<String, dynamic>? data = await groupinfobox?.get(id);
+    Map<dynamic, dynamic>? data = await groupinfobox?.get(id);
     if (data == null || data.isEmpty) {
       return null;
     }
@@ -164,9 +167,9 @@ class MyHive {
   static Future<Map<String, dynamic>?> getpersonalinfo(String uid) async {
     _collection ??= await init();
     final usersbox = await _collection?.openBox("users");
-    Map<dynamic, dynamic>? data = await usersbox?.get(uid);
+    Map<dynamic, dynamic>? data = await usersbox?.get(uid) ?? {};
     log("read personal info to storage $data");
-    return data?.cast();
+    return data!.isEmpty ? null : data.cast();
   }
 
   static Future<void> writepersonalinfo(String uid, Profile profile) async {

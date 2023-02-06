@@ -16,6 +16,7 @@ class MainActivity : FlutterActivity() {
     val CONTACT_REQUEST_CODE = 201
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == channelFilePicker.REQUEST_CODE_SINGLE && resultCode == RESULT_OK) {
             val fileUri = data?.data
             fileUri?.path ?: return

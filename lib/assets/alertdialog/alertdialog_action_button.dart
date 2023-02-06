@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-alertdialogactionbutton(String text, VoidCallback callback) {
+Widget alertdialogactionbutton(String text, VoidCallback callback) {
   return TextButton(
     onPressed: callback,
     style: ButtonStyle(

@@ -73,6 +73,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
   late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>
       listener; // {"myphoneno" : online(1)/typing(2)/offline(0)}
+  late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> chatslistener;
 
   @override
   void initState() {
@@ -142,10 +143,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       scrolltobottom();
     }
     String myphoneno = myprofile.getPhoneNumber;
-    if (iskeyboardvisible && statuses[myphoneno] == Status.online) {
+    if (iskeyboardvisible &&
+        (statuses[myphoneno] ?? Status.online) == Status.online) {
       statuses[myphoneno] = Status.typing; // set to typing
       Database.updatestatus(myphoneno, Status.typing);
-    } else if (!iskeyboardvisible && statuses[myphoneno] == Status.typing) {
+    } else if (!iskeyboardvisible &&
+        (statuses[myphoneno] ?? Status.online) == Status.typing) {
       statuses[myphoneno] = Status.online;
       Database.updatestatus(myphoneno, Status.online);
     }
@@ -234,6 +237,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            pauselisteners();
             unfocus();
             Profile otherprofile = getotherprofile();
             Navigator.push(context, MaterialPageRoute(
@@ -263,6 +267,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
               if (value["chatroom"] != null) {
                 widget.chatroom = value["chatroom"];
               }
+              resumelisteners();
             });
           },
           focusColor: MyColors.focusColor,
@@ -312,17 +317,19 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
               const SizedBox(width: 5),
               GestureDetector(
                   onTap: () async {
+                    pauselisteners();
                     unfocus();
                     myprofile = await Navigator.push(context,
                         MaterialPageRoute(builder: (context) {
                       return MyProfile(profile: myprofile);
                     }));
+                    resumelisteners();
                     setState(() {});
                   },
                   child: Hero(
                     transitionOnUserGestures: true,
                     tag: myprofile.photourl.toString(),
-                    child: profilewidget(myprofile.photourl, 45),
+                    child: profilewidget(myprofile.photourl, 45, false),
                   )),
               const SizedBox(width: 15),
               Flexible(
@@ -543,7 +550,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       widget.chatroom.chats.add(newchat);
 
       scrolltobottom();
-
       controller.clear();
       SystemChannels.textInput.invokeMethod("TextInput.hide");
     });
@@ -653,7 +659,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void listentochatroomchanges() {
-    db
+    chatslistener = db
         .collection("chatrooms")
         .doc(widget.chatroom.id)
         .snapshots()
@@ -672,7 +678,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     Navigator.maybePop(context);
     Picker picker = Picker(onResult: (value) async {
       if (value != null) {
-        file = await compressimage(value, 80);
+        // compress image is returning cache path
+        File myfile = await compressimage(value, 80);
+        file = await myfile.copy(value.path);
+        log(file!.path);
         sendmessage(type: FileType.image);
       }
     });
@@ -707,7 +716,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         .pickImage(source: ImageSource.camera)
         .then((image) async {
       if (image == null) return;
-      file = await compressimage(File(image.path), 80);
+      log(image.path);
+      File myfile = await compressimage(File(image.path), 80);
+      file = await myfile.copy(image.path);
       sendmessage(type: FileType.image);
     });
   }
@@ -865,9 +876,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void onbackpressed() {
+    cancellisteners();
     statuses[myprofile.getPhoneNumber] = Status.offline;
     Database.updatestatus(myprofile.getPhoneNumber, Status.offline);
-    listener.cancel();
     log("canceled status listener");
     Navigator.of(context).pop(widget.chatroom);
   }
@@ -875,5 +886,20 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   void addcontact() {
     Profile profile = getotherprofile();
     intent.Intent.addcontact(profile);
+  }
+
+  void pauselisteners() {
+    listener.pause();
+    chatslistener.pause();
+  }
+
+  void resumelisteners() {
+    listener.resume();
+    chatslistener.resume();
+  }
+
+  void cancellisteners() {
+    listener.cancel();
+    chatslistener.cancel();
   }
 }

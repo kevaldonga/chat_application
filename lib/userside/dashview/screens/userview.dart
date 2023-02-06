@@ -282,7 +282,7 @@ class _UserViewState extends State<UserView> {
             }
         }
       },
-      child: Center(child: profilewidget(profile!.photourl, 35)),
+      child: Center(child: profilewidget(profile!.photourl, 35, false)),
     );
   }
 
@@ -321,6 +321,7 @@ class _UserViewState extends State<UserView> {
               ? currentchatroom.groupinfo!.name
               : getotherprofile(currentchatroom.connectedPersons).getName;
           return ChatRoomItem(
+            isitgroup: chatrooms[index].isitgroup,
             id: chatrooms[index].id,
             url: url,
             top: index == 0 ? true : null,
@@ -384,13 +385,16 @@ class _UserViewState extends State<UserView> {
   void ontap(int index) async {
     SystemChannels.textInput.invokeMethod("TextInput.hide");
     pauselisteners();
-    chatrooms[index] =
+    ChatRoom? chatroom =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ChatRoomActivity(
         chatroom: chatrooms[index],
         user: user,
       );
     }));
+    if (chatroom != null) {
+      chatrooms[index] = chatroom;
+    }
     resumelisteners();
     setState(() {});
   }

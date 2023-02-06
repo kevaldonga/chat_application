@@ -124,27 +124,28 @@ class _FabActionsState extends State<FabActions> {
     return InkWell(
       highlightColor: Colors.transparent,
       onTap: () {
-        if (selectedprofiles.contains(profile)) {
-          setState(() {
-            selectedprofiles.remove(profile);
-            if (selectedprofiles.isEmpty) {
-              selection = false;
-            }
-          });
-          return;
-        } else if (selection) {
+        if (selection) {
+          if (selectedprofiles.contains(profile)) {
+            setState(() {
+              selectedprofiles.remove(profile);
+              if (selectedprofiles.isEmpty) {
+                selection = false;
+              }
+            });
+            return;
+          }
           setState(() {
             selection = true;
             selectedprofiles.add(profile);
           });
-          return;
+        } else {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (context) {
+              return ChatRoomActivity(
+                  chatroom: getchatroom(profile), user: widget.user);
+            },
+          ));
         }
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            return ChatRoomActivity(
-                chatroom: getchatroom(profile), user: widget.user);
-          },
-        ));
       },
       onLongPress: () {
         if (selectedprofiles.contains(profile)) {
@@ -175,7 +176,8 @@ class _FabActionsState extends State<FabActions> {
                         child: Icon(Icons.person_rounded,
                             color: MyColors.profileforeground),
                       )
-                    : profilewidget(profile.photourl!, md.size.width * 0.1),
+                    : profilewidget(
+                        profile.photourl!, md.size.width * 0.1, false),
                 AnimatedOpacity(
                   opacity: selectedprofiles.contains(profile) ? 1 : 0,
                   duration: const Duration(milliseconds: 300),
@@ -310,7 +312,7 @@ class _FabActionsState extends State<FabActions> {
 
   ChatRoom getchatroom(Profile profile) {
     for (int i = 0; i < widget.chatrooms.length; i++) {
-      for (int j = 0; j < widget.chatrooms[i].connectedPersons.length; i++) {
+      for (int j = 0; j < widget.chatrooms[i].connectedPersons.length; j++) {
         if (widget.chatrooms[i].connectedPersons[j].getPhoneNumber ==
             profile.getPhoneNumber) {
           return widget.chatrooms[i];

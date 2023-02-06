@@ -5,6 +5,7 @@ Widget textfieldmaterial({
   required String label,
   required void Function(String) onchanged,
   required TextInputType keyboardtype,
+  TextEditingController? controller,
   int? maxlength,
 }) {
   return Theme(
@@ -12,6 +13,7 @@ Widget textfieldmaterial({
       primaryColor: MyColors.primarySwatch,
     ),
     child: TextField(
+      controller: controller,
       autofocus: true,
       enableSuggestions: true,
       autocorrect: false,

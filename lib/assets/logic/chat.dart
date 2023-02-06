@@ -42,7 +42,6 @@ class Chat {
         _read = chat["read"]!,
         fileinfo = chat["url"] != "null" && chat["url"] != null
             ? FileInfo(
-                fileexist: chat["fileexist"] ?? false,
                 filename: chat["filename"] == "null" ? null : chat["filename"],
                 url: chat["url"],
                 path: chat["path"],
@@ -61,7 +60,8 @@ class Chat {
     if (fileinfo!.path != null && fileinfo!.path != "null") {
       data["path"] = fileinfo!.path;
     }
-    if (fileinfo!.fileexist) data["fileexist"] = fileinfo!.fileexist;
+
+    // dont need file exist varible stored casuse gonna calculate it at intialization
     if (fileinfo?.filename != null && fileinfo?.filename != "null") {
       data["filename"] = fileinfo?.filename;
     }

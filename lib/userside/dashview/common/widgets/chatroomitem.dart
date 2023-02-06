@@ -7,6 +7,7 @@ import '../../../profiles/common/widgets/getprofilecircle.dart';
 import 'notificationbubble.dart';
 
 class ChatRoomItem extends StatelessWidget {
+  final bool isitgroup;
   final String id;
   final String title, description;
   final DateTime? date;
@@ -18,6 +19,7 @@ class ChatRoomItem extends StatelessWidget {
   final VoidCallback ontap;
   const ChatRoomItem({
     super.key,
+    required this.isitgroup,
     required this.id,
     required this.url,
     required this.read,
@@ -63,7 +65,7 @@ class ChatRoomItem extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  profilewidget(url, md.size.width * 0.12),
+                  profilewidget(url, md.size.width * 0.12, isitgroup),
                   SizedBox(width: md.size.width * 0.08),
                   middleactions(),
                   endactions(md),

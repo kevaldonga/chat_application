@@ -25,7 +25,7 @@ Widget bioWidget({required String? bio, required String name}) {
         ),
         const SizedBox(height: 5),
         Text(
-          bio != null && bio != "null"
+          bio != null && bio != "null" && bio != ""
               ? bio
               : "bio haven't been specified yet.",
           softWrap: true,

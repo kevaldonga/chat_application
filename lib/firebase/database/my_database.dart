@@ -125,7 +125,7 @@ class Database {
     List<Chat> chats = [];
     if (chatroom != null) {
       // check for chats added or removed
-      List<String> firestorechats = data["chatids"];
+      List<dynamic> firestorechats = data["chatids"];
       List<String> hivechats = List.generate(chatroom.chats.length, (index) {
         return chatroom.chats[index].id;
       });
@@ -309,8 +309,8 @@ class Database {
       // remove chatrooms
       for (int i = 0; i < chatrooms.length; i++) {
         if (idstoberemoved.contains(chatrooms[i].id)) {
-          chatrooms.removeAt(i);
           log("chatroom id ${chatrooms[i].id} has been removed");
+          chatrooms.removeAt(i);
         }
       }
       return chatrooms;
@@ -482,7 +482,7 @@ class Database {
     );
 
     // then remove the chatroom from his profile
-    await _db?.collection("connectedpersons").doc(uid).set(
+    await _db?.collection("connectedchatrooms").doc(uid).set(
       {
         "chatroomids": FieldValue.arrayRemove([chatroomid])
       },
@@ -525,7 +525,8 @@ class Database {
     return common;
   }
 
-  static List<String> subtractcommon(List<String> parent, List<String> child) {
+  static List<String> subtractcommon(
+      List<dynamic> parent, List<dynamic> child) {
     List<String> unique = [];
     for (int i = 0; i < parent.length; i++) {
       if (!child.contains(parent[i])) {
@@ -534,5 +535,31 @@ class Database {
       }
     }
     return unique;
+  }
+
+  static Future<void> updategroupinfo(String id, GroupInfo groupinfo) async {
+    _db ??= FirebaseFirestore.instance;
+
+    await _db?.collection("groupinfo").doc(id).update(groupinfo.toMap());
+  }
+
+  static Future<void> deletegroup(ChatRoom chatroom) async {
+    _db ??= FirebaseFirestore.instance;
+
+    await _db?.collection("groupinfo").doc(chatroom.id).delete();
+
+    // delete chatroom also
+    await _db?.collection("chatrooms").doc(chatroom.id).delete();
+
+    // delete chatroom id in connectedchatrooms
+    for (int i = 0; i < chatroom.connectedPersons.length; i++) {
+      String uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
+      await _db?.collection("connectedchatrooms").doc(uid).set(
+        {
+          "chatroomids": FieldValue.arrayRemove([chatroom.id])
+        },
+        SetOptions(merge: true),
+      );
+    }
   }
 }

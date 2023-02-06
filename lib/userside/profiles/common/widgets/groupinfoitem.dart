@@ -7,6 +7,7 @@ Widget chatroomitem({
   String? url,
   String? bio,
   Widget? endactions,
+  required bool isitgroup,
   bool amIadmin = false,
   required String name,
   required MediaQueryData md,
@@ -29,7 +30,7 @@ Widget chatroomitem({
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                profilewidget(url, md.size.width * 0.12),
+                profilewidget(url, md.size.width * 0.12, isitgroup),
                 SizedBox(width: md.size.width * 0.08),
                 middleactions(bio, name, md),
                 if (endactions != null) endactions,

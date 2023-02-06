@@ -82,7 +82,7 @@ class _TopActionsState extends State<TopActions>
               flex: 3,
               child: Hero(
                 tag: widget.herotag,
-                child: profilewidget(widget.photourl, 45),
+                child: profilewidget(widget.photourl, 45, widget.isitgroup),
               ),
             ),
             const SizedBox(width: 20),

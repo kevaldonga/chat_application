@@ -1,16 +1,21 @@
 import 'dart:io';
 
 import 'package:chatty/assets/alertdialog/alertdialog.dart';
+import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
+import 'package:chatty/assets/alertdialog/textfield_material.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:chatty/userside/profiles/common/functions/setprofileimage.dart';
 import 'package:chatty/userside/profiles/common/widgets/animatedappbar.dart';
 import 'package:chatty/userside/profiles/common/widgets/groupinfoitem.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../../../assets/SystemChannels/picker.dart';
 import '../../../assets/logic/chat.dart';
@@ -40,15 +45,25 @@ class GroupProfile extends StatefulWidget {
   State<GroupProfile> createState() => _GroupProfileState();
 }
 
+enum popup {
+  editgroupinfo,
+  leave,
+  delete,
+}
+
 class _GroupProfileState extends State<GroupProfile> {
   String? name, bio;
   File? file;
   late MediaQueryData md;
   late bool amIadmin;
+  late TextEditingController groupname;
+  late TextEditingController groupbio;
 
   @override
   void initState() {
     super.initState();
+    groupname = TextEditingController(text: widget.chatroom.groupinfo!.name);
+    groupbio = TextEditingController(text: widget.chatroom.groupinfo!.bio);
     amIadmin = isthisadmin(widget.myphoneno);
   }
 
@@ -72,6 +87,101 @@ class _GroupProfileState extends State<GroupProfile> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: CustomAppbar(
+                    isitgroup: true,
+                    onSelected: (value) async {
+                      switch (value) {
+                        case popup.editgroupinfo:
+                          editgroupinfo();
+                          break;
+                        case popup.leave:
+                          if (widget.chatroom.groupinfo!.admins.length == 1 &&
+                              amIadmin) {
+                            Toast("you cant leave as you are the only admin");
+                            return;
+                          }
+                          bool result = await showdialog(
+                            context: context,
+                            title: const Text("Are you sure ?"),
+                            contents: Text(widget
+                                        .chatroom.connectedPersons.length ==
+                                    2
+                                ? "group will be deleted as group with one person can't exist, Are you sure you want to do this ?"
+                                : "Are you sure you want to leave ${widget.chatroom.groupinfo!.name} ?"),
+                            actions: [
+                              alertdialogactionbutton(
+                                "YES",
+                                () {
+                                  Navigator.of(context).pop(true);
+                                },
+                              ),
+                              alertdialogactionbutton(
+                                "NO",
+                                () {
+                                  Navigator.of(context).pop(false);
+                                },
+                              ),
+                            ],
+                          );
+                          if (result) {
+                            if (widget.chatroom.connectedPersons.length == 2) {
+                              deletegroup();
+                            } else {
+                              leavegroup();
+                            }
+                          }
+                          break;
+                        case popup.delete:
+                          await deletegroupoperation(context);
+                          break;
+                        default:
+                          break;
+                      }
+                    },
+                    items: [
+                      if (amIadmin)
+                        popupMenuItem(
+                          value: popup.editgroupinfo,
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.edit_rounded,
+                                color: MyColors.primarySwatch,
+                              ),
+                              SizedBox(width: 15),
+                              Text("edit group info"),
+                            ],
+                          ),
+                          height: 20,
+                        ),
+                      popupMenuItem(
+                        value: popup.leave,
+                        child: Row(
+                          children: const [
+                            Icon(
+                              Icons.logout_rounded,
+                              color: Colors.red,
+                            ),
+                            SizedBox(width: 15),
+                            Text("leave"),
+                          ],
+                        ),
+                        height: 20,
+                      ),
+                      if (amIadmin)
+                        popupMenuItem(
+                            value: popup.delete,
+                            child: Row(
+                              children: const [
+                                Icon(
+                                  Icons.delete_forever,
+                                  color: Colors.red,
+                                ),
+                                SizedBox(width: 15),
+                                Text("delete group"),
+                              ],
+                            ),
+                            height: 20),
+                    ],
                     onprofiletap: () async {
                       Picker picker = Picker(onResult: (value) async {
                         if (value == null) {
@@ -133,6 +243,32 @@ class _GroupProfileState extends State<GroupProfile> {
     );
   }
 
+  Future<void> deletegroupoperation(BuildContext context) async {
+    bool result = await showdialog(
+      context: context,
+      title: const Text("Are you sure ?"),
+      contents: const Text(
+          "group will be deleted forever and you won't be able to restore data , Are you sure you wanna do this ?"),
+      actions: [
+        alertdialogactionbutton(
+          "YES",
+          () {
+            Navigator.of(context).pop(true);
+          },
+        ),
+        alertdialogactionbutton(
+          "NO",
+          () {
+            Navigator.of(context).pop(false);
+          },
+        ),
+      ],
+    );
+    if (result) {
+      deletegroup();
+    }
+  }
+
   void onbackpressed(context) async {
     bool diditchange = file != null || name != null || bio != null;
     if (diditchange) {
@@ -183,6 +319,7 @@ class _GroupProfileState extends State<GroupProfile> {
           ...List.generate(widget.chatroom.connectedPersons.length, (index) {
             Profile currentprofile = widget.chatroom.connectedPersons[index];
             return chatroomitem(
+              isitgroup: false,
               onitemtap: () {
                 onitemtap(currentprofile);
               },
@@ -247,7 +384,7 @@ class _GroupProfileState extends State<GroupProfile> {
                 Toast("${profile.getName} is now an admin");
               }
               // update groupinfo to remove or add admin
-              await Database.writegroupinfo(
+              await Database.updategroupinfo(
                 widget.chatroom.id,
                 widget.chatroom.groupinfo!,
               );
@@ -258,6 +395,10 @@ class _GroupProfileState extends State<GroupProfile> {
             "Remove ${profile.getName}",
             () async {
               Navigator.pop(context);
+              if (widget.chatroom.connectedPersons.length == 2) {
+                deletegroupoperation(context);
+                return;
+              }
               if (admin) {
                 widget.chatroom.groupinfo!.admins
                     .remove(profile.getPhoneNumber);
@@ -265,13 +406,10 @@ class _GroupProfileState extends State<GroupProfile> {
               widget.chatroom.connectedPersons.remove(profile);
               Toast("${profile.getName} has been removed from group");
               // update the groupinfo
-              await Database.writegroupinfo(
+              await Database.updategroupinfo(
                   widget.chatroom.id, widget.chatroom.groupinfo!);
-              if (admin) {
-                String uid = await Database.getuid(profile.getPhoneNumber);
-                await Database.updateparticipants(
-                    uid, widget.chatroom.id, false);
-              }
+              String uid = await Database.getuid(profile.getPhoneNumber);
+              await Database.updateparticipants(uid, widget.chatroom.id, false);
               setState(() {});
             },
           ),
@@ -293,5 +431,116 @@ class _GroupProfileState extends State<GroupProfile> {
         child: Text(text),
       ),
     );
+  }
+
+  void editgroupinfo() async {
+    bool? result = await showdialog(
+      barrierDismissible: true,
+      context: context,
+      title: const Text("Edit Group Info"),
+      contents: SizedBox(
+        width: md.size.width * 0.8,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              textfieldmaterial(
+                controller: groupname,
+                label: "group name",
+                maxlength: 20,
+                onchanged: (text) {
+                  if (text.length == 20) {
+                    Toast("limit reached");
+                  }
+                },
+                keyboardtype: TextInputType.name,
+              ),
+              textfieldmaterial(
+                controller: groupbio,
+                label: "group bio",
+                onchanged: (text) {
+                  if (text.length == 50) {
+                    Toast("limit reached");
+                  }
+                },
+                keyboardtype: TextInputType.multiline,
+                maxlength: 50,
+              ),
+              Center(
+                child: TextButton(
+                  onPressed: () async {
+                    SystemChannels.textInput.invokeMethod("TextInput.hide");
+                    EasyLoading.show(status: "saving..");
+                    if (groupname.text.isEmpty) {
+                      Toast("name field is empty");
+                      EasyLoading.dismiss();
+                      return;
+                    }
+                    if (groupname.text == widget.chatroom.groupinfo!.name &&
+                        groupbio.text == widget.chatroom.groupinfo!.bio) {
+                      Navigator.pop(context);
+                      EasyLoading.dismiss();
+                      return;
+                    }
+                    widget.chatroom.groupinfo!.name = groupname.text;
+                    widget.chatroom.groupinfo!.bio = groupbio.text;
+                    await Database.updategroupinfo(
+                        widget.chatroom.id, widget.chatroom.groupinfo!);
+                    Toast("info updated successfully !!");
+                    EasyLoading.dismiss();
+                    if (!mounted) return;
+                    Navigator.of(context).pop(true);
+                    setState(() {});
+                  },
+                  child: const Text("SAVE"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!result) {
+      groupname = TextEditingController(text: widget.chatroom.groupinfo!.name);
+      groupbio = TextEditingController(text: widget.chatroom.groupinfo!.bio);
+    }
+  }
+
+  void leavegroup() async {
+    EasyLoading.show(status: "leaving");
+    Toast("leaving group...");
+    if (amIadmin) {
+      widget.chatroom.groupinfo!.admins.remove(widget.myphoneno);
+      await Database.updategroupinfo(
+          widget.chatroom.id, widget.chatroom.groupinfo!);
+    }
+    Profile? profile;
+    for (int i = 0; i < widget.chatroom.connectedPersons.length; i++) {
+      if (widget.chatroom.connectedPersons[i].getPhoneNumber ==
+          widget.myphoneno) {
+        profile = widget.chatroom.connectedPersons[i];
+      }
+    }
+    widget.chatroom.connectedPersons.remove(profile);
+    await Database.updateparticipants(
+        FirebaseAuth.instance.currentUser!.uid, widget.chatroom.id, false);
+    String uid = await Database.getuid(widget.myphoneno);
+    await Database.updateparticipants(uid, widget.chatroom.id, false);
+    EasyLoading.dismiss();
+    int count = 0;
+    if (!mounted) return;
+    Navigator.of(context).popUntil((_) => count++ >= 2);
+  }
+
+  void deletegroup() async {
+    EasyLoading.show(status: "deleting");
+    Toast("deleting group...");
+    await Database.deletegroup(widget.chatroom);
+    EasyLoading.dismiss();
+    int count = 0;
+    if (!mounted) return;
+    Navigator.of(context).popUntil((_) => count++ >= 2);
   }
 }

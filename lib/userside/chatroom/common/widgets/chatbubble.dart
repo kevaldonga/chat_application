@@ -321,6 +321,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     });
     final snapshot = await upload?.whenComplete(() {});
     widget.chat.fileinfo!.url = await snapshot?.ref.getDownloadURL();
+    if (!mounted) return;
     setState(() {});
     await Database.updatechat(widget.chat);
     if (widget.chat.fileinfo!.type == FileType.image) {
@@ -367,24 +368,28 @@ class _ChatBubbleState extends State<ChatBubble> {
   void filedownloadtostorage() async {
     FirebaseStorage storage = FirebaseStorage.instance;
     String mydir = widget.mediavisibility
-        ? "${widget.mediapath}/files/${widget.chat.fileinfo!.filename}"
+        ? "${widget.mediapath}/files/FILE${widget.chat.fileinfo!.filename}"
         : "${widget.documentpath}/files/FILE${widget.chat.fileinfo!.filename}";
     File file = File(mydir);
     // creates the file first before writing anything
     file = await file.create(recursive: true);
-    download = storage.ref("/chats/${widget.chat.id}").writeToFile(file);
-    download!.snapshotEvents.listen((event) {
-      _progress = event.bytesTransferred / event.totalBytes;
-      if (!mounted) return;
-      setState(() {});
-    }).onDone(() {
-      widget.chat.fileinfo!.file = file;
-      widget.chat.fileinfo!.fileexist = true;
-      if (widget.issentfromme) {
-        widget.chat.fileinfo!.path = mydir;
-      }
-    });
-    Database.updatechat(widget.chat);
+    download = storage.ref("/chats/${widget.chat.id}").writeToFile(file)
+      ..snapshotEvents.listen(
+        (event) {
+          _progress = event.bytesTransferred / event.totalBytes;
+          log(_progress.toString());
+          setState(() {});
+          if (_progress == 1) {
+            widget.chat.fileinfo!.file = file;
+            widget.chat.fileinfo!.fileexist = true;
+            if (widget.issentfromme) {
+              widget.chat.fileinfo!.path = mydir;
+            }
+            Database.updatechat(widget.chat);
+            setState(() {});
+          }
+        },
+      );
   }
 
   Future<void> imagedownloadtostorage() async {

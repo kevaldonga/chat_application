@@ -176,6 +176,7 @@ class _CreateGroupState extends State<CreateGroup> {
         focusNode: nodegroupdes,
         controller: groupdescription,
         maxLines: 10,
+        maxLength: 50,
         decoration: const InputDecoration(
           contentPadding:
               EdgeInsets.only(left: 15, top: 15, bottom: 15, right: 15),
@@ -272,7 +273,7 @@ class _CreateGroupState extends State<CreateGroup> {
         child: file == null
             ? const CircleAvatar(
                 backgroundColor: MyColors.profilebackground,
-                child: Icon(Icons.person_rounded,
+                child: Icon(Icons.groups_rounded,
                     size: 50, color: MyColors.profileforeground),
               )
             : Image.file(file!, fit: BoxFit.cover),
@@ -352,7 +353,7 @@ class _CreateGroupState extends State<CreateGroup> {
             child: Stack(
               alignment: Alignment.bottomRight,
               children: [
-                profilewidget(profile.photourl, md.size.width * 0.16),
+                profilewidget(profile.photourl, md.size.width * 0.1, false),
                 // check if its me or not
                 if (profile.getEmail != auth.currentUser!.email)
                   Positioned(
@@ -398,7 +399,8 @@ class _CreateGroupState extends State<CreateGroup> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: profilewidget(profile.photourl, md.size.width * 0.12),
+              child:
+                  profilewidget(profile.photourl, md.size.width * 0.12, false),
             ),
             Flexible(
               flex: 8,

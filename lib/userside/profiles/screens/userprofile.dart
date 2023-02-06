@@ -52,6 +52,7 @@ class UserProfile extends StatelessWidget {
               slivers: [
                 SliverPersistentHeader(
                   delegate: CustomAppbar(
+                    isitgroup: false,
                     herotag: chatroomid,
                     name: profile.getName,
                     screenWidth: MediaQuery.of(context).size.width,
