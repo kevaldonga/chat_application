@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatty/userside/chatroom/common/functions/formatdate.dart';
 import 'package:chatty/userside/dashview/common/widgets/imageview.dart';
 import 'package:flutter/material.dart';
 
@@ -71,7 +72,12 @@ class ChatroomMedia extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ImageView(
-                chat: chats[index], sentFrom: sentdata[chats[index].sentFrom]!),
+                tag: chats[index].fileinfo!.url!,
+                url: chats[index].fileinfo!.url!,
+                file: chats[index].fileinfo!.file,
+                description:
+                    formatdate(chats[index].time, MediaQuery.of(context)),
+                title: sentdata[chats[index].sentFrom]!),
           )),
       child: Hero(
         tag: chats[index].fileinfo!.url!,

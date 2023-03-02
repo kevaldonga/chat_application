@@ -31,7 +31,7 @@ class ShimmerChatRoomActivity extends StatelessWidget {
                 child: Container(
                   width: (md.size.width * (Random().nextDouble() * 50 / 100)) +
                       md.size.width * 0.2,
-                  height: md.size.height * 0.038,
+                  height: md.size.height * 0.035,
                   padding: const EdgeInsets.symmetric(horizontal: 7),
                   decoration: BoxDecoration(
                     color: Colors.white,

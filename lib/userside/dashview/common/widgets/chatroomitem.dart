@@ -1,4 +1,6 @@
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/global/functions/unfocus.dart';
+import 'package:chatty/userside/dashview/common/widgets/imageview.dart';
 import 'package:flutter/material.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
@@ -35,42 +37,61 @@ class ChatRoomItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
-    return Hero(
-      tag: id,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: top != null
+            ? const BorderRadius.vertical(top: Radius.circular(35))
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          highlightColor: Colors.transparent,
           borderRadius: top != null
               ? const BorderRadius.vertical(top: Radius.circular(35))
               : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            highlightColor: Colors.transparent,
-            borderRadius: top != null
-                ? const BorderRadius.vertical(top: Radius.circular(35))
-                : null,
-            onTap: ontap,
-            child: Container(
-              width: md.size.width,
-              height: md.size.height * 0.1,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black12, width: 1),
-                borderRadius: top != null
-                    ? const BorderRadius.vertical(top: Radius.circular(35))
-                    : null,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  profilewidget(url, md.size.width * 0.12, isitgroup),
-                  SizedBox(width: md.size.width * 0.08),
-                  middleactions(),
-                  endactions(md),
-                ],
-              ),
+          onTap: ontap,
+          child: Container(
+            width: md.size.width,
+            height: md.size.height * 0.1,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black12, width: 1),
+              borderRadius: top != null
+                  ? const BorderRadius.vertical(top: Radius.circular(35))
+                  : null,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Hero(
+                  tag: id,
+                  child: GestureDetector(
+                    onTap: () {
+                      if (url == null) {
+                        return;
+                      }
+                      unfocus(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ImageView(
+                            tag: id,
+                            title: title,
+                            url: url!,
+                            description:
+                                "${isitgroup ? "group" : "$title's"} profile",
+                          ),
+                        ),
+                      );
+                    },
+                    child: profilewidget(url, md.size.width * 0.12, isitgroup),
+                  ),
+                ),
+                SizedBox(width: md.size.width * 0.08),
+                middleactions(),
+                endactions(md),
+              ],
             ),
           ),
         ),

@@ -8,6 +8,9 @@ class Chat {
   final DateTime _time;
   final String? _text;
   final String _sentFrom;
+  Map<String, int> reactioncount = {}; // { "😊" : 23, "😂": 32 }
+  Map<String, List<String>> reactions =
+      {}; // { phoneno : ["😊","❤️"],phoneno : ["😂","👌"]}
   bool _read = false;
 
   String get id => _id;
@@ -40,6 +43,8 @@ class Chat {
         _text = chat["text"],
         _sentFrom = chat["sentfrom"]!,
         _read = chat["read"]!,
+        reactioncount = (chat["reactioncount"] ?? {}).cast<String, int>(),
+        reactions = _convert(chat["reactions"] ?? {}),
         fileinfo = chat["url"] != "null" && chat["url"] != null
             ? FileInfo(
                 filename: chat["filename"] == "null" ? null : chat["filename"],
@@ -56,6 +61,10 @@ class Chat {
       "read": _read,
       if (text != "" && text != null) "text": _text,
     };
+    if (reactioncount.isNotEmpty) {
+      data["reactioncount"] = reactioncount;
+      data["reactions"] = reactions;
+    }
     if (fileinfo == null) return data;
     if (fileinfo!.path != null && fileinfo!.path != "null") {
       data["path"] = fileinfo!.path;
@@ -71,9 +80,29 @@ class Chat {
     return data;
   }
 
+  static Map<String, List<String>> _convert(Map<dynamic, dynamic> data) {
+    Map<String, List<String>> mydata = {};
+    mydata = data.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        (value as List).cast<String>(),
+      ),
+    );
+    return mydata;
+  }
+
+  void sortReactionCount() {
+    reactioncount = Map.fromEntries(
+      reactioncount.entries.toList()
+        ..sort(
+          (e1, e2) => e2.value.compareTo(e1.value),
+        ),
+    );
+  }
+
   @override
   String toString() {
-    return "id = $_id || fileinfo = $fileinfo || time = $time || text = $text || sentfrom = $sentFrom || read = $_read";
+    return "id = $_id || fileinfo = $fileinfo || time = $time || text = $text || sentfrom = $sentFrom || read = $_read || reactioncount = $reactioncount";
   }
 }
 

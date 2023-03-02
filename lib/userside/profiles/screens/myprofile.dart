@@ -76,6 +76,9 @@ class _MyProfileState extends State<MyProfile> {
         );
         if (a) {
           onBackPressed();
+        } else {
+          // ignore: use_build_context_synchronously
+          Navigator.of(context).pop();
         }
         return !a;
       },

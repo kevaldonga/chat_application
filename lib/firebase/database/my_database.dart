@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import '../../assets/logic/chat.dart';
 import '../../assets/logic/profile.dart';
@@ -37,6 +38,7 @@ class Database {
     // update it only by its id
     // dont need anything
     await _db?.collection("chats").doc(chat.id).update(chat.toMap());
+
     await MyHive.updatechat(chat);
     log("updated chat $chat");
   }
@@ -58,9 +60,9 @@ class Database {
     if (data == null) {
       return null;
     }
+
     chat = Chat.fromMap(chat: data!);
 
-    // now check if read is changed or not so we can finally update chat on storage
     if (chat.isread) {
       await MyHive.updatechat(chat);
     }
@@ -546,6 +548,11 @@ class Database {
   static Future<void> deletegroup(ChatRoom chatroom) async {
     _db ??= FirebaseFirestore.instance;
 
+    // delete every chat from group
+    for (int i = 0; i < chatroom.chats.length; i++) {
+      await Database.deleteChat(chatroom.chats[i], chatroom.id);
+    }
+
     await _db?.collection("groupinfo").doc(chatroom.id).delete();
 
     // delete chatroom also
@@ -561,5 +568,34 @@ class Database {
         SetOptions(merge: true),
       );
     }
+
+    // delete the profile picture if has it
+    if (chatroom.groupinfo!.photourl != null) {
+      await FirebaseStorage.instance
+          .refFromURL(chatroom.groupinfo!.photourl!)
+          .delete();
+    }
+  }
+
+  static Future<void> deleteChat(Chat chat, String chatroomid) async {
+    _db ??= FirebaseFirestore.instance;
+
+    // delete globally
+    await _db?.collection("chats").doc(chat.id).delete();
+
+    // delete in chatroom
+    await _db?.collection("chatrooms").doc(chatroomid).set(
+      {
+        "chatids": FieldValue.arrayRemove([chat.id]),
+      },
+      SetOptions(merge: true),
+    );
+
+    // delete file if has it
+    if (chat.fileinfo != null) {
+      await FirebaseStorage.instance.refFromURL(chat.fileinfo!.url!).delete();
+    }
+
+    log("deleted chat $chat");
   }
 }

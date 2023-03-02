@@ -12,6 +12,8 @@ Widget chatroomitem({
   required String name,
   required MediaQueryData md,
   VoidCallback? onitemtap,
+  FontWeight? nameFontWeight,
+  BoxConstraints? constraints,
 }) {
   return Container(
     color: Colors.white,
@@ -21,7 +23,7 @@ Widget chatroomitem({
         borderRadius: BorderRadius.circular(12),
         highlightColor: Colors.transparent,
         splashColor: Colors.black26,
-        onTap: amIadmin ? onitemtap : null,
+        onTap: onitemtap,
         child: Container(
             padding: const EdgeInsets.all(10),
             width: md.size.width,
@@ -32,7 +34,7 @@ Widget chatroomitem({
               children: [
                 profilewidget(url, md.size.width * 0.12, isitgroup),
                 SizedBox(width: md.size.width * 0.08),
-                middleactions(bio, name, md),
+                middleactions(bio, name, md, nameFontWeight, constraints),
                 if (endactions != null) endactions,
               ],
             )),
@@ -41,9 +43,11 @@ Widget chatroomitem({
   );
 }
 
-Widget middleactions(String? bio, String name, MediaQueryData md) {
+Widget middleactions(String? bio, String name, MediaQueryData md,
+    FontWeight? nameFontWeight, BoxConstraints? constraints) {
   return Container(
-    constraints: BoxConstraints.tightFor(width: md.size.width * 0.45),
+    constraints:
+        constraints ?? BoxConstraints.tightFor(width: md.size.width * 0.45),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,10 +58,10 @@ Widget middleactions(String? bio, String name, MediaQueryData md) {
           name,
           softWrap: false,
           overflow: TextOverflow.fade,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 19,
             color: Colors.black,
-            fontWeight: FontWeight.w600,
+            fontWeight: nameFontWeight ?? FontWeight.w500,
           ),
         ),
         // item bio

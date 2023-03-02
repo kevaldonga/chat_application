@@ -383,7 +383,7 @@ class _UserViewState extends State<UserView> {
   }
 
   void ontap(int index) async {
-    SystemChannels.textInput.invokeMethod("TextInput.hide");
+    FocusScope.of(context).requestFocus(FocusNode());
     pauselisteners();
     ChatRoom? chatroom =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {

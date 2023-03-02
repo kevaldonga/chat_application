@@ -1,4 +1,3 @@
-
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +55,7 @@ class _TextFieldmainState extends State<TextFieldmain> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
-          onTap: (){},
+          onTap: () {},
           highlightColor: Colors.transparent,
           focusColor: const Color.fromARGB(255, 205, 209, 248),
           splashColor: const Color.fromARGB(255, 193, 199, 247),

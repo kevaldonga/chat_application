@@ -11,13 +11,20 @@ import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
 import '../../../../assets/colors/colors.dart';
-import '../../../../assets/logic/chat.dart';
-import '../../../chatroom/common/functions/formatdate.dart';
 
 class ImageView extends StatefulWidget {
-  final Chat chat;
-  final String sentFrom;
-  const ImageView({super.key, required this.chat, required this.sentFrom});
+  final String title, description;
+  final File? file;
+  final String url;
+  final String tag;
+  const ImageView({
+    super.key,
+    this.file,
+    required this.tag,
+    required this.title,
+    required this.description,
+    required this.url,
+  });
 
   @override
   State<ImageView> createState() => _ImageViewState();
@@ -76,9 +83,9 @@ class _ImageViewState extends State<ImageView> {
               onSelected: (value) async {
                 switch (value) {
                   case popupmenu.save:
-                    if (widget.chat.fileinfo!.file != null) {
+                    if (widget.file != null) {
                       // save image to gallery
-                      saveimage(widget.chat.fileinfo!.file!.path);
+                      saveimage(widget.file!.path);
                     } else {
                       // save image first to temp directory from cloud
                       downloadimagetotemp(whenComplete: (file) {
@@ -87,9 +94,9 @@ class _ImageViewState extends State<ImageView> {
                     }
                     break;
                   case popupmenu.viewinGallery:
-                    if (widget.chat.fileinfo!.file != null) {
+                    if (widget.file != null) {
                       // open the file
-                      openfile(widget.chat.fileinfo!.file!);
+                      openfile(widget.file!);
                     } else {
                       // download image to temporary directory
                       downloadimagetotemp(whenComplete: (file) {
@@ -108,11 +115,11 @@ class _ImageViewState extends State<ImageView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.sentFrom,
+              widget.title,
               style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w500),
             ),
             Text(
-              formatdate(widget.chat.time, md),
+              widget.description,
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w300),
             ),
           ],
@@ -131,14 +138,14 @@ class _ImageViewState extends State<ImageView> {
           constrained: true,
           clipBehavior: Clip.none,
           child: Hero(
-            tag: widget.chat.fileinfo!.url.toString(),
-            child: widget.chat.fileinfo!.file == null
+            tag: widget.tag,
+            child: widget.file == null
                 ? CachedNetworkImage(
-                    imageUrl: widget.chat.fileinfo!.url!,
+                    imageUrl: widget.url,
                     fit: BoxFit.fitWidth,
                   )
                 : Image.file(
-                    widget.chat.fileinfo!.file!,
+                    widget.file!,
                     fit: BoxFit.fitWidth,
                   ),
           ),
@@ -157,7 +164,7 @@ class _ImageViewState extends State<ImageView> {
 
   Future<File> savetoTempPath() async {
     String? temppath = await PathProvider.tempDirectory();
-    String path = "$temppath/IMG${widget.chat.id}.jpg";
+    String path = "$temppath/IMG.jpg";
     File file = File(path);
     return file;
   }
@@ -166,7 +173,7 @@ class _ImageViewState extends State<ImageView> {
     File file = await savetoTempPath();
     file = await file.create(recursive: true);
     FirebaseStorage.instance
-        .ref("chats/${widget.chat.id}")
+        .refFromURL(widget.url)
         .writeToFile(file)
         .whenComplete(() {
       whenComplete(file);

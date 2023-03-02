@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 void showbottomsheet(
     {required BuildContext context, required List<Widget> items}) {
-  FocusScope.of(context).unfocus();
+  FocusScope.of(context).requestFocus(FocusNode());
   showModalBottomSheet(
       useSafeArea: true,
       shape: const RoundedRectangleBorder(

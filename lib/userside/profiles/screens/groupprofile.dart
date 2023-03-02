@@ -358,7 +358,7 @@ class _GroupProfileState extends State<GroupProfile> {
 
   void onitemtap(Profile profile) async {
     // if its me return
-    if (profile.getPhoneNumber == widget.myphoneno) {
+    if (profile.getPhoneNumber == widget.myphoneno || !amIadmin) {
       return;
     }
     bool admin = isthisadmin(profile.getPhoneNumber);
@@ -471,7 +471,7 @@ class _GroupProfileState extends State<GroupProfile> {
               Center(
                 child: TextButton(
                   onPressed: () async {
-                    SystemChannels.textInput.invokeMethod("TextInput.hide");
+                    FocusScope.of(context).requestFocus(FocusNode());
                     EasyLoading.show(status: "saving..");
                     if (groupname.text.isEmpty) {
                       Toast("name field is empty");

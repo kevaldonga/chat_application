@@ -25,13 +25,12 @@ import '../../../assets/logic/FirebaseUser.dart';
 import '../../../assets/logic/chat.dart';
 import '../../../constants/chatbubble_position.dart';
 import '../../../constants/enumFIleType.dart';
-import '../../dashview/common/widgets/imageview.dart';
+import '../../../global/functions/unfocus.dart';
 import '../../dashview/common/widgets/textfield_main.dart';
 import '../../profiles/common/functions/compressimage.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/functions/formatdate.dart';
 import '../common/functions/generateid.dart';
-import '../common/functions/openfile.dart';
 import '../common/functions/sameday.dart';
 import '../common/widgets/chatbubble.dart';
 import '../common/widgets/chatroomactivity_shimmer.dart';
@@ -112,7 +111,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       case AppLifecycleState.detached:
         // if you close app with keybaord on it would stay on typing status
         // so have to hide the keyboard first
-        unfocus();
+        unfocus(context);
         statuses[myprofile.getPhoneNumber] = Status.offline;
         Database.updatestatus(
             myprofile.getPhoneNumber, Status.offline); // set to offline
@@ -126,9 +125,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
   @override
   Widget build(BuildContext context) {
-    if (documentpath == null || mediapath == null) {
-      return Container();
-    }
     ThemeData theme = Theme.of(context);
     MediaQueryData md = MediaQuery.of(context);
     bool iskeyboardvisible = md.viewInsets.bottom > 0;
@@ -238,7 +234,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         child: InkWell(
           onTap: () {
             pauselisteners();
-            unfocus();
+            unfocus(context);
             Profile otherprofile = getotherprofile();
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -318,7 +314,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
               GestureDetector(
                   onTap: () async {
                     pauselisteners();
-                    unfocus();
+                    unfocus(context);
                     myprofile = await Navigator.push(context,
                         MaterialPageRoute(builder: (context) {
                       return MyProfile(profile: myprofile);
@@ -394,6 +390,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                 flex: 3,
                 child: IconButton(
                   onPressed: () {
+                    if (controller.text.isEmpty) {
+                      return;
+                    }
                     sendmessage();
                   },
                   icon: const Icon(Icons.send,
@@ -441,36 +440,27 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                 Chat currentchat = widget.chatroom.chats[index];
                 bool issentfromme =
                     currentchat.sentFrom == myprofile.getPhoneNumber;
-                Alignment bubblealignment =
-                    issentfromme ? Alignment.centerRight : Alignment.centerLeft;
-                return Align(
-                  alignment: bubblealignment,
-                  child: GestureDetector(
-                    onTap: () {
-                      onchatbubbletap(index);
-                    },
-                    onDoubleTap: () {
-                      onchatbubbledoubletap(index, currentchat);
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                          bottom: index == widget.chatroom.chats.length - 1
-                              ? 10
-                              : 0),
-                      child: ChatBubble(
-                          mediavisibility:
-                              widget.user.mediavisibility[widget.chatroom.id] ??
-                                  true,
-                          documentpath: documentpath!,
-                          mediapath: mediapath!,
-                          profile: widget.chatroom.isitgroup
-                              ? getotherprofile(currentchat.sentFrom)
-                              : null,
-                          position: getpositionofbubble(index),
-                          issentfromme: issentfromme,
-                          chat: currentchat),
-                    ),
-                  ),
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom:
+                          index == widget.chatroom.chats.length - 1 ? 10 : 0),
+                  child: ChatBubble(
+                      profiles: widget.chatroom.connectedPersons,
+                      chatroomid: widget.chatroom.id,
+                      onchatdelete: () {
+                        onchatdelete(index);
+                      },
+                      isitgroup: widget.chatroom.isitgroup,
+                      mediavisibility:
+                          widget.user.mediavisibility[widget.chatroom.id] ??
+                              true,
+                      documentpath: documentpath!,
+                      mediapath: mediapath!,
+                      myprofile: myprofile,
+                      otherprofile: getotherprofile(currentchat.sentFrom),
+                      position: getpositionofbubble(index),
+                      issentfromme: issentfromme,
+                      chat: currentchat),
                 );
               },
               itemCount: widget.chatroom.chats.length),
@@ -551,7 +541,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
 
       scrolltobottom();
       controller.clear();
-      SystemChannels.textInput.invokeMethod("TextInput.hide");
+      FocusScope.of(context).requestFocus(FocusNode());
     });
     await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
   }
@@ -648,10 +638,11 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void init() async {
+    myprofile = getmyprofile();
     documentpath = await PathProvider.documentDirectory();
     mediapath = await PathProvider.mediaDirectory();
+    await Future.delayed(const Duration(milliseconds: 300));
     scrolltobottom();
-    myprofile = getmyprofile();
     statuses[myprofile.getPhoneNumber] = Status.online;
     Database.updatestatus(myprofile.getPhoneNumber, Status.online);
     listentochatroomchanges();
@@ -723,56 +714,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     });
   }
 
-  void openImage(Chat chat) async {
-    unfocus();
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return ImageView(
-          chat: chat,
-          sentFrom: chat.sentFrom == myprofile.getPhoneNumber
-              ? myprofile.getName
-              : getotherprofile().getName);
-    }));
-  }
-
-  void onchatbubbletap(int index) {
-    if (widget.chatroom.chats[index].fileinfo?.url == null) {
-      expandbubble(index, widget.chatroom.chats[index]);
-    } else if (widget.chatroom.chats[index].fileinfo?.type == FileType.image) {
-      openImage(widget.chatroom.chats[index]);
-    } else {
-      if (widget.chatroom.chats[index].fileinfo?.file == null) {
-        Toast("File appears to be missing");
-        return;
-      }
-      openfile(widget.chatroom.chats[index].fileinfo!.file!);
-    }
-  }
-
-  void onchatbubbledoubletap(int index, Chat currentchat) {
-    if (currentchat.fileinfo?.url == null) {
-      return;
-    }
-    expandbubble(index, currentchat);
-  }
-
-  void expandbubble(int index, Chat currentchat) {
-    setState(() {
-      if (ChatBubble.expandedbubble == currentchat) {
-        ChatBubble.expandedbubble = null;
-        return;
-      }
-      ChatBubble.expandedbubble = currentchat;
-    });
-    if (index == widget.chatroom.chats.length - 1) {
-      Future.delayed(const Duration(milliseconds: 200)).whenComplete(() {
-        _scrollcontroller.animateTo(
-            curve: Curves.bounceInOut,
-            duration: const Duration(milliseconds: 200),
-            _scrollcontroller.position.maxScrollExtent + 30);
-      });
-    }
-  }
-
   List<Chat> getchatroomfiles() {
     List<Chat> chats = [];
     for (int i = 0; i < widget.chatroom.chats.length; i++) {
@@ -791,10 +732,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
           widget.chatroom.connectedPersons[i].getName;
     }
     return sentdata;
-  }
-
-  void unfocus() {
-    SystemChannels.textInput.invokeMethod("TextInput.hide");
   }
 
   void listentostatuses() {
@@ -901,5 +838,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   void cancellisteners() {
     listener.cancel();
     chatslistener.cancel();
+  }
+
+  void onchatdelete(int index) async {
+    await Database.deleteChat(widget.chatroom.chats[index], widget.chatroom.id);
+    widget.chatroom.chats.removeAt(index);
+    Toast("chat has been deleted successfully !!");
+    setState(() {});
   }
 }

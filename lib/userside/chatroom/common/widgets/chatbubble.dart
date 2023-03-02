@@ -6,27 +6,43 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/constants/chatbubble_position.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/userside/chatroom/common/functions/ReactionCountOp.dart';
+import 'package:chatty/userside/chatroom/common/functions/isReactionEmpty.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../assets/SystemChannels/toast.dart';
 import '../../../../assets/logic/chat.dart';
 import '../../../../assets/logic/profile.dart';
 import '../../../../constants/enumFIleType.dart';
+import '../../../../global/functions/unfocus.dart';
+import '../../../dashview/common/widgets/imageview.dart';
 import '../functions/formatdate.dart';
+import '../functions/openfile.dart';
+import 'onchathold.dart';
 
 class ChatBubble extends StatefulWidget {
+  String chatroomid;
   static Chat? expandedbubble;
   final EdgeInsetsGeometry? margin;
   final ChatBubblePosition position;
   bool issentfromme;
   Chat chat;
-  Profile? profile;
+  Profile myprofile, otherprofile;
   bool mediavisibility;
+  bool isitgroup;
   final String documentpath, mediapath;
+  VoidCallback onchatdelete;
+  List<Profile> profiles;
   ChatBubble({
     super.key,
-    this.profile,
     this.margin,
+    required this.profiles,
+    required this.chatroomid,
+    required this.onchatdelete,
+    required this.isitgroup,
+    required this.myprofile,
+    required this.otherprofile,
     required this.mediavisibility,
     required this.documentpath,
     required this.mediapath,
@@ -39,7 +55,10 @@ class ChatBubble extends StatefulWidget {
   State<ChatBubble> createState() => _ChatBubbleState();
 }
 
-class _ChatBubbleState extends State<ChatBubble> {
+class _ChatBubbleState extends State<ChatBubble>
+    with SingleTickerProviderStateMixin {
+  late AnimationController onreactcontroller;
+  late Animation<double> animation;
   UploadTask? upload;
   DownloadTask? download;
   double _progress = 0;
@@ -48,100 +67,258 @@ class _ChatBubbleState extends State<ChatBubble> {
   @override
   void initState() {
     super.initState();
+    onreactcontroller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300))
+      ..addListener(() {
+        setState(() {});
+      });
+    animation = Tween<double>(begin: 0, end: 0.075).animate(onreactcontroller);
+    onreactcontroller.forward();
     init();
   }
 
   @override
+  void dispose() {
+    onreactcontroller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    String toasttext = widget.chat.fileinfo != null
+        ? widget.chat.fileinfo?.filename != null
+            ? "file name"
+            : "image"
+        : "text";
+    Alignment bubblealignment =
+        widget.issentfromme ? Alignment.centerRight : Alignment.centerLeft;
     md = MediaQuery.of(context);
-    return Column(
-      crossAxisAlignment: widget.issentfromme
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          constraints:
-              BoxConstraints.loose(Size.fromWidth(md.size.width * 0.75)),
-          padding: widget.chat.fileinfo?.file != null ||
-                  widget.chat.fileinfo?.url != null
-              ? const EdgeInsets.all(7)
-              : const EdgeInsets.only(left: 22, right: 22, top: 8, bottom: 12),
-          margin: widget.margin,
-          decoration: BoxDecoration(
-            borderRadius: _getraduisbyposition(),
-            gradient:
-                widget.issentfromme ? MyGradients.maingradientvertical : null,
-            color: !widget.issentfromme ? Colors.white : null,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.profile != null && !widget.issentfromme)
-                Padding(
-                  padding: widget.chat.fileinfo?.type != null
-                      ? EdgeInsets.symmetric(
-                          horizontal:
-                              widget.chat.fileinfo?.type == FileType.image
-                                  ? 10
-                                  : 15,
-                          vertical: widget.chat.fileinfo?.type == FileType.image
-                              ? 5
-                              : 0,
-                        )
-                      : EdgeInsets.zero,
-                  child: Text(
-                    widget.profile!.getName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: () {
+        onchatbubbletap();
+      },
+      onDoubleTap: () {
+        onchatbubbledoubletap();
+      },
+      onLongPress: () {
+        unfocus(context);
+        widget.chat.sortReactionCount();
+        onchathold(
+          profiles: widget.profiles,
+          myphoneno: widget.myprofile.getPhoneNumber,
+          reactionCount: widget.chat.reactioncount,
+          reactions: widget.chat.reactions,
+          onReactionRemoved: removeReaction,
+          onReacted: (emoji) {
+            bool didIReactToCurrentemoji = widget
+                    .chat.reactions[widget.myprofile.getPhoneNumber]
+                    ?.contains(emoji) ??
+                false;
+            if (didIReactToCurrentemoji) {
+              return;
+            }
+            onReacted(emoji);
+          },
+          onchatdelete: widget.onchatdelete,
+          whattocopy: (widget.chat.fileinfo != null
+                  ? widget.chat.fileinfo?.filename ?? widget.chat.fileinfo?.url
+                  : widget.chat.text) ??
+              "",
+          toasttextoncopied: "$toasttext copied to your clipboard !",
+          context: context,
+          isitme: widget.issentfromme,
+          sentFrom: widget.myprofile,
+        );
+      },
+      child: Align(
+        alignment: bubblealignment,
+        child: Column(
+          crossAxisAlignment: widget.issentfromme
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              constraints:
+                  BoxConstraints.loose(Size.fromWidth(md.size.width * 0.75)),
+              padding: widget.chat.fileinfo?.file != null ||
+                      widget.chat.fileinfo?.url != null
+                  ? const EdgeInsets.all(7)
+                  : const EdgeInsets.only(
+                      left: 22, right: 22, top: 8, bottom: 12),
+              margin: widget.margin,
+              decoration: BoxDecoration(
+                borderRadius: _getraduisbyposition(),
+                gradient: widget.issentfromme
+                    ? MyGradients.maingradientvertical
+                    : null,
+                color: !widget.issentfromme ? Colors.white : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.isitgroup && !widget.issentfromme)
+                    Padding(
+                      padding: widget.chat.fileinfo?.type != null
+                          ? EdgeInsets.symmetric(
+                              horizontal:
+                                  widget.chat.fileinfo?.type == FileType.image
+                                      ? 10
+                                      : 15,
+                              vertical:
+                                  widget.chat.fileinfo?.type == FileType.image
+                                      ? 5
+                                      : 0,
+                            )
+                          : EdgeInsets.zero,
+                      child: Text(
+                        widget.otherprofile.getName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              getcorrespondingbubble(),
-              if (widget.chat.text != null && widget.chat.text != "")
-                Padding(
-                  padding: widget.chat.fileinfo?.file != null ||
-                          widget.chat.fileinfo?.url != null
-                      ? const EdgeInsets.only(left: 7, top: 5, bottom: 5)
-                      : EdgeInsets.zero,
-                  child: Text(
-                    widget.chat.text!,
-                    style: TextStyle(
-                      color: widget.issentfromme
-                          ? Colors.white
-                          : MyColors.textprimary,
-                      fontSize: 20,
+                  getcorrespondingbubble(),
+                  if (widget.chat.text != null && widget.chat.text != "")
+                    Padding(
+                      padding: widget.chat.fileinfo?.file != null ||
+                              widget.chat.fileinfo?.url != null
+                          ? const EdgeInsets.only(left: 7, top: 5, bottom: 5)
+                          : EdgeInsets.zero,
+                      child: Text(
+                        widget.chat.text!,
+                        style: TextStyle(
+                          color: widget.issentfromme
+                              ? Colors.white
+                              : MyColors.textprimary,
+                          fontSize: 20,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-            ],
-          ),
+                  // reactions panel
+                  reactionPanel(),
+                ],
+              ),
+            ),
+            AnimatedContainer(
+              height: widget.chat == ChatBubble.expandedbubble ? 20 : 0,
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.only(
+                  left: widget.issentfromme ? 0 : 10,
+                  right: widget.issentfromme ? 10 : 0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.issentfromme)
+                    Icon(Icons.check,
+                        color: widget.chat.isread
+                            ? MyColors.primarySwatch
+                            : MyColors.textprimary,
+                        size:
+                            widget.chat == ChatBubble.expandedbubble ? 22 : 0),
+                  const SizedBox(width: 5),
+                  Text(formatdate(widget.chat.time, md)),
+                ],
+              ),
+            ),
+          ],
         ),
-        AnimatedContainer(
-          height: widget.chat == ChatBubble.expandedbubble ? 20 : 0,
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.only(
-              left: widget.issentfromme ? 0 : 10,
-              right: widget.issentfromme ? 10 : 0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.issentfromme)
-                Icon(Icons.check,
-                    color: widget.chat.isread
-                        ? MyColors.primarySwatch
-                        : MyColors.textprimary,
-                    size: widget.chat == ChatBubble.expandedbubble ? 22 : 0),
-              const SizedBox(width: 5),
-              Text(formatdate(widget.chat.time, md)),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
+  }
+
+  Widget reactionPanel() {
+    return Opacity(
+      opacity: animation.value / 0.075,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          widget.chat.reactioncount.length,
+          (index) {
+            String currentEmoji =
+                widget.chat.reactioncount.keys.elementAt(index);
+            bool didIReactToCurrentemoji = widget
+                    .chat.reactions[widget.myprofile.getPhoneNumber]
+                    ?.contains(currentEmoji) ??
+                false;
+            return GestureDetector(
+              onTap: () {
+                onReacted(currentEmoji);
+              },
+              child: Container(
+                height: md.size.width * animation.value,
+                width: md.size.width * animation.value,
+                margin: const EdgeInsets.only(top: 4, left: 3, right: 3),
+                decoration: BoxDecoration(
+                    color: didIReactToCurrentemoji
+                        ? widget.issentfromme
+                            ? Colors.white38
+                            : Colors.grey.shade300
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: didIReactToCurrentemoji
+                          ? widget.issentfromme
+                              ? Colors.white70
+                              : Colors.black54
+                          : Colors.transparent,
+                      width: 0.5,
+                    )),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      // emoji
+                      Text(currentEmoji, style: const TextStyle(fontSize: 12)),
+                      // emoji count
+                      Text(widget.chat.reactioncount[currentEmoji]!.toString(),
+                          style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void onReacted(String currentEmoji) async {
+    bool didIReactToCurrentemoji = widget
+            .chat.reactions[widget.myprofile.getPhoneNumber]
+            ?.contains(currentEmoji) ??
+        false;
+    if (didIReactToCurrentemoji) {
+      removeReaction(currentEmoji);
+    } else {
+      if (widget.chat.reactions.isReactionEmpty) {
+        onreactcontroller.forward(from: 0);
+      }
+      widget.chat.reactioncount.increment(currentEmoji);
+      //  add the reaction
+      widget.chat.reactions[widget.myprofile.getPhoneNumber] ??= [];
+      widget.chat.reactions[widget.myprofile.getPhoneNumber]!.add(currentEmoji);
+    }
+
+    widget.chat.sortReactionCount();
+    setState(() {});
+
+    // have to write the chat cause update wont work
+    // when we try to remove the last emoji it wont be removed
+    // as we are trying to update doc with {}
+    // which will be merged into doc and not override it
+
+    await Database.writechat(chat: widget.chat, chatroomid: widget.chatroomid);
   }
 
   Widget imageBubble() {
@@ -437,7 +614,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
     if (widget.chat.fileinfo?.filename != null) {
       widget.chat.fileinfo?.type = FileType.media;
-    } else {
+    } else if (widget.chat.fileinfo?.url != null) {
       widget.chat.fileinfo?.type = FileType.image;
       imagedownloadtostorage();
     }
@@ -460,5 +637,68 @@ class _ChatBubbleState extends State<ChatBubble> {
     if (widget.chat.fileinfo!.file != null && widget.issentfromme) {
       widget.chat.fileinfo!.path = widget.chat.fileinfo!.file!.path;
     }
+  }
+
+  void onchatbubbletap() {
+    if (widget.chat.fileinfo?.url == null) {
+      expandbubble();
+    } else if (widget.chat.fileinfo?.type == FileType.image) {
+      openImage();
+    } else {
+      if (widget.chat.fileinfo?.file == null) {
+        Toast("File appears to be missing");
+        return;
+      }
+      openfile(widget.chat.fileinfo!.file!);
+    }
+  }
+
+  void onchatbubbledoubletap() {
+    if (widget.chat.fileinfo?.url == null) {
+      return;
+    }
+    expandbubble();
+  }
+
+  void expandbubble() {
+    setState(() {
+      if (ChatBubble.expandedbubble == widget.chat) {
+        ChatBubble.expandedbubble = null;
+        return;
+      }
+      ChatBubble.expandedbubble = widget.chat;
+    });
+  }
+
+  void openImage() async {
+    unfocus(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return ImageView(
+        tag: widget.chat.fileinfo!.url!,
+        url: widget.chat.fileinfo!.url!,
+        file: widget.chat.fileinfo!.file,
+        description: formatdate(widget.chat.time, md),
+        title: widget.chat.sentFrom == widget.myprofile.getPhoneNumber
+            ? widget.myprofile.getName
+            : widget.otherprofile.getName,
+      );
+    }));
+  }
+
+  void removeReaction(String currentEmoji) async {
+    // remove the reaction
+    widget.chat.reactions[widget.myprofile.getPhoneNumber]!
+        .remove(currentEmoji);
+    if (widget.chat.reactions.isReactionEmpty) {
+      await onreactcontroller.reverse(from: 1);
+    }
+    widget.chat.reactioncount.decrement(currentEmoji);
+    if (widget.chat.reactioncount[currentEmoji] == 0) {
+      widget.chat.reactioncount.remove(currentEmoji);
+    }
+    widget.chat.sortReactionCount();
+    setState(() {});
+
+    await Database.writechat(chat: widget.chat, chatroomid: widget.chatroomid);
   }
 }
