@@ -8,6 +8,7 @@ import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
 import '../../../../assets/colors/colors.dart';
@@ -88,7 +89,7 @@ class _ImageViewState extends State<ImageView> {
                       saveimage(widget.file!.path);
                     } else {
                       // save image first to temp directory from cloud
-                      downloadimagetotemp(whenComplete: (file) {
+                      downloadimage(whenComplete: (file) {
                         saveimage(file.path);
                       });
                     }
@@ -99,7 +100,7 @@ class _ImageViewState extends State<ImageView> {
                       openfile(widget.file!);
                     } else {
                       // download image to temporary directory
-                      downloadimagetotemp(whenComplete: (file) {
+                      downloadimage(whenComplete: (file) {
                         openfile(file);
                       });
                     }
@@ -162,21 +163,27 @@ class _ImageViewState extends State<ImageView> {
     });
   }
 
-  Future<File> savetoTempPath() async {
-    String? temppath = await PathProvider.tempDirectory();
-    String path = "$temppath/IMG.jpg";
+  Future<File> savetoDocPath() async {
+    String? docpath = await PathProvider.documentDirectory();
+    String path = "$docpath/profile/IMG.jpg";
     File file = File(path);
     return file;
   }
 
-  void downloadimagetotemp({required Function(File file) whenComplete}) async {
-    File file = await savetoTempPath();
+  void downloadimage({required Function(File file) whenComplete}) async {
+    File file = await savetoDocPath();
     file = await file.create(recursive: true);
     FirebaseStorage.instance
         .refFromURL(widget.url)
         .writeToFile(file)
-        .whenComplete(() {
-      whenComplete(file);
+        .snapshotEvents
+        .listen((event) {
+      double progress = event.bytesTransferred / event.totalBytes;
+      EasyLoading.showProgress(progress, status: "downloading..");
+      if (progress == 1) {
+        EasyLoading.dismiss();
+        whenComplete(file);
+      }
     });
   }
 }

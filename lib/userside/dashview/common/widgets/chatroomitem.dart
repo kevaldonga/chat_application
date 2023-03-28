@@ -69,7 +69,7 @@ class ChatRoomItem extends StatelessWidget {
                   tag: id,
                   child: GestureDetector(
                     onTap: () {
-                      if (url == null) {
+                      if (url == null || url == "null" || url == "") {
                         return;
                       }
                       unfocus(context);
