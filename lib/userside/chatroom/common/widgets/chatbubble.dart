@@ -127,7 +127,8 @@ class _ChatBubbleState extends State<ChatBubble>
           toasttextoncopied: "$toasttext copied to your clipboard !",
           context: context,
           isitme: widget.issentfromme,
-          sentFrom: widget.myprofile,
+          sentFrom:
+              widget.issentfromme ? widget.myprofile : widget.otherprofile,
         );
       },
       child: Align(
@@ -500,7 +501,7 @@ class _ChatBubbleState extends State<ChatBubble>
     widget.chat.fileinfo!.url = await snapshot?.ref.getDownloadURL();
     if (!mounted) return;
     setState(() {});
-    await Database.updatechat(widget.chat);
+    await Database.writechat(chat: widget.chat, chatroomid: widget.chatroomid);
     if (widget.chat.fileinfo!.type == FileType.image) {
       // only for images cause file havent been downloaded yet !
       widget.chat.fileinfo!.fileexist = true;

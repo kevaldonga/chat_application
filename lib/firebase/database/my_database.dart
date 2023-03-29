@@ -1,14 +1,14 @@
 import 'dart:developer';
 
 import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/groupInfo.dart';
 import 'package:chatty/hive%20database/database_hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+
 import '../../assets/logic/chat.dart';
 import '../../assets/logic/profile.dart';
 
@@ -216,35 +216,6 @@ class Database {
     _db ??= FirebaseFirestore.instance;
     await _db?.collection("userquickinfo").doc(phoneno).set({"uid": uid});
     await MyHive.setuid(phoneno, uid);
-  }
-
-  static Future<List<ChatRoom>?> retrivechatrooms({
-    required Profile myprofile,
-    required String uid,
-  }) async {
-    // you dont need to use hive replica function for this
-    // reading chatroom function will handle that automatically
-    _db ??= FirebaseFirestore.instance;
-    // retrive all ids of connectedchatrooms
-    List<dynamic>? chatroomids = [];
-    await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
-      chatroomids = value.data()?["chatroomids"];
-    });
-    if (chatroomids == null) {
-      log("chat ids are null");
-      return null;
-    }
-    // retrive all chatrooms by its ids
-    List<ChatRoom> chatrooms = [];
-    for (int i = 0; i < chatroomids!.length; i++) {
-      ChatRoom? chatroom =
-          await readchatroom(id: chatroomids![i], myprofile: myprofile);
-      if (chatroom == null) {
-        continue;
-      }
-      chatrooms.add(chatroom);
-    }
-    return chatrooms;
   }
 
   static Future<void> markchatread(Chat chat) async {

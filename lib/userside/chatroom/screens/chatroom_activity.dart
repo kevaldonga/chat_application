@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../../../assets/SystemChannels/toast.dart';
 import '../../../assets/colors/colors.dart';
 import '../../../assets/logic/FirebaseUser.dart';
@@ -35,7 +36,6 @@ import '../common/functions/sameday.dart';
 import '../common/widgets/chatbubble.dart';
 import '../common/widgets/chatroomactivity_shimmer.dart';
 import '../common/widgets/sharebottomsheet.dart';
-import '../../../assets/SystemChannels/intent.dart' as intent;
 
 class ChatRoomActivity extends StatefulWidget {
   ChatRoom chatroom;
@@ -524,18 +524,19 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     String id = generatedid(15);
     setState(() {
       newchat = Chat(
-          fileinfo: type != null
-              ? FileInfo(
-                  filename: name,
-                  type: type,
-                  file: file,
-                  path: file!.path,
-                )
-              : null,
-          id: id,
-          time: DateTime.now(),
-          text: type != FileType.any ? controller.text : "",
-          sentFrom: myprofile.getPhoneNumber);
+        fileinfo: type != null
+            ? FileInfo(
+                filename: name,
+                type: type,
+                file: file,
+                path: file!.path,
+              )
+            : null,
+        id: id,
+        time: DateTime.now(),
+        text: type != FileType.any ? controller.text : "",
+        sentFrom: myprofile.getPhoneNumber,
+      );
 
       widget.chatroom.chats.add(newchat);
 
@@ -543,7 +544,9 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       controller.clear();
       FocusScope.of(context).requestFocus(FocusNode());
     });
-    await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
+    if (type == null) {
+      await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
+    }
   }
 
   ChatBubblePosition getpositionofbubble(int index) {

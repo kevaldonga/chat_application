@@ -36,7 +36,10 @@ class ChatRoom {
     return chats.last;
   }
 
-  int getnotificationcount({required String myphoneno}) {
+  int getnotificationcount({required String myphoneno, required bool? isread}) {
+    if (isread != null) {
+      return 0;
+    }
     int count = 0;
     for (int i = 0; i < chats.length; i++) {
       if (chats[i].sentFrom != myphoneno && !chats[i].isread) {

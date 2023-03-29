@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
@@ -240,14 +240,6 @@ class _UserViewState extends State<UserView> {
 
           case Profileop.refresh:
             initialized = false;
-            await Database.retrivechatrooms(
-                    uid: auth.currentUser!.uid, myprofile: profile!)
-                .then((value) {
-              chatrooms = value ?? [];
-              initialized = true;
-              if (!mounted) return;
-              setState(() {});
-            });
             await AuthFirebase.refresh();
             break;
           case Profileop.verify:
@@ -325,9 +317,8 @@ class _UserViewState extends State<UserView> {
             id: chatrooms[index].id,
             url: url,
             top: index == 0 ? true : null,
-            notificationcount: isread == null
-                ? currentchatroom.getnotificationcount(myphoneno: myphoneno)
-                : 0,
+            notificationcount: currentchatroom.getnotificationcount(
+                myphoneno: myphoneno, isread: isread),
             read: isread,
             searchcontroller: searchcontroller,
             ontap: () => ontap(index),
@@ -361,24 +352,14 @@ class _UserViewState extends State<UserView> {
     });
   }
 
-  void retrivechatrooms(Profile myprofile) {
-    Database.retrivechatrooms(uid: auth.currentUser!.uid, myprofile: myprofile)
-        .then((value) {
-      chatrooms = value ?? [];
-      initialized = true;
-      setState(() {});
-      listentochatroomchanges();
-      listentoaddedtonewchatroom();
-    });
-  }
-
   void init() {
     initfirebaseuser();
     Database.getpersonalinfo(auth.currentUser!.uid).then((value) {
       EasyLoading.dismiss();
       profile = value;
       setState(() {});
-      retrivechatrooms(profile!);
+      listentoaddedtonewchatroom();
+      listentochatroomchanges();
     });
   }
 
@@ -395,6 +376,7 @@ class _UserViewState extends State<UserView> {
     if (chatroom != null) {
       chatrooms[index] = chatroom;
     }
+    sortbynotification();
     resumelisteners();
     setState(() {});
   }
@@ -456,6 +438,7 @@ class _UserViewState extends State<UserView> {
         Database.refreshchatroom(event.data()!, chatrooms[i].chats)
             .then((value) {
           chatrooms[i].chats = value;
+          sortbynotification();
           if (chatrooms[i].chats.isEmpty) return;
           log("updated value at chatroom = ${chatrooms[i].id} is ${chatrooms[i].chats.last}");
           if (mounted) setState(() {});
@@ -494,10 +477,34 @@ class _UserViewState extends State<UserView> {
         .listen((event) {
       Database.chatroomidsListener(event.data(), chatrooms, profile!)
           .then((value) {
+        initialized = true;
         chatrooms = value;
+        sortbynotification();
         setState(() {});
       });
     });
+  }
+
+  void sortbynotification() {
+    chatrooms.sort(
+      (a, b) {
+        String myphoneno = profile!.getPhoneNumber;
+        bool? isreadfora = a.chats.isNotEmpty
+            ? a.chats.last.sentFrom == myphoneno
+                ? a.chats.last.isread
+                : null
+            : null;
+        bool? isreadforb = b.chats.isNotEmpty
+            ? b.chats.last.sentFrom == myphoneno
+                ? b.chats.last.isread
+                : null
+            : null;
+        return b
+            .getnotificationcount(myphoneno: myphoneno, isread: isreadforb)
+            .compareTo(a.getnotificationcount(
+                myphoneno: myphoneno, isread: isreadfora));
+      },
+    );
   }
 
   void resumelisteners() {
