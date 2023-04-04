@@ -251,6 +251,42 @@ class _UserViewState extends State<UserView> {
             await AuthFirebase.verify();
             break;
           case Profileop.updatepassword:
+            String password = "";
+            await showdialog(
+              context: context,
+              title: const Text("change password"),
+              contents: TextField(
+                autocorrect: false,
+                obscureText: true,
+                autofocus: true,
+                enableSuggestions: false,
+                onChanged: (value) {
+                  setState(() {
+                    password = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  labelText: "New password",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              actions: [
+                alertdialogactionbutton(
+                  "change",
+                  (() async {
+                    if (password.isEmpty) {
+                      Toast("too short");
+                      return;
+                    }
+                    await auth.currentUser
+                        ?.updatePassword(password)
+                        .whenComplete(() {
+                      Toast("your password has been updated !!");
+                    });
+                  }),
+                ),
+              ],
+            );
             break;
           case Profileop.signout:
             bool yousure = await showdialog(
