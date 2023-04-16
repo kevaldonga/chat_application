@@ -77,7 +77,7 @@ class Database {
     // get uids by phone no given in profiles
     for (int i = 0; i < chatroom.connectedPersons.length; i++) {
       String? uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
-      uids.add(uid);
+      uids.add(uid!);
     }
 
     // sets write chat globally
@@ -200,7 +200,7 @@ class Database {
     log("inserted value of $profile");
   }
 
-  static Future<String> getuid(String phoneno) async {
+  static Future<String?> getuid(String phoneno) async {
     String? uid = await MyHive.getuid(phoneno);
     if (uid != null) {
       return uid;
@@ -208,6 +208,9 @@ class Database {
     _db ??= FirebaseFirestore.instance;
     DocumentSnapshot<Map<String, dynamic>>? data =
         await _db?.collection("userquickinfo").doc(phoneno).get();
+    if (data?.data() == null) {
+      return null;
+    }
     await MyHive.setuid(phoneno, data?.data()?["uid"]);
     return data?.data()?["uid"];
   }
@@ -531,8 +534,8 @@ class Database {
 
     // delete chatroom id in connectedchatrooms
     for (int i = 0; i < chatroom.connectedPersons.length; i++) {
-      String uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
-      await _db?.collection("connectedchatrooms").doc(uid).set(
+      String? uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
+      await _db?.collection("connectedchatrooms").doc(uid!).set(
         {
           "chatroomids": FieldValue.arrayRemove([chatroom.id])
         },

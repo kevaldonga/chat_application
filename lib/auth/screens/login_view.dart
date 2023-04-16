@@ -5,6 +5,7 @@ import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../../assets/alertdialog/alertdialog.dart';
@@ -22,6 +23,12 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
   String? erroremail, errorpassword;
+
+  @override
+  void initState() {
+    super.initState();
+    FlutterNativeSplash.remove();
+  }
 
   @override
   void dispose() {

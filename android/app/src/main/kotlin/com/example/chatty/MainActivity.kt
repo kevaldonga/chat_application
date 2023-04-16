@@ -1,5 +1,6 @@
 package com.example.chatty
 
+import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
@@ -34,10 +35,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        var mytoast: Toast = Toast(context)
 
-        // toast
-        toastChannel(mytoast)
+        toastChannel()
 
         // call and open file
         callandFileChannel()
@@ -125,15 +124,12 @@ class MainActivity : FlutterActivity() {
                 }
     }
 
-    private fun toastChannel(mytoast: Toast) {
+    private fun toastChannel() {
         MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, toast.CHANNEL)
                 .setMethodCallHandler { call, _ ->
                     if (call.method == toast.METHOD_TOAST) {
                         val message = call.argument<String>(toast.KEY_MESSAGE)
-                        mytoast.cancel()
-                        mytoast.setText(message)
-                        mytoast.duration = Toast.LENGTH_SHORT
-                        mytoast.show()
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                     }
                 }
     }

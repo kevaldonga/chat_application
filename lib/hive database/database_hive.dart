@@ -73,7 +73,7 @@ class MyHive {
       String? uid = await getuid(chatroom.connectedPersons[i].getPhoneNumber);
       uid ??=
           await Database.getuid(chatroom.connectedPersons[i].getPhoneNumber);
-      uids.add(uid);
+      uids.add(uid!);
     }
     Map<String, dynamic> data = {
       "chatids": chatroom.chats,

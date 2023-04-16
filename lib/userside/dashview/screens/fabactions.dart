@@ -1,7 +1,7 @@
+import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -333,9 +333,12 @@ class _FabActionsState extends State<FabActions> {
       }
     }
     // get personal info like email, name by uid
-    String uid = await Database.getuid(phone);
+    String? uid = await Database.getuid(phone);
+    if (uid == null) {
+      Toast("chatroom doesn't exist !!");
+    }
     late Profile otherprofile;
-    await Database.getpersonalinfo(uid).then((value) {
+    await Database.getpersonalinfo(uid!).then((value) {
       otherprofile = value;
     });
     ChatRoom chatRoom = ChatRoom(

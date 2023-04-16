@@ -305,8 +305,8 @@ class BottomSheetView extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: ClipOval(
           child: Container(
-            width: md.size.width * 0.12,
-            height: md.size.width * 0.12,
+            width: md.size.width * 0.11,
+            height: md.size.width * 0.11,
             color: backemojipanel,
             child: Center(
               child: Text(

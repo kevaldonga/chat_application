@@ -37,7 +37,7 @@ class ChatRoom {
   }
 
   int getnotificationcount({required String myphoneno, required bool? isread}) {
-    if (isread != null) {
+    if (isread ?? false) {
       return 0;
     }
     int count = 0;

@@ -79,8 +79,8 @@ class _CommonGroupListState extends State<CommonGroupList> {
   void init() async {
     // get uid by phoneno
     List<String> uids = [];
-    uids.add(await Database.getuid(widget.phonenos[0]));
-    uids.add(await Database.getuid(widget.phonenos[1]));
+    uids.add((await Database.getuid(widget.phonenos[0]))!);
+    uids.add((await Database.getuid(widget.phonenos[1]))!);
 
     // get common chatrooms by both uids
     Database.getCommonGroupChatRoomids(uids).then((groupinfos) {

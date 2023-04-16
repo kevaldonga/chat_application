@@ -1,16 +1,15 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/userside/chatroom/common/functions/openfile.dart';
 import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
+import '../../../../assets/SystemChannels/path.dart';
 import '../../../../assets/colors/colors.dart';
 
 class ImageView extends StatefulWidget {
@@ -37,6 +36,7 @@ enum popupmenu {
 }
 
 class _ImageViewState extends State<ImageView> {
+  bool progress = false;
   @override
   Widget build(BuildContext context) {
     MediaQueryData md = MediaQuery.of(context);
@@ -81,7 +81,7 @@ class _ImageViewState extends State<ImageView> {
                   ),
                 ];
               },
-              onSelected: (value) async {
+              onSelected: (value) {
                 switch (value) {
                   case popupmenu.save:
                     if (widget.file != null) {
@@ -163,7 +163,7 @@ class _ImageViewState extends State<ImageView> {
     });
   }
 
-  Future<File> savetoDocPath() async {
+  Future<File> savetoTempPath() async {
     String? docpath = await PathProvider.documentDirectory();
     String path = "$docpath/profile/IMG.jpg";
     File file = File(path);
@@ -171,19 +171,13 @@ class _ImageViewState extends State<ImageView> {
   }
 
   void downloadimage({required Function(File file) whenComplete}) async {
-    File file = await savetoDocPath();
+    File file = await savetoTempPath();
     file = await file.create(recursive: true);
     FirebaseStorage.instance
         .refFromURL(widget.url)
         .writeToFile(file)
-        .snapshotEvents
-        .listen((event) {
-      double progress = event.bytesTransferred / event.totalBytes;
-      EasyLoading.showProgress(progress, status: "downloading..");
-      if (progress == 1) {
-        EasyLoading.dismiss();
-        whenComplete(file);
-      }
+        .whenComplete(() {
+      whenComplete(file);
     });
   }
 }

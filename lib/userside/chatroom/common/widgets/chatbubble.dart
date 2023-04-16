@@ -382,7 +382,8 @@ class _ChatBubbleState extends State<ChatBubble>
     if (widget.chat.fileinfo!.fileexist) {
       widget.chat.fileinfo!.file = File(path);
     }
-    bool shoulddownload = !widget.chat.fileinfo!.fileexist && download == null;
+    bool shoulddownload =
+        widget.chat.fileinfo!.file == null && download == null;
     final contentcolor =
         widget.issentfromme ? Colors.white : MyColors.primarySwatch;
     return Padding(

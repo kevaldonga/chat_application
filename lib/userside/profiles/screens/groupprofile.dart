@@ -408,7 +408,7 @@ class _GroupProfileState extends State<GroupProfile> {
               // update the groupinfo
               await Database.updategroupinfo(
                   widget.chatroom.id, widget.chatroom.groupinfo!);
-              String uid = await Database.getuid(profile.getPhoneNumber);
+              String uid = (await Database.getuid(profile.getPhoneNumber))!;
               await Database.updateparticipants(uid, widget.chatroom.id, false);
               setState(() {});
             },
@@ -526,7 +526,7 @@ class _GroupProfileState extends State<GroupProfile> {
     widget.chatroom.connectedPersons.remove(profile);
     await Database.updateparticipants(
         FirebaseAuth.instance.currentUser!.uid, widget.chatroom.id, false);
-    String uid = await Database.getuid(widget.myphoneno);
+    String uid = (await Database.getuid(widget.myphoneno))!;
     await Database.updateparticipants(uid, widget.chatroom.id, false);
     EasyLoading.dismiss();
     int count = 0;
