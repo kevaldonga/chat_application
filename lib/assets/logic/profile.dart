@@ -32,7 +32,8 @@ class Profile {
   })  : _name = data["name"].toString(),
         _email = data["email"].toString(),
         _phoneNumber = data["phoneno"].toString(),
-        photourl = data["photourl"].toString().isEmpty
+        photourl = data["photourl"].toString().isEmpty ||
+                data["photourl"].toString() == "null"
             ? null
             : data["photourl"].toString(),
         bio = data["bio"] != null && data["bio"] != "null" && data["bio"] == ""

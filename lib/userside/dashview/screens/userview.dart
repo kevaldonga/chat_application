@@ -6,14 +6,18 @@ import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
+import 'package:chatty/auth/screens/login_view.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import '../../../assets/alertdialog/alertdialog.dart';
@@ -46,6 +50,7 @@ class _UserViewState extends State<UserView> {
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? listener;
   late StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>
       addedtochatroom;
+  late MediaQueryData md;
 
   @override
   void initState() {
@@ -62,7 +67,7 @@ class _UserViewState extends State<UserView> {
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData md = MediaQuery.of(context);
+    md = MediaQuery.of(context);
     ThemeData theme = Theme.of(context);
     return profile == null
         ? AnnotatedRegion<SystemUiOverlayStyle>(
@@ -212,6 +217,16 @@ class _UserViewState extends State<UserView> {
                 ],
               )),
           popupMenuItem(
+              value: Profileop.deleteaccount,
+              height: 20,
+              child: Row(
+                children: const [
+                  Icon(Icons.delete_forever, color: Colors.redAccent),
+                  SizedBox(width: 30),
+                  Text("delete account"),
+                ],
+              )),
+          popupMenuItem(
               value: Profileop.signout,
               height: 20,
               child: Row(
@@ -305,6 +320,100 @@ class _UserViewState extends State<UserView> {
               Navigator.pushNamedAndRemoveUntil(
                   context, Routes.loginview, (_) => false);
             }
+            break;
+          case Profileop.deleteaccount:
+            String password = "";
+            String email = "";
+            await showdialog(
+              barrierDismissible: false,
+              context: context,
+              title: const Text("Are you sure ?"),
+              contents: const Text(
+                  "This is serious action to perform !! All your data will be deleted and you won't be able to get them back !!"),
+              actions: [
+                alertdialogactionbutton(
+                  "AUTHENTICATE",
+                  () async {
+                    Toast(
+                        "you have to reauthenticate to delete your account !");
+                    Navigator.pop(context);
+                    bool result = await showdialog(
+                      context: context,
+                      title: const Text("authenticate yourself"),
+                      contents: Theme(
+                        data: ThemeData(),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                autofocus: true,
+                                enableSuggestions: true,
+                                autocorrect: false,
+                                keyboardType: TextInputType.emailAddress,
+                                onChanged: (value) {
+                                  setState(() {
+                                    email = value;
+                                  });
+                                },
+                                decoration: const InputDecoration(
+                                  labelText: "email",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              TextField(
+                                autocorrect: false,
+                                obscureText: true,
+                                autofocus: true,
+                                enableSuggestions: false,
+                                onChanged: (value) {
+                                  setState(() {
+                                    password = value;
+                                  });
+                                },
+                                decoration: const InputDecoration(
+                                  labelText: "password",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      actions: [
+                        alertdialogactionbutton(
+                          "REAUTHENTICATE",
+                          () async {
+                            if (!EmailValidator.validate(email)) {
+                              Toast("email is not valid !!");
+                              return;
+                            }
+                            if (password.length < 8) {
+                              Toast("password is too short !!");
+                              return;
+                            }
+                            await auth.currentUser
+                                ?.reauthenticateWithCredential(
+                                    EmailAuthProvider.credential(
+                                        email: email, password: password));
+                            Toast("reauthenticated");
+                            if (!mounted) return;
+                            Navigator.of(context).pop(true);
+                          },
+                        ),
+                      ],
+                    );
+                    if (result) {
+                      deleteAccount();
+                    }
+                  },
+                ),
+                alertdialogactionbutton("NEVERMIND", () {
+                  Navigator.of(context).pop(false);
+                }),
+              ],
+            );
         }
       },
       child: Center(child: profilewidget(profile!.photourl, 35, false)),
@@ -313,7 +422,7 @@ class _UserViewState extends State<UserView> {
 
   Widget buildlistview(BuildContext context) {
     if (chatrooms.isEmpty && initialized) {
-      return buildblankview("you are not connected to any chatgroups");
+      return buildblankview("you are not connected to any chatrooms");
     }
     if (searchchatrooms.isEmpty && searchcontroller.text.isNotEmpty) {
       return buildblankview("we could not find the specified");
@@ -399,19 +508,22 @@ class _UserViewState extends State<UserView> {
   void ontap(int index) async {
     FocusScope.of(context).requestFocus(FocusNode());
     pauselisteners();
-    ChatRoom? chatroom =
+    dynamic data =
         await Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ChatRoomActivity(
         chatroom: chatrooms[index],
         user: user,
       );
     }));
-    if (chatroom != null) {
-      chatrooms[index] = chatroom;
+    if (data != null && data.runtimeType == ChatRoom) {
+      chatrooms[index] = data;
+    }
+    if (data == "deleted") {
+      chatrooms.removeAt(index);
     }
     sortbynotification();
-    resumelisteners();
     setState(() {});
+    resumelisteners();
   }
 
   void floatingbuttonaction() async {
@@ -556,5 +668,69 @@ class _UserViewState extends State<UserView> {
   void cancellisteners() {
     listener?.cancel();
     addedtochatroom.cancel();
+  }
+
+  void deleteAccount() async {
+    // first of all we have to check if he is the only admin of any group or not
+    for (int i = 0; i < chatrooms.length; i++) {
+      if (chatrooms[i].isitgroup) {
+        if (chatrooms[i].groupinfo!.admins.contains(profile!.getPhoneNumber) &&
+            chatrooms[i].groupinfo!.admins.length == 1) {
+          showbasicdialog(context, "Operation failed",
+              "You are the only admin of some of the groups, so you have to either make someone admin or delete the group to proceed the operation !!");
+          return;
+        }
+        if (chatrooms[i].connectedPersons.length == 2) {
+          showbasicdialog(context, "Operation failed",
+              "You are in some groups which can become invalid if you leave, leading to deleting group. make sure you leave those groups before proceeding !!");
+          return;
+        }
+      }
+    }
+    EasyLoading.show(status: "deleting..", dismissOnTap: false);
+    FirebaseAuth auth = FirebaseAuth.instance;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    FirebaseStorage storage = FirebaseStorage.instance;
+
+    // delete the chatrooms first
+    for (int i = 0; i < chatrooms.length; i++) {
+      if (chatrooms[i].isitgroup) {
+        chatrooms[i].connectedPersons.remove(profile);
+        await Database.updateparticipants(
+            auth.currentUser!.uid, chatrooms[i].id, false);
+      } else {
+        await Database.deletechatroom(chatrooms[i], isItGroup: false);
+      }
+    }
+
+    // then delete the user, status, userquickinfo, connectedchatrooms collections
+    // user collecton
+    await firestore.collection("users").doc(auth.currentUser!.uid).delete();
+    // status
+    await firestore.collection("status").doc(profile?.getPhoneNumber).delete();
+    // userquickinfo
+    await firestore
+        .collection("userquickinfo")
+        .doc(profile?.getPhoneNumber)
+        .delete();
+    // connectedchatrooms
+    await firestore
+        .collection("connectedchatrooms")
+        .doc(auth.currentUser!.uid)
+        .delete();
+    // then delete the user account from firebase
+    // with profile also
+    await AuthFirebase.deleteAccount(profile!, uid: auth.currentUser!.uid);
+    if (profile?.photourl != null) {
+      await storage.refFromURL(profile!.photourl!).delete();
+    }
+    EasyLoading.dismiss();
+    Toast("user has been deleted !!");
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
+      builder: (context) {
+        return const LoginView();
+      },
+    ), (_) => false);
   }
 }

@@ -4,4 +4,5 @@ enum Profileop {
   signout,
   updatepassword,
   verify,
+  deleteaccount,
 }

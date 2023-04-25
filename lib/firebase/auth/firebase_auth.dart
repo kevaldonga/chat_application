@@ -1,6 +1,7 @@
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../assets/logic/profile.dart';
 
@@ -98,5 +99,16 @@ class AuthFirebase {
       return ["", e.toString()];
     }
     return null;
+  }
+
+  static Future<void> deleteAccount(Profile profile,
+      {required String uid}) async {
+    _auth ??= FirebaseAuth.instance;
+    // remove the profile photo from storage
+    if (profile.photourl != null) {
+      FirebaseStorage.instance.refFromURL(profile.photourl!);
+    }
+
+    await _auth?.currentUser?.delete();
   }
 }

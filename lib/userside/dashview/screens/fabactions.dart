@@ -342,6 +342,7 @@ class _FabActionsState extends State<FabActions> {
       otherprofile = value;
     });
     ChatRoom chatRoom = ChatRoom(
+      blockedby: {},
       connectedPersons: [otherprofile, widget.profile],
       chats: [],
     );

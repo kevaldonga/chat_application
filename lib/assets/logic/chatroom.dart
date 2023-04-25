@@ -10,6 +10,7 @@ class ChatRoom {
   List<Chat> chats;
   GroupInfo? groupinfo;
   bool isitgroup = false;
+  Map<String, bool> blockedby; // {phoneno : true or false}
 
   List<Profile> get connectedPersons => _connectedPersons;
 
@@ -18,6 +19,7 @@ class ChatRoom {
     this.groupinfo,
     required List<Profile> connectedPersons,
     required this.chats,
+    required this.blockedby,
   })  : id = id ?? generatedid(10),
         _connectedPersons = connectedPersons,
         isitgroup = groupinfo != null;

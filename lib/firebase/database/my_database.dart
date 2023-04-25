@@ -85,6 +85,7 @@ class Database {
       "chatids": chatroom.chats,
       "connectedpersons": uids,
       if (chatroom.isitgroup) "isitgroup": chatroom.isitgroup,
+      "blockedby": chatroom.blockedby,
     };
     if (chatroom.isitgroup) {
       await _db
@@ -183,9 +184,11 @@ class Database {
     for (int i = 0; i < uids.length; i++) {
       profiles.add(await getpersonalinfo(uids[i]));
     }
+    Map<String, dynamic> blockedby = data["blockedby"];
 
     return ChatRoom(
       id: id,
+      blockedby: blockedby.cast<String, bool>(),
       connectedPersons: profiles,
       chats: chatroom == null ? chats : chatroom.chats,
       groupinfo: groupinfo,
@@ -332,7 +335,7 @@ class Database {
     await _db?.collection("connectedchatrooms").doc(uid).get().then((value) {
       mediavisibility = value.data()?["mediavisibility"] ?? {};
     });
-    user = FirebaseUser(mediavisibility: mediavisibility.cast<String, bool>());
+    user = FirebaseUser(mediavisibility: mediavisibility.cast());
     await MyHive.setmediavisibility(uid, user);
     return user;
   }
@@ -519,7 +522,8 @@ class Database {
     await _db?.collection("groupinfo").doc(id).update(groupinfo.toMap());
   }
 
-  static Future<void> deletegroup(ChatRoom chatroom) async {
+  static Future<void> deletechatroom(ChatRoom chatroom,
+      {bool isItGroup = false}) async {
     _db ??= FirebaseFirestore.instance;
 
     // delete every chat from group
@@ -527,7 +531,9 @@ class Database {
       await Database.deleteChat(chatroom.chats[i], chatroom.id);
     }
 
-    await _db?.collection("groupinfo").doc(chatroom.id).delete();
+    if (isItGroup) {
+      await _db?.collection("groupinfo").doc(chatroom.id).delete();
+    }
 
     // delete chatroom also
     await _db?.collection("chatrooms").doc(chatroom.id).delete();
@@ -543,11 +549,13 @@ class Database {
       );
     }
 
-    // delete the profile picture if has it
-    if (chatroom.groupinfo!.photourl != null) {
-      await FirebaseStorage.instance
-          .refFromURL(chatroom.groupinfo!.photourl!)
-          .delete();
+    if (isItGroup) {
+      // delete the profile picture if has it
+      if (chatroom.groupinfo!.photourl != null) {
+        await FirebaseStorage.instance
+            .refFromURL(chatroom.groupinfo!.photourl!)
+            .delete();
+      }
     }
   }
 
@@ -571,5 +579,15 @@ class Database {
     }
 
     log("deleted chat $chat");
+  }
+
+  static Future<void> updateblockedby(
+      String chatroomid, Map<String, bool> blockedby) async {
+    _db ??= FirebaseFirestore.instance;
+
+    await _db
+        ?.collection("chatrooms")
+        .doc(chatroomid)
+        .update({"blockedby": blockedby});
   }
 }

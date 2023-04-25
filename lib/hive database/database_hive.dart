@@ -78,6 +78,7 @@ class MyHive {
     Map<String, dynamic> data = {
       "chatids": chatroom.chats,
       "connectedpersons": uids,
+      "blockedby": chatroom.blockedby,
       if (chatroom.isitgroup) "isitgroup": chatroom.isitgroup,
     };
 
@@ -141,7 +142,10 @@ class MyHive {
         profiles.add(Profile.fromMap(data: data));
       }
     }
+
+    Map<String, dynamic> blockedby = data["blockedby"];
     final chatroom = ChatRoom(
+      blockedby: blockedby.cast<String, bool>(),
       id: id,
       connectedPersons: profiles,
       chats: chats,

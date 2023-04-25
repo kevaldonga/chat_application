@@ -61,113 +61,118 @@ class _RegisterViewState extends State<RegisterView> {
           SizedBox(
             width: md.size.width,
             height: md.size.height,
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                const SizedBox(height: 20),
-                Container(
-                  alignment: Alignment.topLeft,
-                  padding: const EdgeInsets.only(left: 35, top: 82),
-                  child: const Text(
-                    "Register.",
-                    style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  const SizedBox(height: 20),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    padding: const EdgeInsets.only(left: 35, top: 82),
+                    child: const Text(
+                      "Register.",
+                      style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
                   ),
-                ),
-                SizedBox(height: 200 - (md.viewInsets.bottom / 2)),
-                Container(
-                  margin: EdgeInsets.only(bottom: md.viewInsets.bottom),
-                  padding: const EdgeInsets.symmetric(horizontal: 35),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      // name
-                      TextfieldAuth(
-                        autofocus: true,
-                        bordergradient: MyGradients.secondarygradient,
-                        controller: name,
-                        autofill: null,
-                        maxlength: 10,
-                        errorText: "",
-                        hintText: "username",
-                      ),
-                      const SizedBox(height: 15),
-                      // phone no
-                      TextfieldAuth(
-                        controller: phone,
-                        autofill: AutofillHints.telephoneNumber,
-                        errorText: errorphone ?? "",
-                        hintText: "phone no",
-                        maxlength: 10,
-                        keyboardtype: TextInputType.phone,
-                        bordergradient: MyGradients.maingradient,
-                      ),
-                      const SizedBox(height: 15),
-                      // email id
-                      TextfieldAuth(
-                        bordergradient: MyGradients.primaryGradient,
-                        controller: email,
-                        keyboardtype: TextInputType.emailAddress,
-                        autofill: AutofillHints.email,
-                        errorText: erroremail ?? "",
-                        hintText: "email",
-                      ),
-                      const SizedBox(height: 15),
-                      // password
-                      TextfieldAuth(
-                        bordergradient: MyGradients.secondarygradient,
-                        controller: password,
-                        autofill: AutofillHints.password,
-                        errorText: errorpassword ?? "",
-                        hintText: "password",
-                      ),
-                      const SizedBox(height: 20),
-                      ButtonAuth(
-                          text: "Sign up",
-                          onclick: () async {
-                            setState(() {
-                              erroremail = validate(Validate.email, email.text);
-                              errorpassword =
-                                  validate(Validate.password, password.text);
-                              errorphone = validate(Validate.phone, phone.text);
-                              errorname = validate(Validate.name, name.text);
-                            });
-                            if (erroremail!.isEmpty &&
-                                errorpassword!.isEmpty &&
-                                errorphone!.isEmpty) {
-                              var e = await AuthFirebase.signup(
-                                  Profile(
-                                      email: email.text,
-                                      name: name.text,
-                                      phoneNumber: phone.text,
-                                      photourl: ""),
-                                  password.text);
-                              if (e == null) {
-                                if (!mounted) return;
-                                await showbasicdialog(context, "Signed up",
-                                    "you have signed up successfully!!");
-                                if (!mounted) return;
-                                Navigator.pushNamedAndRemoveUntil(
-                                    context, Routes.userview, (_) => false);
-                              } else {
-                                if (e[0].isNotEmpty) {
-                                  var a = ExceptionAuth.handleExceptions(e[0]);
+                  SizedBox(height: 200 - (md.viewInsets.bottom / 2)),
+                  Container(
+                    margin: EdgeInsets.only(bottom: md.viewInsets.bottom),
+                    padding: const EdgeInsets.symmetric(horizontal: 35),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        // name
+                        TextfieldAuth(
+                          autofocus: true,
+                          bordergradient: MyGradients.secondarygradient,
+                          controller: name,
+                          autofill: null,
+                          maxlength: 10,
+                          errorText: "",
+                          hintText: "username",
+                        ),
+                        const SizedBox(height: 15),
+                        // phone no
+                        TextfieldAuth(
+                          controller: phone,
+                          autofill: AutofillHints.telephoneNumber,
+                          errorText: errorphone ?? "",
+                          hintText: "phone no",
+                          maxlength: 10,
+                          keyboardtype: TextInputType.phone,
+                          bordergradient: MyGradients.maingradient,
+                        ),
+                        const SizedBox(height: 15),
+                        // email id
+                        TextfieldAuth(
+                          bordergradient: MyGradients.primaryGradient,
+                          controller: email,
+                          keyboardtype: TextInputType.emailAddress,
+                          autofill: AutofillHints.email,
+                          errorText: erroremail ?? "",
+                          hintText: "email",
+                        ),
+                        const SizedBox(height: 15),
+                        // password
+                        TextfieldAuth(
+                          bordergradient: MyGradients.secondarygradient,
+                          controller: password,
+                          autofill: AutofillHints.password,
+                          errorText: errorpassword ?? "",
+                          hintText: "password",
+                        ),
+                        const SizedBox(height: 20),
+                        ButtonAuth(
+                            text: "Sign up",
+                            onclick: () async {
+                              setState(() {
+                                erroremail =
+                                    validate(Validate.email, email.text);
+                                errorpassword =
+                                    validate(Validate.password, password.text);
+                                errorphone =
+                                    validate(Validate.phone, phone.text);
+                                errorname = validate(Validate.name, name.text);
+                              });
+                              if (erroremail!.isEmpty &&
+                                  errorpassword!.isEmpty &&
+                                  errorphone!.isEmpty) {
+                                var e = await AuthFirebase.signup(
+                                    Profile(
+                                        email: email.text,
+                                        name: name.text,
+                                        phoneNumber: phone.text,
+                                        photourl: ""),
+                                    password.text);
+                                if (e == null) {
                                   if (!mounted) return;
-                                  showbasicdialog(context, a[0], a[1]);
+                                  await showbasicdialog(context, "Signed up",
+                                      "you have signed up successfully!!");
+                                  if (!mounted) return;
+                                  Navigator.pushNamedAndRemoveUntil(
+                                      context, Routes.userview, (_) => false);
                                 } else {
-                                  if (!mounted) return;
-                                  showbasicdialog(context, "fatal error",
-                                      "unexpected error occured please try again later.");
+                                  if (e[0].isNotEmpty) {
+                                    var a =
+                                        ExceptionAuth.handleExceptions(e[0]);
+                                    if (!mounted) return;
+                                    showbasicdialog(context, a[0], a[1]);
+                                  } else {
+                                    if (!mounted) return;
+                                    showbasicdialog(context, "fatal error",
+                                        "unexpected error occured please try again later.");
+                                  }
                                 }
                               }
-                            }
-                          }),
-                    ],
+                            }),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

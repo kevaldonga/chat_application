@@ -56,9 +56,14 @@ class MyApp extends StatelessWidget {
           ),
           shadowColor: Colors.black12,
         ),
-        dialogTheme: DialogTheme(
+        bottomSheetTheme: const BottomSheetThemeData(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+        ),
+        dialogTheme: const DialogTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           iconColor: MyColors.primarySwatch,
         ),

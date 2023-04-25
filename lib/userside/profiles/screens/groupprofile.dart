@@ -526,8 +526,6 @@ class _GroupProfileState extends State<GroupProfile> {
     widget.chatroom.connectedPersons.remove(profile);
     await Database.updateparticipants(
         FirebaseAuth.instance.currentUser!.uid, widget.chatroom.id, false);
-    String uid = (await Database.getuid(widget.myphoneno))!;
-    await Database.updateparticipants(uid, widget.chatroom.id, false);
     EasyLoading.dismiss();
     int count = 0;
     if (!mounted) return;
@@ -537,7 +535,7 @@ class _GroupProfileState extends State<GroupProfile> {
   void deletegroup() async {
     EasyLoading.show(status: "deleting");
     Toast("deleting group...");
-    await Database.deletegroup(widget.chatroom);
+    await Database.deletechatroom(widget.chatroom, isItGroup: true);
     EasyLoading.dismiss();
     int count = 0;
     if (!mounted) return;
