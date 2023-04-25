@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-import '../../../assets/alertdialog/alertdialog.dart';
-import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
 import '../common/functions/compressimage.dart';
@@ -62,25 +60,9 @@ class _MyProfileState extends State<MyProfile> {
     return WillPopScope(
       onWillPop: () async {
         isdatachanged();
-        bool a = await showdialog(
-          context: context,
-          title: const Text("Are you sure ?"),
-          contents:
-              const Text("are you sure you want to update your profile ?"),
-          actions: [
-            alertdialogactionbutton(
-                "YES", () => Navigator.of(context).pop(true)),
-            alertdialogactionbutton(
-                "NO", () => Navigator.of(context).pop(false)),
-          ],
-        );
-        if (a) {
-          onBackPressed();
-        } else {
-          // ignore: use_build_context_synchronously
-          Navigator.of(context).pop();
-        }
-        return !a;
+        EasyLoading.show(status: "saving");
+        onBackPressed();
+        return false;
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,

@@ -12,7 +12,6 @@ import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -323,7 +322,6 @@ class _UserViewState extends State<UserView> {
             break;
           case Profileop.deleteaccount:
             String password = "";
-            String email = "";
             await showdialog(
               barrierDismissible: false,
               context: context,
@@ -347,22 +345,6 @@ class _UserViewState extends State<UserView> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               TextField(
-                                autofocus: true,
-                                enableSuggestions: true,
-                                autocorrect: false,
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (value) {
-                                  setState(() {
-                                    email = value;
-                                  });
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: "email",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              TextField(
                                 autocorrect: false,
                                 obscureText: true,
                                 autofocus: true,
@@ -385,18 +367,23 @@ class _UserViewState extends State<UserView> {
                         alertdialogactionbutton(
                           "REAUTHENTICATE",
                           () async {
-                            if (!EmailValidator.validate(email)) {
-                              Toast("email is not valid !!");
-                              return;
-                            }
                             if (password.length < 8) {
                               Toast("password is too short !!");
                               return;
                             }
-                            await auth.currentUser
-                                ?.reauthenticateWithCredential(
-                                    EmailAuthProvider.credential(
-                                        email: email, password: password));
+                            try {
+                              await auth.currentUser
+                                  ?.reauthenticateWithCredential(
+                                      EmailAuthProvider.credential(
+                                          email: auth.currentUser!.email!,
+                                          password: password));
+                            } on FirebaseAuthException catch (e) {
+                              if (e.code == "wrong-password") {
+                                Toast("you have enterred wrong password");
+                                Navigator.of(context).pop(false);
+                              }
+                              return;
+                            }
                             Toast("reauthenticated");
                             if (!mounted) return;
                             Navigator.of(context).pop(true);
@@ -720,10 +707,10 @@ class _UserViewState extends State<UserView> {
         .delete();
     // then delete the user account from firebase
     // with profile also
-    await AuthFirebase.deleteAccount(profile!, uid: auth.currentUser!.uid);
     if (profile?.photourl != null) {
       await storage.refFromURL(profile!.photourl!).delete();
     }
+    await AuthFirebase.deleteAccount(profile!, uid: auth.currentUser!.uid);
     EasyLoading.dismiss();
     Toast("user has been deleted !!");
     if (!mounted) return;
