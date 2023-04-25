@@ -296,137 +296,140 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     );
   }
 
-  Expanded bottomaction(MediaQueryData md, bool iskeyboardvisible) {
+  Widget bottomaction(MediaQueryData md, bool iskeyboardvisible) {
     bool amIBlocked =
         widget.chatroom.blockedby[getotherprofile().getPhoneNumber] ?? false;
     bool didIBlock =
         widget.chatroom.blockedby[myprofile.getPhoneNumber] ?? false;
     return Expanded(
-      child: Container(
-          height: md.size.height * 0.09,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          width: md.size.width,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.black12),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              )),
-          child: Stack(
-            children: [
-              Opacity(
-                opacity: amIBlocked || didIBlock ? 1 : 0,
-                child: Center(
-                  child: Text(
-                    didIBlock
-                        ? "You have blocked ${getotherprofile().getName}."
-                        : "You have been blocked.",
-                    style: const TextStyle(fontSize: 16),
+      child: IgnorePointer(
+        ignoring: amIBlocked || didIBlock,
+        child: Container(
+            height: md.size.height * 0.09,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            width: md.size.width,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: Colors.black12),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                )),
+            child: Stack(
+              children: [
+                Opacity(
+                  opacity: amIBlocked || didIBlock ? 1 : 0,
+                  child: Center(
+                    child: Text(
+                      didIBlock
+                          ? "You have blocked ${getotherprofile().getName}."
+                          : "You have been blocked.",
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
                 ),
-              ),
-              Opacity(
-                opacity: amIBlocked || didIBlock ? 0 : 1,
-                child: Flex(
-                  direction: Axis.horizontal,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(width: 5),
-                    GestureDetector(
-                        onTap: () async {
-                          pauselisteners();
-                          unfocus(context);
-                          myprofile = await Navigator.push(context,
-                              MaterialPageRoute(builder: (context) {
-                            return MyProfile(profile: myprofile);
-                          }));
-                          resumelisteners();
-                          setState(() {});
-                        },
-                        child: Hero(
-                          transitionOnUserGestures: true,
-                          tag: myprofile.photourl.toString(),
-                          child: profilewidget(myprofile.photourl, 45, false),
-                        )),
-                    const SizedBox(width: 15),
-                    Flexible(
-                      fit: FlexFit.tight,
-                      flex: 17,
-                      child: TextFieldmain(
-                        scrollble: true,
-                        onchanged: null,
-                        contentPadding: const EdgeInsets.only(
-                            top: 10, bottom: 15, left: 5, right: 10),
-                        controller: controller,
-                        hintText: "type something...",
+                Opacity(
+                  opacity: amIBlocked || didIBlock ? 0 : 1,
+                  child: Flex(
+                    direction: Axis.horizontal,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(width: 5),
+                      GestureDetector(
+                          onTap: () async {
+                            pauselisteners();
+                            unfocus(context);
+                            myprofile = await Navigator.push(context,
+                                MaterialPageRoute(builder: (context) {
+                              return MyProfile(profile: myprofile);
+                            }));
+                            resumelisteners();
+                            setState(() {});
+                          },
+                          child: Hero(
+                            transitionOnUserGestures: true,
+                            tag: myprofile.photourl.toString(),
+                            child: profilewidget(myprofile.photourl, 45, false),
+                          )),
+                      const SizedBox(width: 15),
+                      Flexible(
+                        fit: FlexFit.tight,
+                        flex: 17,
+                        child: TextFieldmain(
+                          scrollble: true,
+                          onchanged: null,
+                          contentPadding: const EdgeInsets.only(
+                              top: 10, bottom: 15, left: 5, right: 10),
+                          controller: controller,
+                          hintText: "type something...",
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    Transform.rotate(
-                      angle: -math.pi / 4,
-                      child: IconButton(
-                          onPressed: () {
-                            showbottomsheet(
-                              context: context,
-                              items: [
-                                // camera
-                                shareItem(
-                                  context: context,
-                                  backgroundcolor: Colors.red.shade500,
-                                  icon: Icons.camera_alt_rounded,
-                                  ontap: pickfromcamera,
-                                ),
-                                // gallery
-                                shareItem(
-                                  context: context,
-                                  backgroundcolor: Colors.green.shade500,
-                                  icon: Icons.image,
-                                  ontap: pickfromgallery,
-                                ),
-                                // contact
-                                if (!widget.chatroom.isitgroup)
+                      const SizedBox(width: 5),
+                      Transform.rotate(
+                        angle: -math.pi / 4,
+                        child: IconButton(
+                            onPressed: () {
+                              showbottomsheet(
+                                context: context,
+                                items: [
+                                  // camera
                                   shareItem(
                                     context: context,
-                                    backgroundcolor: MyColors.primarySwatch,
-                                    icon: Icons.person_add_alt_rounded,
-                                    ontap: addcontact,
+                                    backgroundcolor: Colors.red.shade500,
+                                    icon: Icons.camera_alt_rounded,
+                                    ontap: pickfromcamera,
                                   ),
-                                // files
-                                shareItem(
-                                  context: context,
-                                  backgroundcolor: Colors.blue.shade500,
-                                  icon: Icons.description_outlined,
-                                  ontap: pickfromfiles,
-                                ),
-                              ],
-                            );
-                          },
-                          icon: const Icon(
-                            size: 27,
-                            Icons.attach_file,
-                            color: MyColors.textprimary,
-                          )),
-                    ),
-                    Flexible(
-                      flex: 3,
-                      child: IconButton(
-                        onPressed: () {
-                          if (controller.text.isEmpty) {
-                            return;
-                          }
-                          sendmessage();
-                        },
-                        icon: const Icon(Icons.send,
-                            color: MyColors.primarySwatch, size: 30),
+                                  // gallery
+                                  shareItem(
+                                    context: context,
+                                    backgroundcolor: Colors.green.shade500,
+                                    icon: Icons.image,
+                                    ontap: pickfromgallery,
+                                  ),
+                                  // contact
+                                  if (!widget.chatroom.isitgroup)
+                                    shareItem(
+                                      context: context,
+                                      backgroundcolor: MyColors.primarySwatch,
+                                      icon: Icons.person_add_alt_rounded,
+                                      ontap: addcontact,
+                                    ),
+                                  // files
+                                  shareItem(
+                                    context: context,
+                                    backgroundcolor: Colors.blue.shade500,
+                                    icon: Icons.description_outlined,
+                                    ontap: pickfromfiles,
+                                  ),
+                                ],
+                              );
+                            },
+                            icon: const Icon(
+                              size: 27,
+                              Icons.attach_file,
+                              color: MyColors.textprimary,
+                            )),
                       ),
-                    ),
-                  ],
+                      Flexible(
+                        flex: 3,
+                        child: IconButton(
+                          onPressed: () {
+                            if (controller.text.isEmpty) {
+                              return;
+                            }
+                            sendmessage();
+                          },
+                          icon: const Icon(Icons.send,
+                              color: MyColors.primarySwatch, size: 30),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          )),
+              ],
+            )),
+      ),
     );
   }
 

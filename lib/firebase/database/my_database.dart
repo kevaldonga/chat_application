@@ -204,10 +204,6 @@ class Database {
   }
 
   static Future<String?> getuid(String phoneno) async {
-    String? uid = await MyHive.getuid(phoneno);
-    if (uid != null) {
-      return uid;
-    }
     _db ??= FirebaseFirestore.instance;
     DocumentSnapshot<Map<String, dynamic>>? data =
         await _db?.collection("userquickinfo").doc(phoneno).get();

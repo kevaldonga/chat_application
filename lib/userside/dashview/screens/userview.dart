@@ -250,8 +250,13 @@ class _UserViewState extends State<UserView> {
             break;
 
           case Profileop.refresh:
-            initialized = false;
+            setState(() {
+              initialized = false;
+            });
             await AuthFirebase.refresh();
+            setState(() {
+              initialized = true;
+            });
             break;
           case Profileop.verify:
             if (auth.currentUser!.emailVerified) {
@@ -620,21 +625,41 @@ class _UserViewState extends State<UserView> {
   void sortbynotification() {
     chatrooms.sort(
       (a, b) {
-        String myphoneno = profile!.getPhoneNumber;
-        bool? isreadfora = a.chats.isNotEmpty
-            ? a.chats.last.sentFrom == myphoneno
-                ? a.chats.last.isread
-                : null
-            : null;
-        bool? isreadforb = b.chats.isNotEmpty
-            ? b.chats.last.sentFrom == myphoneno
-                ? b.chats.last.isread
-                : null
-            : null;
-        return b
-            .getnotificationcount(myphoneno: myphoneno, isread: isreadforb)
-            .compareTo(a.getnotificationcount(
-                myphoneno: myphoneno, isread: isreadfora));
+        int fora = 0;
+        int forb = 0;
+        if (a.chats.isEmpty && b.chats.isEmpty) {
+          return 0;
+        }
+        if (a.chats.isEmpty) {
+          return 1;
+        } else if (b.chats.isEmpty) {
+          return -1;
+        }
+
+        fora = a.chats.last.sentFrom == profile!.getPhoneNumber
+            ? 3
+            : !a.chats.last.isread
+                ? 2
+                : 1;
+        forb = b.chats.last.sentFrom == profile!.getPhoneNumber
+            ? 3
+            : !b.chats.last.isread
+                ? 2
+                : 1;
+        if (fora == 2 && forb == 2) {
+          return b
+              .getnotificationcount(
+                  myphoneno: profile!.getPhoneNumber, isread: false)
+              .compareTo(
+                a.getnotificationcount(
+                    myphoneno: profile!.getPhoneNumber, isread: false),
+              );
+        }
+
+        if (fora == 3 && forb == 3) {
+          return b.chats.last.time.compareTo(a.chats.last.time);
+        }
+        return forb.compareTo(fora);
       },
     );
   }
