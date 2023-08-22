@@ -1,7 +1,8 @@
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/global/functions/unfocus.dart';
-import 'package:chatty/userside/dashview/common/widgets/imageview.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
 import '../../../chatroom/common/functions/formatdate.dart';
@@ -73,17 +74,13 @@ class ChatRoomItem extends StatelessWidget {
                         return;
                       }
                       unfocus(context);
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ImageView(
-                            tag: id,
-                            title: title,
-                            url: url!,
-                            description:
-                                "${isitgroup ? "group" : "$title's"} profile",
-                          ),
-                        ),
-                      );
+                      context.push(Routes.imageView, extra: {
+                        "tag": id,
+                        "title": title,
+                        "url": url!,
+                        "description":
+                            "${isitgroup ? "group" : "$title's"} profile",
+                      });
                     },
                     child: profilewidget(url, md.size.width * 0.12, isitgroup),
                   ),

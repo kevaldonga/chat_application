@@ -7,15 +7,14 @@ import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
+import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/chatroom/common/widgets/topactions.dart';
-import 'package:chatty/userside/profiles/screens/groupprofile.dart';
-import 'package:chatty/userside/profiles/screens/myprofile.dart';
-import 'package:chatty/userside/profiles/screens/userprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -118,8 +117,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         break;
       case AppLifecycleState.resumed:
         statuses[myprofile.getPhoneNumber] = Status.online;
-        Database.updatestatus(
-            myprofile.getPhoneNumber, Status.online); // set to online
+        Database.updatestatus(myprofile.getPhoneNumber, Status.online);
+        break; // set to online
+      case AppLifecycleState.hidden:
+        break;
     }
   }
 
@@ -236,31 +237,36 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
             pauselisteners();
             unfocus(context);
             Profile otherprofile = getotherprofile();
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return widget.chatroom.isitgroup
-                    ? GroupProfile(
-                        myphoneno: myprofile.getPhoneNumber,
-                        mediachats: getchatroomfiles(),
-                        sentData: getsentfromdata(),
-                        user: widget.user,
-                        chatroom: widget.chatroom,
-                      )
-                    : UserProfile(
-                        blockedby: widget.chatroom.blockedby,
-                        chatroomid: widget.chatroom.id,
-                        myprofile: myprofile,
-                        user: widget.user,
-                        chats: getchatroomfiles(),
-                        profile: otherprofile,
-                        sentData: getsentfromdata(),
-                      );
-              },
-            )).then((value) {
-              if (value == null) return;
-              if (value == "deleted") {
-                Navigator.of(context).pop("deleted");
+            final String route = widget.chatroom.isitgroup
+                ? Routes.groupProfile
+                : Routes.userProfile;
+            final Map<String, dynamic> extra = widget.chatroom.isitgroup
+                ? {
+                    "myphoneno": myprofile.getPhoneNumber,
+                    "mediachats": getchatroomfiles(),
+                    "sentData": getsentfromdata(),
+                    "user": widget.user,
+                    "chatroom": widget.chatroom,
+                  }
+                : {
+                    "blockedBy": widget.chatroom.blockedby,
+                    "chatroomid": widget.chatroom.id,
+                    "myprofile": myprofile,
+                    "user": widget.user,
+                    "chats": getchatroomfiles(),
+                    "profile": otherprofile,
+                    "sentData": getsentfromdata(),
+                  };
+
+            context.push(route, extra: extra).then((data) {
+              if (data == "pop") {
+                context.pop();
               }
+              if (data == null) return;
+              if (data == "deleted") {
+                context.pop("deleted");
+              }
+              final value = data as Map<String, dynamic>;
               if (value["firebaseuser"] != null) {
                 widget.user = value["firebaseuser"];
               }
@@ -340,10 +346,12 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                           onTap: () async {
                             pauselisteners();
                             unfocus(context);
-                            myprofile = await Navigator.push(context,
-                                MaterialPageRoute(builder: (context) {
-                              return MyProfile(profile: myprofile);
-                            }));
+                            Object? data =
+                                await context.push(Routes.myProfile, extra: {
+                              "myprofile": myprofile,
+                            });
+
+                            myprofile = data as Profile;
                             resumelisteners();
                             setState(() {});
                           },
@@ -698,7 +706,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void pickfromgallery() async {
-    Navigator.maybePop(context);
+    context.pop();
     Picker picker = Picker(onResult: (value) async {
       if (value != null) {
         // compress image is returning cache path
@@ -712,7 +720,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void pickfromfiles() async {
-    Navigator.maybePop(context);
+    context.pop();
     bool isgranted = await Permission.storage.request().isGranted;
     if (!isgranted) {
       Toast("allow the permission to send files");
@@ -733,7 +741,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
   }
 
   void pickfromcamera() {
-    Navigator.maybePop(context);
+    context.pop();
     // ignore: invalid_use_of_visible_for_testing_member
     ImagePicker.platform
         .pickImage(source: ImageSource.camera)
@@ -849,7 +857,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     statuses[myprofile.getPhoneNumber] = Status.offline;
     Database.updatestatus(myprofile.getPhoneNumber, Status.offline);
     log("canceled status listener");
-    Navigator.of(context).pop(widget.chatroom);
+    context.pop(widget.chatroom);
   }
 
   void addcontact() {

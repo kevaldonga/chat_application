@@ -7,6 +7,7 @@ import 'package:chatty/assets/colors/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
@@ -21,8 +22,8 @@ enum TextFieldType {
 }
 
 class MyProfile extends StatefulWidget {
-  Profile profile;
-  MyProfile({super.key, required this.profile});
+  final Profile profile;
+  const MyProfile({super.key, required this.profile});
 
   @override
   State<MyProfile> createState() => _MyProfileState();
@@ -159,13 +160,13 @@ class _MyProfileState extends State<MyProfile> {
         if (!mounted) return;
         Database.writepersonalinfo(widget.profile).whenComplete(() {
           EasyLoading.dismiss();
-          Navigator.of(context).pop(widget.profile);
+          context.pop(widget.profile);
         });
       });
     } else {
       Database.writepersonalinfo(widget.profile).whenComplete(() {
         EasyLoading.dismiss();
-        Navigator.of(context).pop(widget.profile);
+        context.pop(widget.profile);
       });
     }
   }
@@ -280,7 +281,7 @@ class _MyProfileState extends State<MyProfile> {
     if (widget.profile.getName != name.text &&
         widget.profile.bio != bio.text &&
         file == null) {
-      Navigator.of(context).pop(widget.profile);
+      context.pop(widget.profile);
     }
   }
 

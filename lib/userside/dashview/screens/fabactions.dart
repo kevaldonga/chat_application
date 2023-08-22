@@ -2,24 +2,24 @@ import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:chatty/constants/Routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../assets/alertdialog/alertdialog.dart';
 import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../assets/alertdialog/textfield_material.dart';
 import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
-import '../../chatroom/screens/chatroom_activity.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
-import 'creategroupActivity.dart';
 
 class FabActions extends StatefulWidget {
-  List<ChatRoom> chatrooms;
-  Profile profile;
-  FirebaseUser user;
-  FabActions(this.profile, this.chatrooms, this.user, {super.key});
+  final List<ChatRoom> chatrooms;
+  final Profile profile;
+  final FirebaseUser user;
+  const FabActions(this.profile, this.chatrooms, this.user, {super.key});
 
   @override
   State<FabActions> createState() => _FabActionsState();
@@ -53,7 +53,7 @@ class _FabActionsState extends State<FabActions> {
           ),
           onPressed: () {
             if (!selection) {
-              Navigator.pop(context);
+              context.pop();
             } else {
               setState(() {
                 selection = false;
@@ -139,12 +139,10 @@ class _FabActionsState extends State<FabActions> {
             selectedprofiles.add(profile);
           });
         } else {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return ChatRoomActivity(
-                  chatroom: getchatroom(profile), user: widget.user);
-            },
-          ));
+          context.push(Routes.chatroomActivity, extra: {
+            "chatroom": getchatroom(profile),
+            "user": widget.user,
+          });
         }
       },
       onLongPress: () {
@@ -215,17 +213,14 @@ class _FabActionsState extends State<FabActions> {
           "You have to select more than 1 people to create a group");
       return;
     }
-    ChatRoom? chatroom = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CreateGroup(
-            users: selectedprofiles,
-            admins: [widget.profile],
-          ),
-        ));
+    final data = await context.push(Routes.createGroupActivity, extra: {
+      "users": selectedprofiles,
+      "admins": [widget.profile],
+    });
+    ChatRoom? chatroom = data as ChatRoom?;
     if (chatroom != null) {
       if (!mounted) return;
-      Navigator.of(context).pop(chatroom);
+      context.pop(chatroom);
     }
   }
 
@@ -253,10 +248,10 @@ class _FabActionsState extends State<FabActions> {
             result = await Database.getuid(phone);
             EasyLoading.dismiss();
             if (!mounted) return;
-            Navigator.of(context).pop(true);
+            context.pop(true);
           }),
           alertdialogactionbutton("CANCEL", () {
-            Navigator.of(context).pop(false);
+            context.pop(false);
           }),
         ]);
     if (!mounted) return;
@@ -350,7 +345,7 @@ class _FabActionsState extends State<FabActions> {
     await Database.setmediavisibility(
         FirebaseAuth.instance.currentUser!.uid, widget.user);
     await Database.writechatroom(chatRoom).whenComplete(() {
-      if (mounted) Navigator.of(context).pop(chatRoom);
+      if (mounted) context.pop(chatRoom);
     });
   }
 

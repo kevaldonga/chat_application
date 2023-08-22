@@ -12,6 +12,7 @@ import 'package:chatty/userside/profiles/common/widgets/mediavisibility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../assets/SystemChannels/intent.dart' as intent;
@@ -25,15 +26,15 @@ enum OP {
 }
 
 class UserProfile extends StatefulWidget {
-  String chatroomid;
+  final String chatroomid;
   final Profile myprofile;
   final Profile profile;
   final List<Chat> chats;
   final Map<String, String> sentData;
-  FirebaseUser user;
-  Map<String, bool> blockedby;
+  final FirebaseUser user;
+  final Map<String, bool> blockedby;
 
-  UserProfile({
+  const UserProfile({
     Key? key,
     required this.blockedby,
     required this.chatroomid,
@@ -83,8 +84,8 @@ class _UserProfileState extends State<UserProfile> {
                       popupMenuItem(
                           value: OP.deletechatroom,
                           height: 20,
-                          child: Row(
-                            children: const [
+                          child: const Row(
+                            children: [
                               Icon(Icons.delete_forever,
                                   color: Colors.redAccent),
                               SizedBox(width: 30),
@@ -102,10 +103,10 @@ class _UserProfileState extends State<UserProfile> {
                                 "It will delete whole chatroom including media and chats, and you wont be able to get them back !!"),
                             actions: [
                               alertdialogactionbutton("YES", () {
-                                Navigator.of(context).pop(true);
+                                context.pop(true);
                               }),
                               alertdialogactionbutton("CANCEL", () {
-                                Navigator.of(context).pop(false);
+                                context.pop(false);
                               })
                             ],
                           );
@@ -117,7 +118,7 @@ class _UserProfileState extends State<UserProfile> {
                             Database.deletechatroom(chatroom!);
                             EasyLoading.dismiss();
                             if (!mounted) return;
-                            Navigator.of(context).pop("deleted");
+                            context.pop("deleted");
                           }
                           break;
                       }
@@ -200,7 +201,7 @@ class _UserProfileState extends State<UserProfile> {
           label: "chat",
           backgroundcolor: MyColors.primarySwatch,
           onclick: () {
-            Navigator.pop(context);
+            context.pop();
           },
         ),
         profileoperationWidget(
@@ -285,7 +286,6 @@ class _UserProfileState extends State<UserProfile> {
   }
 
   void onbackpressed(BuildContext context) {
-    Navigator.of(context)
-        .pop({"firebaseuser": widget.user, "blockedby": widget.blockedby});
+    context.pop({"firebaseuser": widget.user, "blockedby": widget.blockedby});
   }
 }

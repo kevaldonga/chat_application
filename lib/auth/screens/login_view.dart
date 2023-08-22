@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../assets/alertdialog/alertdialog.dart';
 import '../widgets/button_auth.dart';
@@ -123,8 +124,7 @@ class _LoginViewState extends State<LoginView> {
                                     await showbasicdialog(context, "Signed in",
                                         "you have signed in successfully!!");
                                     if (!mounted) return;
-                                    Navigator.pushNamedAndRemoveUntil(
-                                        context, Routes.userview, (_) => false);
+                                    context.go(Routes.userView);
                                   } else {
                                     if (e[0].isNotEmpty) {
                                       var a =
@@ -142,11 +142,11 @@ class _LoginViewState extends State<LoginView> {
                           const SizedBox(height: 20),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, Routes.registerview);
+                              context.push(Routes.registerView);
                             },
-                            child: Row(
+                            child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Text(
                                   "new user?",
                                   style: TextStyle(

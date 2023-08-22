@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'alertdialog_action_button.dart';
 
@@ -41,7 +42,7 @@ Future<void> showbasicdialog(
           ),
           actions: [
             alertdialogactionbutton("OK", () {
-              Navigator.of(context).pop(true);
+              context.pop(true);
             }),
           ],
         );

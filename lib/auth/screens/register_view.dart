@@ -6,6 +6,7 @@ import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../assets/alertdialog/alertdialog.dart';
 import '../../assets/logic/profile.dart';
@@ -152,8 +153,7 @@ class _RegisterViewState extends State<RegisterView> {
                                   await showbasicdialog(context, "Signed up",
                                       "you have signed up successfully!!");
                                   if (!mounted) return;
-                                  Navigator.pushNamedAndRemoveUntil(
-                                      context, Routes.userview, (_) => false);
+                                  context.go(Routes.userView);
                                 } else {
                                   if (e[0].isNotEmpty) {
                                     var a =

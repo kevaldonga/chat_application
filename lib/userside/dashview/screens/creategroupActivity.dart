@@ -9,6 +9,7 @@ import 'package:chatty/userside/profiles/common/widgets/getprofilecircle.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../assets/SystemChannels/picker.dart';
 import '../../../assets/logic/chatroom.dart';
@@ -115,7 +116,7 @@ class _CreateGroupState extends State<CreateGroup> {
           splashColor: Colors.white38,
           splashRadius: 30,
           onPressed: () {
-            Navigator.pop(context);
+            context.pop();
           },
           icon: const Icon(Icons.arrow_back_rounded),
         ),
@@ -453,7 +454,7 @@ class _CreateGroupState extends State<CreateGroup> {
     Database.writechatroom(chatroom).whenComplete(() {
       EasyLoading.dismiss();
       Toast("Group created succussfully!!");
-      Navigator.of(context).pop(chatroom);
+      context.pop(chatroom);
     });
   }
 

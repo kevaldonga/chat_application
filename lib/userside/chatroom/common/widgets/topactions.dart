@@ -4,12 +4,12 @@ import '../../../../assets/colors/colors.dart';
 import '../../../profiles/common/widgets/getprofilecircle.dart';
 
 class TopActions extends StatefulWidget {
-  VoidCallback onbackpressed;
-  String title;
-  String? photourl, status;
-  bool isitgroup;
-  String herotag;
-  TopActions({
+  final VoidCallback onbackpressed;
+  final String title;
+  final String? photourl, status;
+  final bool isitgroup;
+  final String herotag;
+  const TopActions({
     super.key,
     this.isitgroup = false,
     required this.herotag,

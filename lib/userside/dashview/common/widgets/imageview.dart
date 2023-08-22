@@ -39,7 +39,6 @@ class _ImageViewState extends State<ImageView> {
   bool progress = false;
   @override
   Widget build(BuildContext context) {
-    MediaQueryData md = MediaQuery.of(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
@@ -58,8 +57,8 @@ class _ImageViewState extends State<ImageView> {
                 return [
                   popupMenuItem(
                     value: popupmenu.save,
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Icon(Icons.save, color: MyColors.seconadaryswatch),
                         SizedBox(width: 30),
                         Text("save"),
@@ -69,8 +68,8 @@ class _ImageViewState extends State<ImageView> {
                   ),
                   popupMenuItem(
                     value: popupmenu.viewinGallery,
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Icon(Icons.remove_red_eye,
                             color: MyColors.seconadaryswatch),
                         SizedBox(width: 30),

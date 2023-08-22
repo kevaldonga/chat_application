@@ -7,6 +7,7 @@ import 'package:chatty/userside/profiles/common/widgets/groupinfoitem.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../assets/colors/colors.dart';
 import '../../../../assets/logic/profile.dart';
@@ -98,15 +99,15 @@ class BottomSheetView extends StatelessWidget {
     "🥰",
   ];
 
-  Map<String, List<String>> reactions;
-  Map<String, int> reactionCount;
-  String whattocopy;
-  String toasttextoncopied;
-  bool isitme;
-  Profile sentFrom;
-  VoidCallback? onchatdelete;
-  Function(String emoji) onReacted;
-  late MediaQueryData md;
+  final Map<String, List<String>> reactions;
+  final Map<String, int> reactionCount;
+  final String whattocopy;
+  final String toasttextoncopied;
+  final bool isitme;
+  final Profile sentFrom;
+  final VoidCallback? onchatdelete;
+  final Function(String emoji) onReacted;
+  late final MediaQueryData md;
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +150,7 @@ class BottomSheetView extends StatelessWidget {
                 color: MyColors.textsecondary, size: 30),
             text: "copy text",
             onclicked: () {
-              Navigator.of(context).pop();
+              context.pop();
               Clipboard.setData(ClipboardData(text: whattocopy)).then((value) {
                 Toast(toasttextoncopied);
               });
@@ -166,7 +167,7 @@ class BottomSheetView extends StatelessWidget {
                   start: const Icon(Icons.face_rounded),
                   text: "view reactions",
                   onclicked: () {
-                    Navigator.of(context).pop(ExtraOperations.viewReactions);
+                    context.pop(ExtraOperations.viewReactions);
                   }),
             ),
 
@@ -185,7 +186,7 @@ class BottomSheetView extends StatelessWidget {
   }
 
   void ondeleteclicked(BuildContext context) async {
-    Navigator.of(context).pop();
+    context.pop();
     bool result = await showDialog(
       barrierDismissible: true,
       context: context,
@@ -198,10 +199,8 @@ class BottomSheetView extends StatelessWidget {
           title: const Text("Are you sure ?"),
           content: const Text("Are you sure you want to delete this chat ?"),
           actions: [
-            alertdialogactionbutton(
-                "YES", () => Navigator.of(alertcontext).pop(true)),
-            alertdialogactionbutton(
-                "NO", () => Navigator.of(alertcontext).pop(false)),
+            alertdialogactionbutton("YES", () => alertcontext.pop(true)),
+            alertdialogactionbutton("NO", () => alertcontext.pop(false)),
           ],
         );
       },
@@ -278,7 +277,7 @@ class BottomSheetView extends StatelessWidget {
   Widget emojiadd(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).pop(ExtraOperations.addReaction);
+        context.pop(ExtraOperations.addReaction);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -299,7 +298,7 @@ class BottomSheetView extends StatelessWidget {
       onTap: () {
         log("${sentFrom.getPhoneNumber} reacted with $emoji");
         onReacted(emoji);
-        Navigator.of(context).pop();
+        context.pop();
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -322,14 +321,14 @@ class BottomSheetView extends StatelessWidget {
 }
 
 class EmojiPickerView extends StatelessWidget {
-  EmojiPickerView({
+  const EmojiPickerView({
     super.key,
     required this.onReacted,
     required this.sentFrom,
   });
 
-  Function(String emoji) onReacted;
-  Profile sentFrom;
+  final Function(String emoji) onReacted;
+  final Profile sentFrom;
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +340,7 @@ class EmojiPickerView extends StatelessWidget {
         onEmojiSelected: (category, emoji) {
           log("${sentFrom.getPhoneNumber} reacted with new emoji ${emoji.emoji}");
           onReacted(emoji.emoji);
-          Navigator.pop(context);
+          context.pop();
         },
         config: const Config(
           buttonMode: ButtonMode.MATERIAL,
@@ -360,12 +359,12 @@ class EmojiPickerView extends StatelessWidget {
 }
 
 class ViewReactions extends StatelessWidget {
-  Map<String, int> reactionCount;
-  Map<String, List<String>> reactions;
-  List<Profile> profiles;
-  String myphoneno;
-  Function(String emoji) onReactionRemoved;
-  ViewReactions({
+  final Map<String, int> reactionCount;
+  final Map<String, List<String>> reactions;
+  final List<Profile> profiles;
+  final String myphoneno;
+  final Function(String emoji) onReactionRemoved;
+  const ViewReactions({
     super.key,
     required this.onReactionRemoved,
     required this.myphoneno,
@@ -448,7 +447,7 @@ class ViewReactions extends StatelessWidget {
                               if (profileList[index].getPhoneNumber ==
                                   myphoneno) {
                                 onReactionRemoved(entry.key);
-                                Navigator.of(context).pop();
+                                context.pop();
                               }
                             },
                             md: md,

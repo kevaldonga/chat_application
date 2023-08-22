@@ -4,37 +4,38 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/chatbubble_position.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/chatroom/common/functions/ReactionCountOp.dart';
 import 'package:chatty/userside/chatroom/common/functions/isReactionEmpty.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../assets/SystemChannels/toast.dart';
 import '../../../../assets/logic/chat.dart';
 import '../../../../assets/logic/profile.dart';
 import '../../../../constants/enumFIleType.dart';
 import '../../../../global/functions/unfocus.dart';
-import '../../../dashview/common/widgets/imageview.dart';
 import '../functions/formatdate.dart';
 import '../functions/openfile.dart';
 import 'onchathold.dart';
 
 class ChatBubble extends StatefulWidget {
-  String chatroomid;
+  final String chatroomid;
   static Chat? expandedbubble;
   final EdgeInsetsGeometry? margin;
   final ChatBubblePosition position;
-  bool issentfromme;
-  Chat chat;
-  Profile myprofile, otherprofile;
-  bool mediavisibility;
-  bool isitgroup;
+  final bool issentfromme;
+  final Chat chat;
+  final Profile myprofile, otherprofile;
+  final bool mediavisibility;
+  final bool isitgroup;
   final String documentpath, mediapath;
-  VoidCallback onchatdelete;
-  List<Profile> profiles;
-  ChatBubble({
+  final VoidCallback onchatdelete;
+  final List<Profile> profiles;
+  const ChatBubble({
     super.key,
     this.margin,
     required this.profiles,
@@ -674,17 +675,15 @@ class _ChatBubbleState extends State<ChatBubble>
 
   void openImage() async {
     unfocus(context);
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return ImageView(
-        tag: widget.chat.fileinfo!.url!,
-        url: widget.chat.fileinfo!.url!,
-        file: widget.chat.fileinfo!.file,
-        description: formatdate(widget.chat.time, md),
-        title: widget.chat.sentFrom == widget.myprofile.getPhoneNumber
-            ? widget.myprofile.getName
-            : widget.otherprofile.getName,
-      );
-    }));
+    context.push(Routes.imageView, extra: {
+      "tag": widget.chat.fileinfo!.url!,
+      "url": widget.chat.fileinfo!.url!,
+      "file": widget.chat.fileinfo!.file,
+      "description": formatdate(widget.chat.time, md),
+      "title": widget.chat.sentFrom == widget.myprofile.getPhoneNumber
+          ? widget.myprofile.getName
+          : widget.otherprofile.getName,
+    });
   }
 
   void removeReaction(String currentEmoji) async {

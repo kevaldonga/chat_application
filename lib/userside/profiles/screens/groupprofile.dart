@@ -16,6 +16,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../assets/SystemChannels/picker.dart';
 import '../../../assets/logic/chat.dart';
@@ -29,10 +30,10 @@ class GroupProfile extends StatefulWidget {
   final String myphoneno;
   final List<Chat> mediachats;
   final Map<String, String> sentData;
-  FirebaseUser user;
-  ChatRoom chatroom;
+  final FirebaseUser user;
+  final ChatRoom chatroom;
 
-  GroupProfile({
+  const GroupProfile({
     super.key,
     required this.myphoneno,
     required this.mediachats,
@@ -111,13 +112,13 @@ class _GroupProfileState extends State<GroupProfile> {
                               alertdialogactionbutton(
                                 "YES",
                                 () {
-                                  Navigator.of(context).pop(true);
+                                  context.pop(true);
                                 },
                               ),
                               alertdialogactionbutton(
                                 "NO",
                                 () {
-                                  Navigator.of(context).pop(false);
+                                  context.pop(false);
                                 },
                               ),
                             ],
@@ -141,8 +142,8 @@ class _GroupProfileState extends State<GroupProfile> {
                       if (amIadmin)
                         popupMenuItem(
                           value: popup.editgroupinfo,
-                          child: Row(
-                            children: const [
+                          child: const Row(
+                            children: [
                               Icon(
                                 Icons.edit_rounded,
                                 color: MyColors.primarySwatch,
@@ -155,8 +156,8 @@ class _GroupProfileState extends State<GroupProfile> {
                         ),
                       popupMenuItem(
                         value: popup.leave,
-                        child: Row(
-                          children: const [
+                        child: const Row(
+                          children: [
                             Icon(
                               Icons.logout_rounded,
                               color: Colors.red,
@@ -170,8 +171,8 @@ class _GroupProfileState extends State<GroupProfile> {
                       if (amIadmin)
                         popupMenuItem(
                             value: popup.delete,
-                            child: Row(
-                              children: const [
+                            child: const Row(
+                              children: [
                                 Icon(
                                   Icons.delete_forever,
                                   color: Colors.red,
@@ -253,13 +254,13 @@ class _GroupProfileState extends State<GroupProfile> {
         alertdialogactionbutton(
           "YES",
           () {
-            Navigator.of(context).pop(true);
+            context.pop(true);
           },
         ),
         alertdialogactionbutton(
           "NO",
           () {
-            Navigator.of(context).pop(false);
+            context.pop(false);
           },
         ),
       ],
@@ -286,8 +287,7 @@ class _GroupProfileState extends State<GroupProfile> {
     }
     await Database.writegroupinfo(
         widget.chatroom.id, widget.chatroom.groupinfo!);
-    Navigator.of(context)
-        .pop({"chatroom": widget.chatroom, "firebaseuser": widget.user});
+    context.pop({"chatroom": widget.chatroom, "firebaseuser": widget.user});
   }
 
   Widget participantsList() {
@@ -373,7 +373,7 @@ class _GroupProfileState extends State<GroupProfile> {
           alertdialogitem(
             admin ? "Dismiss as admin" : "Make group admin",
             () async {
-              Navigator.pop(context);
+              context.pop();
               if (admin) {
                 // removing an admin
                 widget.chatroom.groupinfo!.admins
@@ -394,7 +394,7 @@ class _GroupProfileState extends State<GroupProfile> {
           alertdialogitem(
             "Remove ${profile.getName}",
             () async {
-              Navigator.pop(context);
+              context.pop();
               if (widget.chatroom.connectedPersons.length == 2) {
                 deletegroupoperation(context);
                 return;
@@ -480,7 +480,7 @@ class _GroupProfileState extends State<GroupProfile> {
                     }
                     if (groupname.text == widget.chatroom.groupinfo!.name &&
                         groupbio.text == widget.chatroom.groupinfo!.bio) {
-                      Navigator.pop(context);
+                      context.pop();
                       EasyLoading.dismiss();
                       return;
                     }
@@ -491,7 +491,7 @@ class _GroupProfileState extends State<GroupProfile> {
                     Toast("info updated successfully !!");
                     EasyLoading.dismiss();
                     if (!mounted) return;
-                    Navigator.of(context).pop(true);
+                    context.pop(true);
                     setState(() {});
                   },
                   child: const Text("SAVE"),
@@ -527,9 +527,8 @@ class _GroupProfileState extends State<GroupProfile> {
     await Database.updateparticipants(
         FirebaseAuth.instance.currentUser!.uid, widget.chatroom.id, false);
     EasyLoading.dismiss();
-    int count = 0;
     if (!mounted) return;
-    Navigator.of(context).popUntil((_) => count++ >= 2);
+    context.pop("pop");
   }
 
   void deletegroup() async {
@@ -537,8 +536,7 @@ class _GroupProfileState extends State<GroupProfile> {
     Toast("deleting group...");
     await Database.deletechatroom(widget.chatroom, isItGroup: true);
     EasyLoading.dismiss();
-    int count = 0;
     if (!mounted) return;
-    Navigator.of(context).popUntil((_) => count++ >= 2);
+    context.pop("pop");
   }
 }

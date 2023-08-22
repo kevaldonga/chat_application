@@ -3,14 +3,15 @@ import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../assets/colors/colors.dart';
 import '../../../../assets/logic/FirebaseUser.dart';
 
 class MediaVisibility extends StatefulWidget {
-  String id;
-  FirebaseUser user;
-  MediaVisibility({super.key, required this.user, required this.id});
+  final String id;
+  final FirebaseUser user;
+  const MediaVisibility({super.key, required this.user, required this.id});
 
   @override
   State<MediaVisibility> createState() => _MediaVisibilityState();
@@ -81,14 +82,13 @@ class _MediaVisibilityState extends State<MediaVisibility> {
               actions: [
                 alertdialogactionbutton("OK", () {
                   setState(() {
-                    Navigator.of(context)
-                        .pop(widget.user.mediavisibility[widget.id] ?? true);
+                    context.pop(widget.user.mediavisibility[widget.id] ?? true);
                   });
                   Database.setmediavisibility(
                       FirebaseAuth.instance.currentUser!.uid, widget.user);
                 }),
                 alertdialogactionbutton("CANCEL", () {
-                  Navigator.of(context).pop(null);
+                  context.pop(null);
                 }),
               ],
             );

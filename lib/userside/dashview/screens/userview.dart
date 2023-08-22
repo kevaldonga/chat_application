@@ -6,11 +6,9 @@ import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/assets/logic/FirebaseUser.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/auth/screens/login_view.dart';
 import 'package:chatty/constants/Routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
-import 'package:chatty/userside/profiles/screens/myprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -18,17 +16,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../assets/alertdialog/alertdialog.dart';
 import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../firebase/database/my_database.dart';
-import '../../chatroom/screens/chatroom_activity.dart';
 import '../../profiles/common/widgets/getprofilecircle.dart';
 import '../common/widgets/chatroomitem.dart';
 import '../common/widgets/chatroomitem_shimmer.dart';
 import '../common/widgets/popupmenuitem.dart';
 import '../common/widgets/textfield_main.dart';
-import 'fabactions.dart';
 
 class UserView extends StatefulWidget {
   const UserView({super.key});
@@ -172,8 +169,8 @@ class _UserViewState extends State<UserView> {
           popupMenuItem(
               value: Profileop.myprofile,
               height: 20,
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.person, color: MyColors.seconadaryswatch),
                   SizedBox(width: 30),
                   Text("profile")
@@ -182,8 +179,8 @@ class _UserViewState extends State<UserView> {
           popupMenuItem(
               value: Profileop.refresh,
               height: 20,
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.refresh, color: MyColors.seconadaryswatch),
                   SizedBox(width: 30),
                   Text("refresh")
@@ -192,8 +189,8 @@ class _UserViewState extends State<UserView> {
           popupMenuItem(
               value: Profileop.updatepassword,
               height: 20,
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.password_rounded,
                       color: MyColors.seconadaryswatch),
                   SizedBox(width: 30),
@@ -218,8 +215,8 @@ class _UserViewState extends State<UserView> {
           popupMenuItem(
               value: Profileop.deleteaccount,
               height: 20,
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.delete_forever, color: Colors.redAccent),
                   SizedBox(width: 30),
                   Text("delete account"),
@@ -228,8 +225,8 @@ class _UserViewState extends State<UserView> {
           popupMenuItem(
               value: Profileop.signout,
               height: 20,
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.logout, color: MyColors.seconadaryswatch),
                   SizedBox(width: 30),
                   Text("sign out"),
@@ -241,10 +238,10 @@ class _UserViewState extends State<UserView> {
         switch (value) {
           case Profileop.myprofile:
             pauselisteners();
-            profile = await Navigator.push(context,
-                MaterialPageRoute(builder: (context) {
-              return MyProfile(profile: profile!);
-            }));
+            final data = await context.push(Routes.myProfile, extra: {
+              "myprofile": profile!,
+            });
+            profile = data as Profile;
             resumelisteners();
             setState(() {});
             break;
@@ -311,18 +308,17 @@ class _UserViewState extends State<UserView> {
                 contents: const Text("Are you sure you want to sign out ? "),
                 actions: [
                   alertdialogactionbutton("BACK", () {
-                    Navigator.of(context).pop(false);
+                    context.pop(false);
                   }),
                   alertdialogactionbutton("YES", () {
-                    Navigator.of(context).pop(true);
+                    context.pop(true);
                   }),
                 ]);
             if (yousure) {
               cancellisteners();
               await AuthFirebase.signout();
               if (!mounted) return;
-              Navigator.pushNamedAndRemoveUntil(
-                  context, Routes.loginview, (_) => false);
+              context.go(Routes.loginView);
             }
             break;
           case Profileop.deleteaccount:
@@ -339,7 +335,7 @@ class _UserViewState extends State<UserView> {
                   () async {
                     Toast(
                         "you have to reauthenticate to delete your account !");
-                    Navigator.pop(context);
+                    context.pop();
                     bool result = await showdialog(
                       context: context,
                       title: const Text("authenticate yourself"),
@@ -385,13 +381,13 @@ class _UserViewState extends State<UserView> {
                             } on FirebaseAuthException catch (e) {
                               if (e.code == "wrong-password") {
                                 Toast("you have enterred wrong password");
-                                Navigator.of(context).pop(false);
+                                context.pop(false);
                               }
                               return;
                             }
                             Toast("reauthenticated");
                             if (!mounted) return;
-                            Navigator.of(context).pop(true);
+                            context.pop(true);
                           },
                         ),
                       ],
@@ -402,7 +398,7 @@ class _UserViewState extends State<UserView> {
                   },
                 ),
                 alertdialogactionbutton("NEVERMIND", () {
-                  Navigator.of(context).pop(false);
+                  context.pop(false);
                 }),
               ],
             );
@@ -500,13 +496,10 @@ class _UserViewState extends State<UserView> {
   void ontap(int index) async {
     FocusScope.of(context).requestFocus(FocusNode());
     pauselisteners();
-    dynamic data =
-        await Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return ChatRoomActivity(
-        chatroom: chatrooms[index],
-        user: user,
-      );
-    }));
+    dynamic data = await context.push(Routes.chatroomActivity, extra: {
+      "chatroom": chatrooms[index],
+      "user": user,
+    });
     if (data != null && data.runtimeType == ChatRoom) {
       chatrooms[index] = data;
     }
@@ -520,14 +513,15 @@ class _UserViewState extends State<UserView> {
 
   void floatingbuttonaction() async {
     pauselisteners();
-    await Navigator.push(context, MaterialPageRoute<ChatRoom?>(
-      builder: (context) {
-        return FabActions(profile!, chatrooms, user);
-      },
-    )).then((newchatroom) {
-      if (newchatroom == null) {
+    await context.push(Routes.fabActions, extra: {
+      "profile": profile!,
+      "chatrooms": chatrooms,
+      "user": user,
+    }).then((data) {
+      if (data == null) {
         return;
       }
+      final ChatRoom newchatroom = data as ChatRoom;
       chatrooms.add(newchatroom);
       setState(() {});
       resumelisteners();
@@ -739,10 +733,6 @@ class _UserViewState extends State<UserView> {
     EasyLoading.dismiss();
     Toast("user has been deleted !!");
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
-      builder: (context) {
-        return const LoginView();
-      },
-    ), (_) => false);
+    context.go(Routes.loginView);
   }
 }
