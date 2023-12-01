@@ -1,8 +1,10 @@
 package com.example.chatty
 
-import android.content.ContentValues
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.ContactsContract
 import android.provider.MediaStore
@@ -36,16 +38,34 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        // create notification channel
+        initNotificationChannel();
+
+        // create a toast message
         toastChannel()
 
         // call and open file
         callandFileChannel()
 
-        // filepicker signal receiver
+        // file picker signal receiver
         filePickerSignalReceiver()
 
         // to handle paths
         pathhandler()
+    }
+
+    private fun initNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val mChannel = NotificationChannel(getString(R.string.channel_id), name, importance)
+            mChannel.description = descriptionText
+            // Register the channel with the system. You can't change the importance
+            // or other notification behaviors after this.
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+        }
     }
 
     private fun filePickerSignalReceiver() {
@@ -80,10 +100,10 @@ class MainActivity : FlutterActivity() {
                             )
                         } else {
                             Toast.makeText(
-                                            context,
-                                            "you don't have gallery installed !",
-                                            Toast.LENGTH_SHORT
-                                    )
+                                    context,
+                                    "you don't have gallery installed !",
+                                    Toast.LENGTH_SHORT
+                            )
                                     .show()
                         }
                     }

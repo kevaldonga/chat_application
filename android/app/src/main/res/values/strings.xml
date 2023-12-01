@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_id">14112</string>
+    <string name="channel_name">messaging_notification_channel</string>
+    <string name="channel_description">This notification channel is used to show messaging notifications</string>
+</resources>
