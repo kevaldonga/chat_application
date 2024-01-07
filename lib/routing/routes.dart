@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chat.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
 import 'package:chatty/auth/screens/login_view.dart';
 import 'package:chatty/auth/screens/register_view.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/main.dart';
 import 'package:chatty/userside/chatroom/screens/chatroom_activity.dart';
 import 'package:chatty/userside/dashview/common/widgets/imageview.dart';
-import 'package:chatty/userside/dashview/screens/creategroupActivity.dart';
+import 'package:chatty/userside/dashview/screens/create_group_activity.dart';
 import 'package:chatty/userside/dashview/screens/fabactions.dart';
 import 'package:chatty/userside/dashview/screens/userview.dart';
 import 'package:chatty/userside/profiles/screens/groupprofile.dart';

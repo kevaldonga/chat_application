@@ -58,12 +58,12 @@ class _MyProfileState extends State<MyProfile> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     md = MediaQuery.of(context);
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (value) async {
         isdatachanged();
         EasyLoading.show(status: "saving");
         onBackPressed();
-        return false;
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,

@@ -1,5 +1,5 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/global/functions/unfocus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

@@ -1,8 +1,8 @@
 import 'dart:developer';
 
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/groupInfo.dart';
+import 'package:chatty/assets/logic/group_info.dart';
 import 'package:chatty/hive%20database/database_hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';

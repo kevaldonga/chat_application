@@ -1,5 +1,5 @@
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/constants/validate.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:chatty/firebase/exceptions/auth_exceptions.dart';

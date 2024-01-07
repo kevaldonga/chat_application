@@ -1,8 +1,8 @@
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';

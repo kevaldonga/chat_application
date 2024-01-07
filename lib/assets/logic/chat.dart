@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../constants/enumFIleType.dart';
+import '../../constants/enum_file_type.dart';
 
 class Chat {
   FileInfo? fileinfo;

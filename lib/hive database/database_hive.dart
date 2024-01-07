@@ -3,11 +3,11 @@ import 'dart:developer';
 import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/logic/chat.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/groupInfo.dart';
+import 'package:chatty/assets/logic/group_info.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:hive/hive.dart';
 
-import '../assets/logic/FirebaseUser.dart';
+import '../assets/logic/firebase_user.dart';
 import '../assets/logic/profile.dart';
 
 class MyHive {

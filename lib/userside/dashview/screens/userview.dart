@@ -3,10 +3,10 @@ import 'dart:developer';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/constants/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -381,6 +381,7 @@ class _UserViewState extends State<UserView> {
                             } on FirebaseAuthException catch (e) {
                               if (e.code == "wrong-password") {
                                 Toast("you have enterred wrong password");
+                                if (!mounted) return;
                                 context.pop(false);
                               }
                               return;

@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/userside/chatroom/common/functions/formatdate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

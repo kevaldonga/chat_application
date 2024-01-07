@@ -7,9 +7,8 @@ import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/picker.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/constants/Routes.dart';
+import 'package:chatty/constants/routes.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/firebase/messaging/fcmoperations.dart';
 import 'package:chatty/userside/chatroom/common/widgets/topactions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,10 +21,10 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../../../assets/SystemChannels/toast.dart';
 import '../../../assets/colors/colors.dart';
-import '../../../assets/logic/FirebaseUser.dart';
+import '../../../assets/logic/firebase_user.dart';
 import '../../../assets/logic/chat.dart';
 import '../../../constants/chatbubble_position.dart';
-import '../../../constants/enumFIleType.dart';
+import '../../../constants/enum_file_type.dart';
 import '../../../global/functions/unfocus.dart';
 import '../../dashview/common/widgets/textfield_main.dart';
 import '../../profiles/common/functions/compressimage.dart';
@@ -164,10 +163,10 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       title = otherprofile.getName;
       status = decodestatus(statuses[otherprofile.getPhoneNumber]);
     }
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (value) async {
         onbackpressed();
-        return false;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(
@@ -583,16 +582,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       FocusScope.of(context).requestFocus(FocusNode());
     });
 
-    final List<String>? tokens =
-        await getTokens(widget.chatroom.connectedPersons);
-    if (tokens == null || tokens.isEmpty) return;
-    bool result = await FCMOperations.send(tokens, {
-      "chat": newchat.toMap(),
-      "sentFrom": myprofile.toMap(),
-    });
-
-    if (!result) log("error sending notification");
-
     if (type == null) {
       await Database.writechat(chat: newchat, chatroomid: widget.chatroom.id);
     }
@@ -897,24 +886,5 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     widget.chatroom.chats.removeAt(index);
     Toast("chat has been deleted successfully !!");
     setState(() {});
-  }
-
-  Future<List<String>?> getTokens(List<Profile> connectedPersons) async {
-    List<String> tokens = [];
-
-    for (int i = 0; i < connectedPersons.length; i++) {
-      final String phoneno = connectedPersons[i].getPhoneNumber;
-      if (phoneno == myprofile.getPhoneNumber) continue;
-
-      final String? uid = await Database.getuid(phoneno);
-      if (uid == null) continue;
-
-      final String? token = await FCMOperations.get(uid);
-      if (token == null) continue;
-
-      tokens.add(token);
-    }
-
-    return tokens.isEmpty ? null : tokens;
   }
 }

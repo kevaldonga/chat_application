@@ -1,4 +1,4 @@
-import 'package:chatty/assets/logic/groupInfo.dart';
+import 'package:chatty/assets/logic/group_info.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/dashview/common/widgets/chatroomitem_shimmer.dart';
 import 'package:flutter/material.dart';

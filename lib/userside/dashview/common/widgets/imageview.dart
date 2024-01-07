@@ -30,7 +30,7 @@ class ImageView extends StatefulWidget {
   State<ImageView> createState() => _ImageViewState();
 }
 
-enum popupmenu {
+enum PopUpMenu {
   save,
   viewinGallery,
 }
@@ -56,7 +56,7 @@ class _ImageViewState extends State<ImageView> {
               itemBuilder: (context) {
                 return [
                   popupMenuItem(
-                    value: popupmenu.save,
+                    value: PopUpMenu.save,
                     child: const Row(
                       children: [
                         Icon(Icons.save, color: MyColors.seconadaryswatch),
@@ -67,7 +67,7 @@ class _ImageViewState extends State<ImageView> {
                     height: 20,
                   ),
                   popupMenuItem(
-                    value: popupmenu.viewinGallery,
+                    value: PopUpMenu.viewinGallery,
                     child: const Row(
                       children: [
                         Icon(Icons.remove_red_eye,
@@ -82,7 +82,7 @@ class _ImageViewState extends State<ImageView> {
               },
               onSelected: (value) {
                 switch (value) {
-                  case popupmenu.save:
+                  case PopUpMenu.save:
                     if (widget.file != null) {
                       // save image to gallery
                       saveimage(widget.file!.path);
@@ -93,7 +93,7 @@ class _ImageViewState extends State<ImageView> {
                       });
                     }
                     break;
-                  case popupmenu.viewinGallery:
+                  case PopUpMenu.viewinGallery:
                     if (widget.file != null) {
                       // open the file
                       openfile(widget.file!);

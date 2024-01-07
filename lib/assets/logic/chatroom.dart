@@ -2,7 +2,7 @@ import 'package:chatty/assets/logic/profile.dart';
 
 import '../../userside/chatroom/common/functions/generateid.dart';
 import 'chat.dart';
-import 'groupInfo.dart';
+import 'group_info.dart';
 
 class ChatRoom {
   final String id;

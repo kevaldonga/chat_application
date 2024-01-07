@@ -2,7 +2,7 @@ import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/alertdialog/alertdialog.dart';
 import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chat.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/firebase/database/my_database.dart';
@@ -64,10 +64,10 @@ class _UserProfileState extends State<UserProfile> {
     didiblock = widget.blockedby[widget.myprofile.getPhoneNumber] ?? false;
     amiblocked = widget.blockedby[widget.profile.getPhoneNumber] ?? false;
     md = MediaQuery.of(context);
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (value) async {
         onbackpressed(context);
-        return false;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(

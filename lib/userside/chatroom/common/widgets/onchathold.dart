@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
-import 'package:chatty/userside/chatroom/common/functions/isReactionEmpty.dart';
+import 'package:chatty/userside/chatroom/common/functions/isreaction_empty.dart';
 import 'package:chatty/userside/profiles/common/widgets/groupinfoitem.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';

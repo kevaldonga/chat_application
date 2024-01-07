@@ -5,7 +5,7 @@ import 'package:chatty/assets/alertdialog/alertdialog.dart';
 import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
 import 'package:chatty/assets/alertdialog/textfield_material.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/FirebaseUser.dart';
+import 'package:chatty/assets/logic/firebase_user.dart';
 import 'package:chatty/assets/logic/chatroom.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
@@ -46,7 +46,7 @@ class GroupProfile extends StatefulWidget {
   State<GroupProfile> createState() => _GroupProfileState();
 }
 
-enum popup {
+enum PopUp {
   editgroupinfo,
   leave,
   delete,
@@ -71,10 +71,10 @@ class _GroupProfileState extends State<GroupProfile> {
   @override
   Widget build(BuildContext context) {
     md = MediaQuery.of(context);
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (value) async {
         onbackpressed(context);
-        return false;
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(
@@ -91,10 +91,10 @@ class _GroupProfileState extends State<GroupProfile> {
                     isitgroup: true,
                     onSelected: (value) async {
                       switch (value) {
-                        case popup.editgroupinfo:
+                        case PopUp.editgroupinfo:
                           editgroupinfo();
                           break;
-                        case popup.leave:
+                        case PopUp.leave:
                           if (widget.chatroom.groupinfo!.admins.length == 1 &&
                               amIadmin) {
                             Toast("you cant leave as you are the only admin");
@@ -131,7 +131,7 @@ class _GroupProfileState extends State<GroupProfile> {
                             }
                           }
                           break;
-                        case popup.delete:
+                        case PopUp.delete:
                           await deletegroupoperation(context);
                           break;
                         default:
@@ -141,7 +141,7 @@ class _GroupProfileState extends State<GroupProfile> {
                     items: [
                       if (amIadmin)
                         popupMenuItem(
-                          value: popup.editgroupinfo,
+                          value: PopUp.editgroupinfo,
                           child: const Row(
                             children: [
                               Icon(
@@ -155,7 +155,7 @@ class _GroupProfileState extends State<GroupProfile> {
                           height: 20,
                         ),
                       popupMenuItem(
-                        value: popup.leave,
+                        value: PopUp.leave,
                         child: const Row(
                           children: [
                             Icon(
@@ -170,7 +170,7 @@ class _GroupProfileState extends State<GroupProfile> {
                       ),
                       if (amIadmin)
                         popupMenuItem(
-                            value: popup.delete,
+                            value: PopUp.delete,
                             child: const Row(
                               children: [
                                 Icon(

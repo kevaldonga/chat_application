@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/groupInfo.dart';
+import 'package:chatty/assets/logic/group_info.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/profiles/common/functions/setprofileimage.dart';
 import 'package:chatty/userside/profiles/common/widgets/getprofilecircle.dart';

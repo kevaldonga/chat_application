@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../assets/colors/colors.dart';
-import '../../../../assets/logic/FirebaseUser.dart';
+import '../../../../assets/logic/firebase_user.dart';
 
 class MediaVisibility extends StatefulWidget {
   final String id;
