@@ -58,8 +58,6 @@ dependencies:
   go_router: ^10.1.0
   firebase_messaging: ^14.7.3
   intl: ^0.18.1
-  http: ^0.13.6
-  flutter_local_notifications: ^16.1.0
 
 dev_dependencies:
   flutter_test:

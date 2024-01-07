@@ -351,7 +351,7 @@ class EmojiPickerView extends StatelessWidget {
           checkPlatformCompatibility: true,
           initCategory: Category.SMILEYS,
           indicatorColor: MyColors.primarySwatch,
-          showRecentsTab: true,
+          recentTabBehavior: RecentTabBehavior.POPULAR,
         ),
       ),
     );

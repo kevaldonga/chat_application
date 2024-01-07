@@ -1,7 +1,6 @@
 import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/colors/colors.dart';
 import 'package:chatty/firebase/generated/firebase_options.dart';
-import 'package:chatty/firebase/messaging/fcm_service.dart';
 import 'package:chatty/routing/routes.dart';
 import 'package:chatty/userside/dashview/screens/userview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,7 +22,6 @@ void main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FCMService.setup();
   runApp(const MyApp());
 }
 
