@@ -1,14 +1,15 @@
 import 'package:chatty/assets/SystemChannels/toast.dart';
-import 'package:chatty/assets/alertdialog/alertdialog.dart';
-import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
-import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/firebase_user.dart';
-import 'package:chatty/assets/logic/chat.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/userside/profiles/common/widgets/chatroom_media.dart';
-import 'package:chatty/userside/profiles/common/widgets/commongrouplist.dart';
-import 'package:chatty/userside/profiles/common/widgets/mediavisibility.dart';
+import 'package:chatty/global/widgets/alertdialog.dart';
+import 'package:chatty/global/widgets/alertdialog_button.dart';
+import 'package:chatty/userside/profiles/widgets/chatroom_media.dart';
+import 'package:chatty/userside/profiles/widgets/commongrouplist.dart';
+import 'package:chatty/userside/profiles/widgets/mediavisibility.dart';
+import 'package:chatty/utils/chat.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -16,10 +17,9 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../assets/SystemChannels/intent.dart' as intent;
-import '../../../assets/logic/profile.dart';
-import '../../dashview/common/widgets/popupmenuitem.dart';
-import '../common/widgets/animatedappbar.dart';
-import '../common/widgets/bio.dart';
+import '../../dashview/widgets/popupmenuitem.dart';
+import '../widgets/animatedappbar.dart';
+import '../widgets/bio.dart';
 
 enum OP {
   deletechatroom,
@@ -102,12 +102,16 @@ class _UserProfileState extends State<UserProfile> {
                             contents: const Text(
                                 "It will delete whole chatroom including media and chats, and you wont be able to get them back !!"),
                             actions: [
-                              alertdialogactionbutton("YES", () {
-                                context.pop(true);
-                              }),
-                              alertdialogactionbutton("CANCEL", () {
-                                context.pop(false);
-                              })
+                              AlertDialogButton(
+                                  text: "YES",
+                                  callback: () {
+                                    context.pop(true);
+                                  }),
+                              AlertDialogButton(
+                                  text: "CANCEL",
+                                  callback: () {
+                                    context.pop(false);
+                                  })
                             ],
                           );
                           if (yousure) {
@@ -117,7 +121,7 @@ class _UserProfileState extends State<UserProfile> {
                                 myprofile: widget.myprofile);
                             Database.deletechatroom(chatroom!);
                             EasyLoading.dismiss();
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             context.pop("deleted");
                           }
                           break;

@@ -1,7 +1,7 @@
 import 'package:chatty/assets/SystemChannels/path.dart';
-import 'package:chatty/assets/colors/colors.dart';
+import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/generated/firebase_options.dart';
-import 'package:chatty/routing/routes.dart';
+import 'package:chatty/routing/router.dart';
 import 'package:chatty/userside/dashview/screens/userview.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:hive/hive.dart';
 
-import 'auth/screens/login_view.dart';
+import 'userside/auth/screens/login_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

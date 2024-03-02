@@ -1,16 +1,15 @@
 import 'dart:developer';
 
-import 'package:chatty/assets/logic/firebase_user.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/group_info.dart';
-import 'package:chatty/hive%20database/database_hive.dart';
+import 'package:chatty/hive/database_hive.dart';
+import 'package:chatty/utils/chat.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/group_info.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
-
-import '../../assets/logic/chat.dart';
-import '../../assets/logic/profile.dart';
 
 class Database {
   static FirebaseFirestore? _db;

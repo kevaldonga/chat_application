@@ -1,9 +1,8 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:chatty/utils/profile.dart';
 import 'package:flutter/services.dart';
-
-import '../logic/profile.dart';
 
 class Intent {
   static const _channel = MethodChannel("flutter.io/intent");

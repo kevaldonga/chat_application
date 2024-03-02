@@ -1,9 +1,8 @@
 import 'package:chatty/assets/SystemChannels/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
-import '../../assets/logic/profile.dart';
 
 class AuthFirebase {
   static FirebaseAuth? _auth;
@@ -20,7 +19,7 @@ class AuthFirebase {
     return null;
   }
 
-  static Future<List<String>?> signup(Profile profile, password) async {
+  static Future<List<String>?> signup(Profile profile, String password) async {
     Toast("signing up...");
     _auth ??= FirebaseAuth.instance;
     try {

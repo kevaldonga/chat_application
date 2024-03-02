@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
-import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/firebase_user.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/constants/routes.dart';
-import 'package:chatty/constants/profile_operations.dart';
+import 'package:chatty/global/variables/colors.dart';
+import 'package:chatty/global/widgets/alertdialog.dart';
+import 'package:chatty/global/widgets/alertdialog_button.dart';
+import 'package:chatty/routing/routes.dart';
+import 'package:chatty/global/variables/profile_operations.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -18,14 +20,12 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../assets/alertdialog/alertdialog.dart';
-import '../../../assets/alertdialog/alertdialog_action_button.dart';
 import '../../../firebase/database/my_database.dart';
-import '../../profiles/common/widgets/getprofilecircle.dart';
-import '../common/widgets/chatroomitem.dart';
-import '../common/widgets/chatroomitem_shimmer.dart';
-import '../common/widgets/popupmenuitem.dart';
-import '../common/widgets/textfield_main.dart';
+import '../../profiles/widgets/getprofilecircle.dart';
+import '../widgets/chatroomitem.dart';
+import '../widgets/chatroomitem_shimmer.dart';
+import '../widgets/popupmenuitem.dart';
+import '../widgets/textfield_main.dart';
 
 class UserView extends StatefulWidget {
   const UserView({super.key});
@@ -207,9 +207,11 @@ class _UserViewState extends State<UserView> {
                           ? Colors.green
                           : MyColors.textprimary),
                   const SizedBox(width: 30),
-                  Text(auth.currentUser!.emailVerified
-                      ? "verified"
-                      : "verify yourself"),
+                  Text(
+                    auth.currentUser!.emailVerified
+                        ? "verified"
+                        : "verify yourself",
+                  ),
                 ],
               )),
           popupMenuItem(
@@ -284,9 +286,9 @@ class _UserViewState extends State<UserView> {
                 ),
               ),
               actions: [
-                alertdialogactionbutton(
-                  "change",
-                  (() async {
+                AlertDialogButton(
+                  text: "change",
+                  callback: (() async {
                     if (password.isEmpty) {
                       Toast("too short");
                       return;
@@ -307,17 +309,21 @@ class _UserViewState extends State<UserView> {
                 title: const Text("Are you sure ?"),
                 contents: const Text("Are you sure you want to sign out ? "),
                 actions: [
-                  alertdialogactionbutton("BACK", () {
-                    context.pop(false);
-                  }),
-                  alertdialogactionbutton("YES", () {
-                    context.pop(true);
-                  }),
+                  AlertDialogButton(
+                      text: "BACK",
+                      callback: () {
+                        context.pop(false);
+                      }),
+                  AlertDialogButton(
+                      text: "YES",
+                      callback: () {
+                        context.pop(true);
+                      }),
                 ]);
             if (yousure) {
               cancellisteners();
               await AuthFirebase.signout();
-              if (!mounted) return;
+              if (!context.mounted) return;
               context.go(Routes.loginView);
             }
             break;
@@ -330,9 +336,9 @@ class _UserViewState extends State<UserView> {
               contents: const Text(
                   "This is serious action to perform !! All your data will be deleted and you won't be able to get them back !!"),
               actions: [
-                alertdialogactionbutton(
-                  "AUTHENTICATE",
-                  () async {
+                AlertDialogButton(
+                  text: "AUTHENTICATE",
+                  callback: () async {
                     Toast(
                         "you have to reauthenticate to delete your account !");
                     context.pop();
@@ -365,9 +371,9 @@ class _UserViewState extends State<UserView> {
                         ),
                       ),
                       actions: [
-                        alertdialogactionbutton(
-                          "REAUTHENTICATE",
-                          () async {
+                        AlertDialogButton(
+                          text: "REAUTHENTICATE",
+                          callback: () async {
                             if (password.length < 8) {
                               Toast("password is too short !!");
                               return;
@@ -381,13 +387,13 @@ class _UserViewState extends State<UserView> {
                             } on FirebaseAuthException catch (e) {
                               if (e.code == "wrong-password") {
                                 Toast("you have enterred wrong password");
-                                if (!mounted) return;
+                                if (!context.mounted) return;
                                 context.pop(false);
                               }
                               return;
                             }
                             Toast("reauthenticated");
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             context.pop(true);
                           },
                         ),
@@ -398,9 +404,11 @@ class _UserViewState extends State<UserView> {
                     }
                   },
                 ),
-                alertdialogactionbutton("NEVERMIND", () {
-                  context.pop(false);
-                }),
+                AlertDialogButton(
+                    text: "NEVERMIND",
+                    callback: () {
+                      context.pop(false);
+                    }),
               ],
             );
         }
@@ -733,7 +741,7 @@ class _UserViewState extends State<UserView> {
     await AuthFirebase.deleteAccount(profile!, uid: auth.currentUser!.uid);
     EasyLoading.dismiss();
     Toast("user has been deleted !!");
-    if (!mounted) return;
+    if (!context.mounted) return;
     context.go(Routes.loginView);
   }
 }

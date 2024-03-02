@@ -1,17 +1,19 @@
 import 'dart:io';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
-import 'package:chatty/assets/alertdialog/alertdialog.dart';
-import 'package:chatty/assets/alertdialog/alertdialog_action_button.dart';
-import 'package:chatty/assets/alertdialog/textfield_material.dart';
-import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/firebase_user.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
+import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/userside/dashview/common/widgets/popupmenuitem.dart';
-import 'package:chatty/userside/profiles/common/functions/setprofileimage.dart';
-import 'package:chatty/userside/profiles/common/widgets/animatedappbar.dart';
-import 'package:chatty/userside/profiles/common/widgets/groupinfoitem.dart';
+import 'package:chatty/global/widgets/alertdialog.dart';
+import 'package:chatty/global/widgets/alertdialog_button.dart';
+import 'package:chatty/global/widgets/primary_textfield.dart';
+import 'package:chatty/userside/dashview/widgets/popupmenuitem.dart';
+import 'package:chatty/userside/profiles/functions/setprofileimage.dart';
+import 'package:chatty/userside/profiles/widgets/animatedappbar.dart';
+import 'package:chatty/userside/profiles/widgets/groupinfoitem.dart';
+import 'package:chatty/utils/chat.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,12 +21,10 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../assets/SystemChannels/picker.dart';
-import '../../../assets/logic/chat.dart';
-import '../../../assets/logic/profile.dart';
-import '../common/functions/compressimage.dart';
-import '../common/widgets/bio.dart';
-import '../common/widgets/chatroom_media.dart';
-import '../common/widgets/mediavisibility.dart';
+import '../functions/compressimage.dart';
+import '../widgets/bio.dart';
+import '../widgets/chatroom_media.dart';
+import '../widgets/mediavisibility.dart';
 
 class GroupProfile extends StatefulWidget {
   final String myphoneno;
@@ -109,15 +109,15 @@ class _GroupProfileState extends State<GroupProfile> {
                                 ? "group will be deleted as group with one person can't exist, Are you sure you want to do this ?"
                                 : "Are you sure you want to leave ${widget.chatroom.groupinfo!.name} ?"),
                             actions: [
-                              alertdialogactionbutton(
-                                "YES",
-                                () {
+                              AlertDialogButton(
+                                text: "YES",
+                                callback: () {
                                   context.pop(true);
                                 },
                               ),
-                              alertdialogactionbutton(
-                                "NO",
-                                () {
+                              AlertDialogButton(
+                                text: "NO",
+                                callback: () {
                                   context.pop(false);
                                 },
                               ),
@@ -251,15 +251,15 @@ class _GroupProfileState extends State<GroupProfile> {
       contents: const Text(
           "group will be deleted forever and you won't be able to restore data , Are you sure you wanna do this ?"),
       actions: [
-        alertdialogactionbutton(
-          "YES",
-          () {
+        AlertDialogButton(
+          text: "YES",
+          callback: () {
             context.pop(true);
           },
         ),
-        alertdialogactionbutton(
-          "NO",
-          () {
+        AlertDialogButton(
+          text: "NO",
+          callback: () {
             context.pop(false);
           },
         ),
@@ -446,27 +446,27 @@ class _GroupProfileState extends State<GroupProfile> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              textfieldmaterial(
+              PrimaryTextField(
                 controller: groupname,
                 label: "group name",
-                maxlength: 20,
-                onchanged: (text) {
+                maxLength: 20,
+                onChanged: (text) {
                   if (text.length == 20) {
                     Toast("limit reached");
                   }
                 },
-                keyboardtype: TextInputType.name,
+                keyboardType: TextInputType.name,
               ),
-              textfieldmaterial(
+              PrimaryTextField(
                 controller: groupbio,
                 label: "group bio",
-                onchanged: (text) {
+                onChanged: (text) {
                   if (text.length == 50) {
                     Toast("limit reached");
                   }
                 },
-                keyboardtype: TextInputType.multiline,
-                maxlength: 50,
+                keyboardType: TextInputType.multiline,
+                maxLength: 50,
               ),
               Center(
                 child: TextButton(
@@ -490,7 +490,7 @@ class _GroupProfileState extends State<GroupProfile> {
                         widget.chatroom.id, widget.chatroom.groupinfo!);
                     Toast("info updated successfully !!");
                     EasyLoading.dismiss();
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     context.pop(true);
                     setState(() {});
                   },
@@ -527,7 +527,7 @@ class _GroupProfileState extends State<GroupProfile> {
     await Database.updateparticipants(
         FirebaseAuth.instance.currentUser!.uid, widget.chatroom.id, false);
     EasyLoading.dismiss();
-    if (!mounted) return;
+    if (!context.mounted) return;
     context.pop("pop");
   }
 
@@ -536,7 +536,7 @@ class _GroupProfileState extends State<GroupProfile> {
     Toast("deleting group...");
     await Database.deletechatroom(widget.chatroom, isItGroup: true);
     EasyLoading.dismiss();
-    if (!mounted) return;
+    if (!context.mounted) return;
     context.pop("pop");
   }
 }

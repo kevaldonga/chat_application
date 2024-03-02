@@ -2,18 +2,17 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatty/assets/SystemChannels/picker.dart';
-import 'package:chatty/assets/colors/colors.dart';
-// import 'package:file_picker/file_picker.dart';
+import 'package:chatty/global/variables/colors.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
-import '../common/functions/compressimage.dart';
-import '../common/functions/setprofileimage.dart';
-import '../common/widgets/buildcircle.dart';
+import '../functions/compressimage.dart';
+import '../functions/setprofileimage.dart';
+import '../widgets/buildcircle.dart';
 
 enum TextFieldType {
   name,
@@ -157,7 +156,7 @@ class _MyProfileState extends State<MyProfile> {
       await setuserprofile(file!).then((value) {
         widget.profile.photourl = value;
         EasyLoading.dismiss();
-        if (!mounted) return;
+        if (!context.mounted) return;
         Database.writepersonalinfo(widget.profile).whenComplete(() {
           EasyLoading.dismiss();
           context.pop(widget.profile);

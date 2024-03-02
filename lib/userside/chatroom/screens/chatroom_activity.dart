@@ -5,11 +5,13 @@ import 'dart:math' as math;
 
 import 'package:chatty/assets/SystemChannels/path.dart';
 import 'package:chatty/assets/SystemChannels/picker.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/assets/logic/profile.dart';
-import 'package:chatty/constants/routes.dart';
+import 'package:chatty/routing/routes.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/userside/chatroom/common/widgets/topactions.dart';
+import 'package:chatty/userside/chatroom/widgets/topactions.dart';
+import 'package:chatty/utils/chat.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,22 +22,21 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../assets/SystemChannels/intent.dart' as intent;
 import '../../../assets/SystemChannels/toast.dart';
-import '../../../assets/colors/colors.dart';
-import '../../../assets/logic/firebase_user.dart';
-import '../../../assets/logic/chat.dart';
-import '../../../constants/chatbubble_position.dart';
-import '../../../constants/enum_file_type.dart';
+import '../../../global/variables/colors.dart';
+import '../../../global/variables/chatbubble_position.dart';
+import '../../../global/variables/enum_file_type.dart';
 import '../../../global/functions/unfocus.dart';
-import '../../dashview/common/widgets/textfield_main.dart';
-import '../../profiles/common/functions/compressimage.dart';
-import '../../profiles/common/widgets/getprofilecircle.dart';
-import '../common/functions/formatdate.dart';
-import '../common/functions/generateid.dart';
-import '../common/functions/sameday.dart';
-import '../common/widgets/chatbubble.dart';
-import '../common/widgets/chatroomactivity_shimmer.dart';
-import '../common/widgets/sharebottomsheet.dart';
+import '../../dashview/widgets/textfield_main.dart';
+import '../../profiles/functions/compressimage.dart';
+import '../../profiles/widgets/getprofilecircle.dart';
+import '../../../global/functions/formatdate.dart';
+import '../../../global/functions/generateid.dart';
+import '../../../global/functions/sameday.dart';
+import '../widgets/chatbubble.dart';
+import '../widgets/chatroomactivity_shimmer.dart';
+import '../widgets/sharebottomsheet.dart';
 
+// ignore: must_be_immutable
 class ChatRoomActivity extends StatefulWidget {
   ChatRoom chatroom;
   FirebaseUser user;
@@ -203,8 +204,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
           body: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
+              // profile bar
               topactions(context, md, title, status, photourl),
+
+              // chatlist
               chatslistview(md),
+
+              // send widget
               bottomaction(md, iskeyboardvisible),
               SizedBox(height: md.viewInsets.bottom),
             ],
@@ -745,12 +751,13 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
     context.pop();
     // ignore: invalid_use_of_visible_for_testing_member
     ImagePicker.platform
-        .pickImage(source: ImageSource.camera)
+        .getImageFromSource(source: ImageSource.camera)
         .then((image) async {
       if (image == null) return;
       log(image.path);
       File myfile = await compressimage(File(image.path), 80);
       file = await myfile.copy(image.path);
+
       sendmessage(type: FileType.image);
     });
   }
@@ -786,7 +793,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       listener = db.collection("status").doc(key).snapshots().listen((event) {
         statuses[key] = event.data()?.cast<String, int>()["status"] ?? 0;
         log("$key : ${statuses[key]} updated");
-        if (!mounted) return;
+        if (!context.mounted) return;
         setState(() {});
       });
     });

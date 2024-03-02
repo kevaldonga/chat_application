@@ -1,21 +1,21 @@
 import 'dart:io';
 
 import 'package:chatty/assets/SystemChannels/toast.dart';
-import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/group_info.dart';
+import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
-import 'package:chatty/userside/profiles/common/functions/setprofileimage.dart';
-import 'package:chatty/userside/profiles/common/widgets/getprofilecircle.dart';
+import 'package:chatty/userside/profiles/functions/setprofileimage.dart';
+import 'package:chatty/userside/profiles/widgets/getprofilecircle.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/group_info.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../assets/SystemChannels/picker.dart';
-import '../../../assets/logic/chatroom.dart';
-import '../../../assets/logic/profile.dart';
-import '../../profiles/common/functions/compressimage.dart';
-import '../../profiles/common/widgets/buildcircle.dart';
+import '../../profiles/functions/compressimage.dart';
+import '../../profiles/widgets/buildcircle.dart';
 
 enum MemberType {
   admin,

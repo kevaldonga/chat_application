@@ -1,19 +1,19 @@
 import 'package:chatty/assets/SystemChannels/toast.dart';
-import 'package:chatty/assets/colors/colors.dart';
-import 'package:chatty/assets/logic/firebase_user.dart';
-import 'package:chatty/assets/logic/chatroom.dart';
-import 'package:chatty/constants/routes.dart';
+import 'package:chatty/global/variables/colors.dart';
+import 'package:chatty/global/widgets/alertdialog.dart';
+import 'package:chatty/global/widgets/alertdialog_button.dart';
+import 'package:chatty/global/widgets/primary_textfield.dart';
+import 'package:chatty/routing/routes.dart';
+import 'package:chatty/utils/chatroom.dart';
+import 'package:chatty/utils/firebase_user.dart';
+import 'package:chatty/utils/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../assets/alertdialog/alertdialog.dart';
-import '../../../assets/alertdialog/alertdialog_action_button.dart';
-import '../../../assets/alertdialog/textfield_material.dart';
-import '../../../assets/logic/profile.dart';
 import '../../../firebase/database/my_database.dart';
-import '../../profiles/common/widgets/getprofilecircle.dart';
+import '../../profiles/widgets/getprofilecircle.dart';
 
 class FabActions extends StatefulWidget {
   final List<ChatRoom> chatrooms;
@@ -219,7 +219,7 @@ class _FabActionsState extends State<FabActions> {
     });
     ChatRoom? chatroom = data as ChatRoom?;
     if (chatroom != null) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       context.pop(chatroom);
     }
   }
@@ -230,31 +230,35 @@ class _FabActionsState extends State<FabActions> {
     bool? response = await showdialog(
         context: context,
         title: const Text("add chatroom"),
-        contents: textfieldmaterial(
-          keyboardtype: TextInputType.number,
+        contents: PrimaryTextField(
+          keyboardType: TextInputType.number,
           label: "phoneno",
-          onchanged: (value) {
+          onChanged: (value) {
             phone = value;
           },
-          maxlength: 10,
+          maxLength: 10,
         ),
         actions: [
-          alertdialogactionbutton("ADD", () async {
-            if (phone.length < 10) {
-              Toast("too short!!");
-              return;
-            }
-            EasyLoading.show(status: "searching");
-            result = await Database.getuid(phone);
-            EasyLoading.dismiss();
-            if (!mounted) return;
-            context.pop(true);
-          }),
-          alertdialogactionbutton("CANCEL", () {
-            context.pop(false);
-          }),
+          AlertDialogButton(
+              text: "ADD",
+              callback: () async {
+                if (phone.length < 10) {
+                  Toast("too short!!");
+                  return;
+                }
+                EasyLoading.show(status: "searching");
+                result = await Database.getuid(phone);
+                EasyLoading.dismiss();
+                if (!context.mounted) return;
+                context.pop(true);
+              }),
+          AlertDialogButton(
+              text: "CANCEL",
+              callback: () {
+                context.pop(false);
+              }),
         ]);
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (result != null && response) {
       if (phone == widget.profile.getPhoneNumber) {
         Toast("you can't add your own number!");
