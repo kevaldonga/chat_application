@@ -3,8 +3,8 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:chatty/assets/SystemChannels/path.dart';
-import 'package:chatty/assets/SystemChannels/picker.dart';
+import 'package:chatty/global/SystemChannels/path.dart';
+import 'package:chatty/global/SystemChannels/picker.dart';
 import 'package:chatty/routing/routes.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/chatroom/widgets/topactions.dart';
@@ -20,8 +20,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../assets/SystemChannels/intent.dart' as intent;
-import '../../../assets/SystemChannels/toast.dart';
+import '../../../global/SystemChannels/intent.dart' as intent;
+import '../../../global/SystemChannels/toast.dart';
 import '../../../global/variables/colors.dart';
 import '../../../global/variables/chatbubble_position.dart';
 import '../../../global/variables/enum_file_type.dart';
@@ -109,6 +109,7 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
         // if you close app with keybaord on it would stay on typing status
         // so have to hide the keyboard first
         unfocus(context);
@@ -120,8 +121,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
         statuses[myprofile.getPhoneNumber] = Status.online;
         Database.updatestatus(myprofile.getPhoneNumber, Status.online);
         break; // set to online
-      case AppLifecycleState.hidden:
-        break;
     }
   }
 

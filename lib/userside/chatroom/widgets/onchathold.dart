@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/widgets/alertdialog_button.dart';
 import 'package:chatty/userside/chatroom/functions/isreaction_empty.dart';
 import 'package:chatty/userside/profiles/widgets/groupinfoitem.dart';

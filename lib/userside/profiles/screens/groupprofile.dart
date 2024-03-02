@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/global/widgets/alertdialog.dart';
@@ -20,7 +20,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../assets/SystemChannels/picker.dart';
+import '../../../global/SystemChannels/picker.dart';
 import '../functions/compressimage.dart';
 import '../widgets/bio.dart';
 import '../widgets/chatroom_media.dart';

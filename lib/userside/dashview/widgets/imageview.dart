@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/functions/openfile.dart';
 import 'package:chatty/userside/dashview/widgets/popupmenuitem.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 
-import '../../../assets/SystemChannels/path.dart';
+import '../../../global/SystemChannels/path.dart';
 import '../../../global/variables/colors.dart';
 
 class ImageView extends StatefulWidget {

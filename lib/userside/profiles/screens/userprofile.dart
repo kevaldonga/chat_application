@@ -1,4 +1,4 @@
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/global/widgets/alertdialog.dart';
@@ -16,7 +16,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../assets/SystemChannels/intent.dart' as intent;
+import '../../../global/SystemChannels/intent.dart' as intent;
 import '../../dashview/widgets/popupmenuitem.dart';
 import '../widgets/animatedappbar.dart';
 import '../widgets/bio.dart';

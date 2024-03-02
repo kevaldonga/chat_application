@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import '../../assets/SystemChannels/intent.dart' as intent;
-import '../../assets/SystemChannels/toast.dart';
+import '../SystemChannels/intent.dart' as intent;
+import '../SystemChannels/toast.dart';
 
 void openfile(File file) {
   // if file exist in at the moment open it

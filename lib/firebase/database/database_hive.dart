@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:chatty/assets/SystemChannels/path.dart';
+import 'package:chatty/global/SystemChannels/path.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/utils/chat.dart';
 import 'package:chatty/utils/chatroom.dart';

@@ -1,4 +1,4 @@
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/global/widgets/alertdialog.dart';
 import 'package:chatty/global/widgets/alertdialog_button.dart';

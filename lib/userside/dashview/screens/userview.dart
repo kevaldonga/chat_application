@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/global/widgets/alertdialog.dart';
 import 'package:chatty/global/widgets/alertdialog_button.dart';
@@ -258,159 +258,16 @@ class _UserViewState extends State<UserView> {
             });
             break;
           case Profileop.verify:
-            if (auth.currentUser!.emailVerified) {
-              Toast("you are already verifed!");
-              return;
-            }
-            Toast("sending link to verify!");
-            await AuthFirebase.verify();
+            verifyUser();
             break;
           case Profileop.updatepassword:
-            String password = "";
-            await showdialog(
-              context: context,
-              title: const Text("change password"),
-              contents: TextField(
-                autocorrect: false,
-                obscureText: true,
-                autofocus: true,
-                enableSuggestions: false,
-                onChanged: (value) {
-                  setState(() {
-                    password = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  labelText: "New password",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              actions: [
-                AlertDialogButton(
-                  text: "change",
-                  callback: (() async {
-                    if (password.isEmpty) {
-                      Toast("too short");
-                      return;
-                    }
-                    await auth.currentUser
-                        ?.updatePassword(password)
-                        .whenComplete(() {
-                      Toast("your password has been updated !!");
-                    });
-                  }),
-                ),
-              ],
-            );
+            updatePassword();
             break;
           case Profileop.signout:
-            bool yousure = await showdialog(
-                context: context,
-                title: const Text("Are you sure ?"),
-                contents: const Text("Are you sure you want to sign out ? "),
-                actions: [
-                  AlertDialogButton(
-                      text: "BACK",
-                      callback: () {
-                        context.pop(false);
-                      }),
-                  AlertDialogButton(
-                      text: "YES",
-                      callback: () {
-                        context.pop(true);
-                      }),
-                ]);
-            if (yousure) {
-              cancellisteners();
-              await AuthFirebase.signout();
-              if (!context.mounted) return;
-              context.go(Routes.loginView);
-            }
+            signout();
             break;
           case Profileop.deleteaccount:
-            String password = "";
-            await showdialog(
-              barrierDismissible: false,
-              context: context,
-              title: const Text("Are you sure ?"),
-              contents: const Text(
-                  "This is serious action to perform !! All your data will be deleted and you won't be able to get them back !!"),
-              actions: [
-                AlertDialogButton(
-                  text: "AUTHENTICATE",
-                  callback: () async {
-                    Toast(
-                        "you have to reauthenticate to delete your account !");
-                    context.pop();
-                    bool result = await showdialog(
-                      context: context,
-                      title: const Text("authenticate yourself"),
-                      contents: Theme(
-                        data: ThemeData(),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                autocorrect: false,
-                                obscureText: true,
-                                autofocus: true,
-                                enableSuggestions: false,
-                                onChanged: (value) {
-                                  setState(() {
-                                    password = value;
-                                  });
-                                },
-                                decoration: const InputDecoration(
-                                  labelText: "password",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      actions: [
-                        AlertDialogButton(
-                          text: "REAUTHENTICATE",
-                          callback: () async {
-                            if (password.length < 8) {
-                              Toast("password is too short !!");
-                              return;
-                            }
-                            try {
-                              await auth.currentUser
-                                  ?.reauthenticateWithCredential(
-                                      EmailAuthProvider.credential(
-                                          email: auth.currentUser!.email!,
-                                          password: password));
-                            } on FirebaseAuthException catch (e) {
-                              if (e.code == "wrong-password") {
-                                Toast("you have enterred wrong password");
-                                if (!context.mounted) return;
-                                context.pop(false);
-                              }
-                              return;
-                            }
-                            Toast("reauthenticated");
-                            if (!context.mounted) return;
-                            context.pop(true);
-                          },
-                        ),
-                      ],
-                    );
-                    if (result) {
-                      deleteAccount();
-                    }
-                  },
-                ),
-                AlertDialogButton(
-                    text: "NEVERMIND",
-                    callback: () {
-                      context.pop(false);
-                    }),
-              ],
-            );
+            onDeleteAccountAction();
         }
       },
       child: Center(child: profilewidget(profile!.photourl, 35, false)),
@@ -743,5 +600,160 @@ class _UserViewState extends State<UserView> {
     Toast("user has been deleted !!");
     if (!context.mounted) return;
     context.go(Routes.loginView);
+  }
+
+  void verifyUser() async {
+    if (auth.currentUser!.emailVerified) {
+      Toast("you are already verifed!");
+      return;
+    }
+    Toast("sending link to verify!");
+    await AuthFirebase.verify();
+  }
+
+  void updatePassword() async {
+    String password = "";
+    await showdialog(
+      context: context,
+      title: const Text("change password"),
+      contents: TextField(
+        autocorrect: false,
+        obscureText: true,
+        autofocus: true,
+        enableSuggestions: false,
+        onChanged: (value) {
+          setState(() {
+            password = value;
+          });
+        },
+        decoration: const InputDecoration(
+          labelText: "New password",
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        AlertDialogButton(
+          text: "change",
+          callback: (() async {
+            if (password.isEmpty) {
+              Toast("too short");
+              return;
+            }
+            await auth.currentUser?.updatePassword(password).whenComplete(() {
+              Toast("your password has been updated !!");
+            });
+          }),
+        ),
+      ],
+    );
+  }
+
+  void signout() async {
+    bool yousure = await showdialog(
+        context: context,
+        title: const Text("Are you sure ?"),
+        contents: const Text("Are you sure you want to sign out ? "),
+        actions: [
+          AlertDialogButton(
+              text: "BACK",
+              callback: () {
+                context.pop(false);
+              }),
+          AlertDialogButton(
+              text: "YES",
+              callback: () {
+                context.pop(true);
+              }),
+        ]);
+    if (yousure) {
+      cancellisteners();
+      await AuthFirebase.signout();
+      if (!context.mounted) return;
+      context.go(Routes.loginView);
+    }
+  }
+
+  void onDeleteAccountAction() async {
+    String password = "";
+    await showdialog(
+      barrierDismissible: false,
+      context: context,
+      title: const Text("Are you sure ?"),
+      contents: const Text(
+          "This is serious action to perform !! All your data will be deleted and you won't be able to get them back !!"),
+      actions: [
+        AlertDialogButton(
+          text: "AUTHENTICATE",
+          callback: () async {
+            Toast("you have to reauthenticate to delete your account !");
+            context.pop();
+            bool result = await showdialog(
+              context: context,
+              title: const Text("authenticate yourself"),
+              contents: Theme(
+                data: ThemeData(),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        autocorrect: false,
+                        obscureText: true,
+                        autofocus: true,
+                        enableSuggestions: false,
+                        onChanged: (value) {
+                          setState(() {
+                            password = value;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: "password",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                AlertDialogButton(
+                  text: "REAUTHENTICATE",
+                  callback: () async {
+                    if (password.length < 8) {
+                      Toast("password is too short !!");
+                      return;
+                    }
+                    try {
+                      await auth.currentUser?.reauthenticateWithCredential(
+                          EmailAuthProvider.credential(
+                              email: auth.currentUser!.email!,
+                              password: password));
+                    } on FirebaseAuthException catch (e) {
+                      if (e.code == "wrong-password") {
+                        Toast("you have enterred wrong password");
+                        if (!context.mounted) return;
+                        context.pop(false);
+                      }
+                      return;
+                    }
+                    Toast("reauthenticated");
+                    if (!context.mounted) return;
+                    context.pop(true);
+                  },
+                ),
+              ],
+            );
+            if (result) {
+              deleteAccount();
+            }
+          },
+        ),
+        AlertDialogButton(
+            text: "NEVERMIND",
+            callback: () {
+              context.pop(false);
+            }),
+      ],
+    );
   }
 }

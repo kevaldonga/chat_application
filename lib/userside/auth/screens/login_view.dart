@@ -3,7 +3,7 @@ import 'package:chatty/global/widgets/alertdialog.dart';
 import 'package:chatty/routing/routes.dart';
 import 'package:chatty/global/variables/validate.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
-import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
+import 'package:chatty/firebase/database/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -56,7 +56,7 @@ class _LoginViewState extends State<LoginView> {
           alignment: Alignment.topCenter,
           children: [
             SvgPicture.asset(
-              "lib/assets/layout/login.svg",
+              "assets/SVGs/login.svg",
               width: md.size.width,
               fit: BoxFit.fitWidth,
             ),

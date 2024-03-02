@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:chatty/assets/SystemChannels/picker.dart';
+import 'package:chatty/global/SystemChannels/picker.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/utils/profile.dart';
 import 'package:flutter/material.dart';

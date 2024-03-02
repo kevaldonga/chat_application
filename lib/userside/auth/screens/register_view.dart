@@ -3,7 +3,7 @@ import 'package:chatty/global/widgets/alertdialog.dart';
 import 'package:chatty/routing/routes.dart';
 import 'package:chatty/global/variables/validate.dart';
 import 'package:chatty/firebase/auth/firebase_auth.dart';
-import 'package:chatty/firebase/exceptions/auth_exceptions.dart';
+import 'package:chatty/firebase/database/auth_exceptions.dart';
 import 'package:chatty/utils/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,7 +56,7 @@ class _RegisterViewState extends State<RegisterView> {
         children: [
           SvgPicture.asset(
             width: md.size.width,
-            "lib/assets/layout/register.svg",
+            "assets/SVGs/register.svg",
             fit: BoxFit.fitWidth,
           ),
           SizedBox(

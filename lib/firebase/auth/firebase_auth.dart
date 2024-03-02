@@ -1,4 +1,4 @@
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/utils/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';

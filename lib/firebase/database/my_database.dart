@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:chatty/hive/database_hive.dart';
+import 'package:chatty/firebase/database/database_hive.dart';
 import 'package:chatty/utils/chat.dart';
 import 'package:chatty/utils/chatroom.dart';
 import 'package:chatty/utils/firebase_user.dart';

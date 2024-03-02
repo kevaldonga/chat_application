@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:chatty/assets/SystemChannels/toast.dart';
+import 'package:chatty/global/SystemChannels/toast.dart';
 import 'package:chatty/global/variables/colors.dart';
 import 'package:chatty/firebase/database/my_database.dart';
 import 'package:chatty/userside/profiles/functions/setprofileimage.dart';
@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../assets/SystemChannels/picker.dart';
+import '../../../global/SystemChannels/picker.dart';
 import '../../profiles/functions/compressimage.dart';
 import '../../profiles/widgets/buildcircle.dart';
 
