@@ -38,7 +38,7 @@ class _TopActionsState extends State<TopActions>
       ..addListener(() {
         setState(() {});
       });
-    size = Tween<double>(begin: 0, end: 20).animate(
+    size = Tween<double>(begin: 0, end: 30).animate(
         CurvedAnimation(parent: controller, curve: const Interval(0, 0.5)));
     fadein = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: controller, curve: const Interval(0.5, 1)));
@@ -73,9 +73,10 @@ class _TopActionsState extends State<TopActions>
             Flexible(
               flex: 2,
               child: IconButton(
-                  onPressed: widget.onbackpressed,
-                  icon: const Icon(Icons.arrow_back_ios_rounded,
-                      color: MyColors.primarySwatch)),
+                onPressed: widget.onbackpressed,
+                icon: const Icon(Icons.arrow_back_ios_rounded,
+                    color: MyColors.primarySwatch),
+              ),
             ),
             const SizedBox(width: 20),
             Flexible(

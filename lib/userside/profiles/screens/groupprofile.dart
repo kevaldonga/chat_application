@@ -270,7 +270,7 @@ class _GroupProfileState extends State<GroupProfile> {
     }
   }
 
-  void onbackpressed(context) async {
+  void onbackpressed(BuildContext context) async {
     bool diditchange = file != null || name != null || bio != null;
     if (diditchange) {
       Toast("saving info...");
@@ -287,6 +287,7 @@ class _GroupProfileState extends State<GroupProfile> {
     }
     await Database.writegroupinfo(
         widget.chatroom.id, widget.chatroom.groupinfo!);
+    if (!context.mounted) return;
     context.pop({"chatroom": widget.chatroom, "firebaseuser": widget.user});
   }
 
