@@ -372,8 +372,6 @@ class _ChatRoomActivityState extends State<ChatRoomActivity>
                         child: TextFieldmain(
                           scrollble: true,
                           onchanged: null,
-                          contentPadding: const EdgeInsets.only(
-                              top: 10, bottom: 15, left: 5, right: 10),
                           controller: controller,
                           hintText: "type something...",
                         ),

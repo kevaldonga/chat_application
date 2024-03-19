@@ -8,14 +8,14 @@ class TextFieldmain extends StatefulWidget implements PreferredSizeWidget {
   final bool scrollble;
   final Widget? leading, ending;
 
-  final EdgeInsetsGeometry contentPadding;
+  final EdgeInsets? contentPadding;
   const TextFieldmain({
     this.leading,
     this.ending,
     super.key,
     bool? scrollble,
     required this.onchanged,
-    required this.contentPadding,
+    this.contentPadding,
     required this.controller,
     this.hintText,
   }) : scrollble = scrollble ?? false;
@@ -69,7 +69,6 @@ class _TextFieldmainState extends State<TextFieldmain> {
               textAlignVertical: TextAlignVertical.center,
               controller: widget.controller,
               autocorrect: false,
-              cursorHeight: 24,
               maxLines: widget.scrollble ? null : 1,
               style: const TextStyle(
                 fontSize: 19,
